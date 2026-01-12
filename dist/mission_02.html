@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission 02 - Inequality & Absolute Value | Math Hunter Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+    
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #1a1a2e;
+    --bg-card: #16213e;
+    --accent-blue: #4cc9f0;
+    --accent-purple: #7b2cbf;
+    --accent-gold: #ffd700;
+    --accent-green: #00ff88;
+    --accent-red: #ff4444;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --text-muted: #666;
+    --glow-blue: 0 0 20px rgba(76, 201, 240, 0.5);
+    --glow-purple: 0 0 20px rgba(123, 44, 191, 0.5);
+    --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.8;
+    min-height: 100vh;
+}
+
+/* Animated background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse at top left, rgba(123, 44, 191, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* System Notification Header */
+.system-alert {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+    border: 2px solid var(--accent-blue);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--glow-blue);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(76, 201, 240, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(76, 201, 240, 0.6); }
+}
+
+.system-alert h1 {
+    font-family: 'Courier New', monospace;
+    color: var(--accent-blue);
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.system-alert .dungeon-name {
+    color: var(--accent-gold);
+    font-size: 1.8em;
+    font-weight: bold;
+    text-shadow: var(--glow-gold);
+}
+
+/* Rank Badge */
+.rank-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 1.2em;
+    margin: 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.rank-E { background: linear-gradient(135deg, #444 0%, #666 100%); color: #fff; }
+.rank-D { background: linear-gradient(135deg, #2a6f97 0%, #4cc9f0 100%); color: #fff; box-shadow: var(--glow-blue); }
+.rank-C { background: linear-gradient(135deg, #006644 0%, #00ff88 100%); color: #000; }
+.rank-B { background: linear-gradient(135deg, #5a189a 0%, #7b2cbf 100%); color: #fff; box-shadow: var(--glow-purple); }
+.rank-A { background: linear-gradient(135deg, #b8860b 0%, #ffd700 100%); color: #000; box-shadow: var(--glow-gold); }
+
+/* Section Cards */
+.section-card {
+    background: var(--bg-card);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-left: 4px solid var(--accent-purple);
+    position: relative;
+    overflow: hidden;
+}
+
+.section-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(123, 44, 191, 0.05) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.section-card h2 {
+    color: var(--accent-blue);
+    font-size: 1.4em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-card h2 .icon {
+    font-size: 1.5em;
+}
+
+.section-card h3 {
+    color: var(--accent-purple);
+    margin: 20px 0 10px;
+}
+
+/* Equipment/Materials List */
+.equipment-list {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 15px 0;
+}
+
+.equipment-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    list-style: none;
+    position: relative;
+    padding-left: 25px;
+}
+
+.equipment-list li::before {
+    content: '◆';
+    position: absolute;
+    left: 0;
+    color: var(--accent-gold);
+}
+
+.equipment-list li:last-child {
+    border-bottom: none;
+}
+
+/* Skills/Learning Targets */
+.skill-box {
+    background: linear-gradient(135deg, rgba(123, 44, 191, 0.2) 0%, rgba(76, 201, 240, 0.1) 100%);
+    border: 1px solid var(--accent-purple);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+}
+
+.skill-box .standard-code {
+    color: var(--accent-gold);
+    font-weight: bold;
+}
+
+/* Strategy Steps */
+.strategy-steps {
+    counter-reset: step;
+}
+
+.strategy-step {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 15px 20px 15px 60px;
+    margin: 15px 0;
+    position: relative;
+}
+
+.strategy-step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 35px;
+    height: 35px;
+    background: var(--accent-purple);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Checklist */
+.checklist-item {
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid var(--accent-green);
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.checklist-item:hover {
+    background: rgba(0, 255, 136, 0.2);
+    transform: translateX(5px);
+}
+
+.checklist-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent-green);
+}
+
+/* Quest Complete Box */
+.quest-complete {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(123, 44, 191, 0.1) 100%);
+    border: 2px solid var(--accent-gold);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    margin-top: 30px;
+}
+
+.quest-complete h2 {
+    color: var(--accent-gold);
+    justify-content: center;
+}
+
+/* Navigation */
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    color: var(--accent-blue);
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s;
+    border: 1px solid var(--accent-blue);
+}
+
+.nav-btn:hover {
+    background: var(--accent-blue);
+    color: var(--bg-primary);
+    box-shadow: var(--glow-blue);
+}
+
+/* Progress Bar */
+.progress-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: var(--bg-secondary);
+    z-index: 1000;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-purple) 0%, var(--accent-blue) 100%);
+    width: 0%;
+    transition: width 0.3s;
+    box-shadow: 0 0 10px var(--accent-blue);
+}
+
+/* Links */
+a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+a:hover {
+    color: var(--accent-gold);
+    text-shadow: 0 0 10px var(--accent-gold);
+}
+
+/* Code blocks */
+pre, code {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 2px 6px;
+    font-family: 'Courier New', monospace;
+    color: var(--accent-green);
+}
+
+pre {
+    padding: 15px;
+    overflow-x: auto;
+    border: 1px solid rgba(76, 201, 240, 0.3);
+}
+
+/* Mission Image */
+.mission-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 15px;
+    margin: 20px 0;
+    border: 2px solid var(--accent-purple);
+    box-shadow: var(--glow-purple);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .system-alert .dungeon-name {
+        font-size: 1.4em;
+    }
+
+    .section-card {
+        padding: 20px 15px;
+    }
+}
+
+/* Tip boxes */
+.tip-box {
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 4px solid var(--accent-gold);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.tip-box strong {
+    color: var(--accent-gold);
+}
+
+/* Warning boxes */
+.warning-box {
+    background: rgba(255, 68, 68, 0.1);
+    border-left: 4px solid var(--accent-red);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.warning-box strong {
+    color: var(--accent-red);
+}
+
+    </style>
+    <style>
+    .mission-content {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .mission-header {
+        text-align: center;
+        padding: 40px 20px;
+        margin-bottom: 30px;
+        background: linear-gradient(135deg, rgba(123, 44, 191, 0.2), rgba(76, 201, 240, 0.2));
+        border-radius: 15px;
+        border: 1px solid var(--accent-purple);
+    }
+
+    .mission-header h1 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 2.5em;
+        color: var(--accent-blue);
+        margin-bottom: 10px;
+    }
+
+    .mission-body {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 40px;
+        border-radius: 15px;
+        border: 1px solid var(--border-color);
+    }
+
+    .mission-body h2 {
+        color: var(--accent-blue);
+        font-family: 'Orbitron', sans-serif;
+        border-bottom: 2px solid var(--accent-purple);
+        padding-bottom: 10px;
+        margin-top: 30px;
+    }
+
+    .mission-body h3 {
+        color: var(--accent-purple);
+        margin-top: 25px;
+    }
+
+    .mission-body p {
+        line-height: 1.8;
+        margin-bottom: 15px;
+    }
+
+    .mission-body pre {
+        background: rgba(0, 0, 0, 0.6);
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+    }
+
+    .mission-body code {
+        background: rgba(76, 201, 240, 0.2);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .mission-body pre code {
+        background: transparent;
+        padding: 0;
+    }
+
+    .mission-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+
+    .mission-body th, .mission-body td {
+        border: 1px solid var(--border-color);
+        padding: 12px;
+        text-align: left;
+    }
+
+    .mission-body th {
+        background: rgba(123, 44, 191, 0.3);
+        color: var(--accent-blue);
+    }
+
+    .mission-body ul, .mission-body ol {
+        margin-left: 20px;
+        margin-bottom: 15px;
+    }
+
+    .mission-body li {
+        margin-bottom: 8px;
+    }
+
+    .system-alert {
+        background: linear-gradient(135deg, rgba(76, 201, 240, 0.2), rgba(123, 44, 191, 0.2));
+        border: 2px solid var(--accent-blue);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        font-family: 'Orbitron', sans-serif;
+    }
+
+    .hunter-tip {
+        background: rgba(0, 255, 136, 0.1);
+        border-left: 4px solid var(--accent-green);
+        padding: 15px 20px;
+        margin: 20px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .system-complete {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(123, 44, 191, 0.2));
+        border: 2px solid #ffd700;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+    }
+
+    .equipment-box {
+        background: rgba(123, 44, 191, 0.15);
+        border: 1px solid var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .skill-box {
+        background: rgba(76, 201, 240, 0.1);
+        border-left: 4px solid var(--accent-blue);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .training-links {
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin: 20px 0;
+    }
+
+    .training-links a {
+        display: block;
+        margin: 8px 0;
+    }
+
+    .quest-box {
+        background: linear-gradient(135deg, rgba(255, 68, 68, 0.1), rgba(123, 44, 191, 0.1));
+        border: 2px solid var(--accent-red);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .checklist-box {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .note-box {
+        background: rgba(76, 201, 240, 0.1);
+        border-left: 4px solid var(--accent-blue);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .quest-complete {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(255, 215, 0, 0.15));
+        border: 2px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: var(--glow-gold);
+    }
+
+    .strategy-box {
+        background: rgba(123, 44, 191, 0.1);
+        border: 1px dashed var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .verbatim-box {
+        background: rgba(255, 215, 0, 0.1);
+        border: 2px solid var(--accent-gold);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        font-style: italic;
+    }
+
+    .back-link {
+        display: inline-block;
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-purple);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+
+    .back-link:hover {
+        background: rgba(123, 44, 191, 0.3);
+        border-color: var(--accent-blue);
+    }
+
+    .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .nav-buttons a {
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-purple);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        transition: all 0.3s;
+    }
+
+    .nav-buttons a:hover {
+        background: rgba(123, 44, 191, 0.3);
+    }
+
+    .nav-buttons .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .mission-image {
+        width: 100%;
+        max-width: 800px;
+        height: auto;
+        border-radius: 15px;
+        margin: 20px auto;
+        display: block;
+        border: 2px solid var(--accent-purple);
+        box-shadow: 0 0 30px rgba(123, 44, 191, 0.4);
+    }
+    </style>
+</head>
+<body>
+    <div class="mission-content">
+        <a href="index.html" class="back-link">← Back to Mission Select</a>
+
+        <div class="mission-header">
+            <span class="rank-badge rank-E">E-RANK</span>
+            <h1>Mission 02</h1>
+            <p style="color: var(--text-secondary); font-size: 1.2em;">Inequality & Absolute Value</p>
+            <img src="images/mission_02.png" alt="Mission 02 - Inequality & Absolute Value" class="mission-image">
+        </div>
+
+        <div class="mission-body">
+            <h1>Mission 02: Inequality &amp; Absolute Value</h1>
+<div class="system-alert">
+<p><strong>[SYSTEM NOTIFICATION]</strong>
+A Tutorial Gate has been detected. Difficulty: E-Rank.
+Hunter, prepare to navigate the treacherous Number Lines.</p>
+</div>
+
+<h2>The Challenge Awaits</h2>
+<p>Hunter, you're about to enter the <strong>Tutorial Gate: Number Lines</strong> - a realm where numbers stretch infinitely in both directions. In this dimension, you'll learn to navigate between the positive realm (light) and the negative realm (shadow).</p>
+<p>Understanding <strong>inequalities</strong> and <strong>absolute value</strong> is like having a map of any dungeon. You'll always know:
+- Which direction leads deeper into shadow (negative) or toward light (positive)
+- The exact DISTANCE from the center point (zero), regardless of direction
+- How to compare any two positions in the number realm</p>
+<hr />
+<h2>⚔️ Hunter Equipment</h2>
+<div class="equipment-box">
+<p><strong>Gather these items before entering the dungeon:</strong>
+- Sidewalk chalk (on a warm day) OR paper and pencil
+- One die (your fate randomizer)
+- A clear floor space or sidewalk (your battlefield)</p>
+</div>
+
+<hr />
+<h2>📜 Skills to Unlock</h2>
+<div class="skill-box">
+<p><strong>6.NS.7a</strong> - I can understand statements of inequality (Ex: -3 &gt; -7) and explain their positions and distances apart on a number line.</p>
+</div>
+
+<div class="skill-box">
+<p><strong>6.NS.7b</strong> - I can write, understand and explain how the order of rational numbers applies in real-world situations (Ex: -3°C &gt; -7°C to show that -3°C is warmer than -7°C).</p>
+</div>
+
+<div class="skill-box">
+<p><strong>6.NS.7c</strong> - I understand the absolute value of a number as its distance from 0 on the number line.</p>
+</div>
+
+<div class="skill-box">
+<p><strong>6.NS.7d</strong> - I can tell the difference between comparisons of absolute value from statements of order (Ex: An account balance less than -30 dollars is a debt greater than 30 dollars).</p>
+</div>
+
+<hr />
+<h2>🎓 Training Scrolls</h2>
+<div class="training-links">
+<ul>
+<li><a href="https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic">Negative and Positive Integers Video</a></li>
+</ul>
+</div>
+
+<h3>Understanding the Number Line: A Hunter's Navigation Guide</h3>
+<p><strong>The Number Line is Your Map</strong></p>
+<p>Imagine standing at the center of a vast corridor that extends infinitely in both directions:
+- <strong>Right (East)</strong> = Positive numbers (1, 2, 3, 4...)
+- <strong>Left (West)</strong> = Negative numbers (-1, -2, -3, -4...)
+- <strong>Center</strong> = Zero (your starting point)</p>
+<p><strong>The Inequality Symbols: Direction Indicators</strong></p>
+<p>Think of these symbols as arrows pointing to the SMALLER value:
+- <code>&gt;</code> means "greater than" - the arrow points right toward the bigger number
+- <code>&lt;</code> means "less than" - the arrow points left toward the smaller number</p>
+<div class="tip-box">
+<p><strong>Hunter Memory Trick:</strong> The symbol is like a hungry alligator's mouth - it always wants to EAT the bigger number! 5 &gt; 3 (the mouth opens toward 5)</p>
+</div>
+
+<p><strong>Negative Number Logic (Critical Concept!)</strong></p>
+<p>Here's where many Hunters get confused:
+- <strong>-3 is GREATER than -7</strong> because -3 is CLOSER to zero
+- Think of it like debt: Would you rather owe $3 or $7? Owing $3 is better!
+- On the number line: -3 is to the RIGHT of -7</p>
+<p><strong>Absolute Value: Distance from Zero</strong></p>
+<p>The absolute value of any number is simply how far it is from zero - direction doesn't matter!
+- |5| = 5 (five steps from zero going right)
+- |-5| = 5 (five steps from zero going left)
+- Both are the SAME distance from the center!</p>
+<div class="tip-box">
+<p><strong>Real World Application:</strong> If you're at sea level (0) and a diver is at -30 feet while a bird is at +30 feet, they're both 30 feet away from you - just in opposite directions!</p>
+</div>
+
+<hr />
+<h2>🏰 Dungeon Raid</h2>
+<h3>📜 Official Quest Instructions</h3>
+<div class="verbatim-box">
+<p>You get to make a really creative number line. If one of your siblings has made a number line already you can just add onto it in the opposite direction, so starting at 0 you would go left and write negative numbers. So your number line will look something like this:</p>
+<p>Start at zero. Roll a dice and add that many numbers to the number you are on. (for example if you are standing on 0 and you roll a five, then you will move to number five). The second time you roll your dice you will subtract the number on the dice (so if you roll a six you would move backwards six, if you were on number five then you would move left to -1). Go back and forth between adding and subtracting the number you roll. See how many rolls you can make until you move off the numberline.</p>
+<p>Discuss</p>
+<p>When everyone is finished, bring the family back together to have a discussion, let the kids have a chance to tell each other what they did on their number line and what they learned. The kids might want a chance to play each other's games.</p>
+</div>
+
+<h3>Additional Practice</h3>
+<ul>
+<li><a href="https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic">Khan Academy - Negative Numbers</a></li>
+</ul>
+<hr />
+<h2>💡 Raid Strategy Guide</h2>
+<div class="strategy-box">
+<h3>Step 1: Build Your Battlefield</h3>
+<p>Draw or chalk a long number line on the floor or paper.
+- Put <strong>0</strong> in the CENTER
+- Mark positive numbers going RIGHT: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10...
+- Mark negative numbers going LEFT: -1, -2, -3, -4, -5, -6, -7, -8, -9, -10...</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 2: Take Your Starting Position</h3>
+<p>Stand (or place a marker) on ZERO. This is your origin point - the boundary between positive and negative realms.</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 3: First Roll - Move Forward (Add)</h3>
+<p>Roll your die. Whatever number appears, move that many spaces to the RIGHT (positive direction).
+- Roll a 5? → Move from 0 to <strong>5</strong>
+- You're now at position 5 in the positive realm!</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 4: Second Roll - Move Backward (Subtract)</h3>
+<p>Roll again. This time, move that many spaces to the LEFT (subtract).
+- At position 5 and roll a 6? → Move 6 spaces left
+- 5 - 6 = <strong>-1</strong> → You've crossed into the negative realm!</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 5: Alternate and Survive</h3>
+<p>Continue alternating: Add, Subtract, Add, Subtract...
+- <strong>Track your position</strong> after each roll
+- <strong>Count your moves</strong> - how many rolls can you survive before falling off?</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 6: Record Your Journey</h3>
+<p>Write down each position you land on. This creates a record of your adventure through the number realms!</p>
+<p>Example Journey: 0 → 5 → -1 → 2 → -4 → 1 → ...</p>
+</div>
+
+<hr />
+<h2>👑 Guild Master Verification</h2>
+<div class="warning-box">
+<p><strong>STOP!</strong> 🛑 Summon your Guild Master (Parent/Guardian) for verification.</p>
+</div>
+
+<p><strong>Guild Master Instructions:</strong></p>
+<p>Your young Hunter has navigated the Number Lines. Verify their mastery:</p>
+<div class="checklist-box">
+<ul>
+<li>[ ] Watch them move across zero - do they count correctly? (e.g., 2 - 3 = -1, not 1)</li>
+<li>[ ] Can they explain WHY -3 &gt; -7? (Because -3 is closer to zero / less of a debt)</li>
+<li>[ ] Did they complete the verbatim quest instructions in Section 4?</li>
+<li>[ ] Did they watch at least one Training Scroll (lesson video)?</li>
+<li>[ ] Did they discuss their journey with family members?</li>
+</ul>
+</div>
+
+<hr />
+<h2>✅ Quest Completion</h2>
+<div class="quest-complete">
+<p><strong>Congratulations, Hunter!</strong></p>
+<p>You have successfully cleared the E-Rank Tutorial Gate: Number Lines.</p>
+<p><strong>To receive credit for this dungeon clear:</strong>
+Submit a video of you navigating your number line OR a picture of your drawn number line showing your journey.</p>
+<p><em>Upload to your class portal.</em></p>
+<p><strong>Reward:</strong> +1 Mathematical Power | Number Line Navigation Unlocked</p>
+</div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="mission_01.html">← Previous Mission</a>
+            <a href="mission_03.html">Next Mission →</a>
+        </div>
+    </div>
+</body>
+</html>

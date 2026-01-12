@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LA Mission 06 - Point of View | Language Arts Hunter Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        --bg-primary: #0a0a0f; --bg-secondary: #1a1a2e; --bg-card: #16213e;
+        --accent-blue: #4cc9f0; --accent-purple: #7b2cbf; --accent-gold: #ffd700;
+        --accent-green: #00ff88; --accent-red: #ff4444; --accent-teal: #00d4aa;
+        --text-primary: #e0e0e0; --text-secondary: #a0a0a0;
+        --border-color: rgba(76, 201, 240, 0.3); --card-bg: rgba(22, 33, 62, 0.8);
+        --glow-blue: 0 0 20px rgba(76, 201, 240, 0.5);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.8; min-height: 100vh; }
+    body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at top left, rgba(0, 212, 170, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.1) 0%, transparent 50%); pointer-events: none; z-index: -1; }
+    .mission-content { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .back-link { display: inline-block; padding: 10px 20px; background: var(--card-bg); border: 1px solid var(--accent-teal); color: var(--accent-blue); text-decoration: none; border-radius: 5px; margin-bottom: 20px; transition: all 0.3s; }
+    .back-link:hover { background: rgba(0, 212, 170, 0.2); }
+    .mission-header { text-align: center; padding: 40px 20px; margin-bottom: 30px; background: linear-gradient(135deg, rgba(76, 201, 240, 0.2), rgba(123, 44, 191, 0.2)); border-radius: 15px; border: 1px solid var(--accent-blue); }
+    .mission-header h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2em; color: var(--accent-blue); margin-bottom: 10px; }
+    .rank-badge { display: inline-block; padding: 8px 20px; border-radius: 5px; font-weight: bold; font-size: 1em; margin: 10px 0; text-transform: uppercase; letter-spacing: 3px; font-family: 'Orbitron', sans-serif; }
+    .rank-D { background: linear-gradient(135deg, #2a6f97 0%, #4cc9f0 100%); color: #fff; box-shadow: var(--glow-blue); }
+    .mission-body { background: rgba(0, 0, 0, 0.4); padding: 40px; border-radius: 15px; border: 1px solid var(--border-color); }
+    .mission-body h2 { color: var(--accent-blue); font-family: 'Orbitron', sans-serif; border-bottom: 2px solid var(--accent-purple); padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px; }
+    .mission-body h3 { color: var(--accent-purple); margin-top: 25px; margin-bottom: 15px; }
+    .mission-body p { line-height: 1.8; margin-bottom: 15px; }
+    .system-alert { background: linear-gradient(135deg, rgba(76, 201, 240, 0.2), rgba(123, 44, 191, 0.2)); border: 2px solid var(--accent-blue); border-radius: 10px; padding: 20px; margin: 20px 0; font-family: 'Orbitron', sans-serif; }
+    .equipment-box { background: rgba(123, 44, 191, 0.15); border: 1px solid var(--accent-purple); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .equipment-box ul { margin-left: 20px; } .equipment-box li { margin-bottom: 8px; }
+    .skill-box { background: rgba(76, 201, 240, 0.1); border-left: 4px solid var(--accent-blue); padding: 15px 20px; margin: 15px 0; border-radius: 0 10px 10px 0; }
+    .training-links { background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .training-links a { display: block; color: var(--accent-blue); margin: 10px 0; padding: 10px 15px; background: rgba(76, 201, 240, 0.1); border-radius: 5px; text-decoration: none; transition: all 0.3s; }
+    .training-links a:hover { background: rgba(76, 201, 240, 0.2); color: var(--accent-gold); }
+    .quest-box { background: linear-gradient(135deg, rgba(255, 68, 68, 0.1), rgba(123, 44, 191, 0.1)); border: 2px solid var(--accent-red); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .strategy-box { background: rgba(123, 44, 191, 0.1); border: 1px dashed var(--accent-purple); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .checklist-box { background: rgba(0, 255, 136, 0.1); border: 1px solid var(--accent-green); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .checklist-box ul { margin-left: 20px; } .checklist-box li { margin-bottom: 10px; }
+    .quest-complete { background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(255, 215, 0, 0.15)); border: 2px solid var(--accent-green); border-radius: 10px; padding: 25px; margin: 30px 0; text-align: center; }
+    .warning-box { background: rgba(255, 68, 68, 0.1); border-left: 4px solid var(--accent-red); padding: 15px 20px; margin: 15px 0; border-radius: 0 10px 10px 0; }
+    .nav-buttons { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+    .nav-buttons a, .nav-buttons span { padding: 10px 20px; background: var(--card-bg); border: 1px solid var(--accent-purple); color: var(--accent-blue); text-decoration: none; border-radius: 5px; transition: all 0.3s; }
+    .nav-buttons a:hover { background: rgba(123, 44, 191, 0.3); }
+    hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
+    a { color: var(--accent-blue); } a:hover { color: var(--accent-gold); }
+    </style>
+</head>
+<body>
+    <div class="mission-content">
+        <a href="la_index.html" class="back-link">&#8592; Back to Mission Select</a>
+        <div class="mission-header">
+            <span class="rank-badge rank-D">D-RANK</span>
+            <h1>Mission 06: Point of View</h1>
+            <p style="color: var(--text-secondary); font-size: 1.2em;">Evaluate How Authors Incorporate Points of View</p>
+        </div>
+
+        <div class="mission-body">
+            <div class="system-alert">
+                <p><strong>[SYSTEM NOTIFICATION]</strong><br>
+                A Literary Gate has been detected. Difficulty: D-Rank.<br>
+                Hunter Hyro, learn to see through different eyes - understanding point of view is essential for advanced reading.</p>
+            </div>
+
+            <h2>The Challenge Awaits</h2>
+            <p>Every story is told from a <strong>point of view</strong> - the perspective through which events are seen. Like viewing a dungeon from different angles, understanding POV helps you see the full picture.</p>
+            <p>Your mission? Read "The Girl Who Owned The Bear" and analyze how the author uses point of view to shape the reader's understanding.</p>
+
+            <hr>
+
+            <h2>Hunter Equipment</h2>
+            <div class="equipment-box">
+                <ul>
+                    <li>Pencil and highlighter</li>
+                    <li>POV analysis chart</li>
+                    <li>Note-taking paper</li>
+                </ul>
+            </div>
+
+            <hr>
+
+            <h2>Skills to Unlock</h2>
+            <div class="skill-box">
+                <p><strong>Power Standard PS6</strong><br>
+                The student will evaluate how an author incorporates points of view.</p>
+            </div>
+
+            <hr>
+
+            <h2>Training Scrolls</h2>
+            <p>Understanding Point of View:</p>
+            <ul>
+                <li><strong>First Person:</strong> Uses "I" and "me" - narrator is a character in the story</li>
+                <li><strong>Third Person Limited:</strong> Uses "he/she" - narrator knows one character's thoughts</li>
+                <li><strong>Third Person Omniscient:</strong> Uses "he/she" - narrator knows everyone's thoughts</li>
+            </ul>
+
+            <hr>
+
+            <h2>Dungeon Raid</h2>
+            <div class="quest-box">
+                <h3>Official Quest Instructions</h3>
+                <p>Students will independently read "The Girl Who Owned The Bear." After which they will complete questions analyzing the author's use of point of view.</p>
+            </div>
+
+            <h3>Your Quest Materials</h3>
+            <div class="training-links">
+                <a href="https://drive.google.com/file/d/1VNJHBiwzKcqDlCf9QeKOQpVrdGxTZ3iA/view?usp=sharing" target="_blank">The Girl Who Owned The Bear - Text and Questions</a>
+            </div>
+
+            <hr>
+
+            <h2>Raid Strategy Guide</h2>
+            <div class="strategy-box">
+                <h3>Step 1: Identify the POV</h3>
+                <p>As you read, ask: "Who is telling this story?" Look for pronouns (I, he, she, they) to identify the point of view.</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 2: Note What the Narrator Knows</h3>
+                <p>Can the narrator see into characters' minds? Does the narrator share opinions? This reveals the type of POV being used.</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 3: Analyze the Effect</h3>
+                <p>Ask: "How would this story be different if told from another POV?" Consider what information would be gained or lost.</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 4: Find Evidence</h3>
+                <p>Highlight specific sentences that show the POV. These will be your evidence when answering questions.</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 5: Complete Questions</h3>
+                <p>Answer all questions about point of view, using specific evidence from the text.</p>
+            </div>
+
+            <hr>
+
+            <h2>Guild Master Verification</h2>
+            <div class="warning-box">
+                <p><strong>STOP!</strong> Summon your Guild Master (Parent/Guardian) for verification.</p>
+            </div>
+            <div class="checklist-box">
+                <ul>
+                    <li>[ ] Read the entire story</li>
+                    <li>[ ] Point of view is correctly identified</li>
+                    <li>[ ] Evidence from text supports POV analysis</li>
+                    <li>[ ] Effect of POV on story is explained</li>
+                    <li>[ ] All questions are complete</li>
+                </ul>
+            </div>
+
+            <hr>
+
+            <h2>Quest Completion</h2>
+            <div class="quest-complete">
+                <p><strong>Congratulations, Hunter!</strong></p>
+                <p>You have cleared the D-Rank Literary Gate: Point of View.</p>
+                <p><strong>Upload your completed worksheet to Boost.</strong></p>
+                <p><strong>Reward:</strong> +2 Reading Power | Perspective Analysis Skill Unlocked</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="la_mission_05.html">&#8592; Previous Mission</a>
+            <a href="la_mission_07.html">Next Mission &#8594;</a>
+        </div>
+    </div>
+</body>
+</html>

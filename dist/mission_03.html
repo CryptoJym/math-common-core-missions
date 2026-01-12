@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission 03 - Ratios with Money | Math Hunter Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+    
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #1a1a2e;
+    --bg-card: #16213e;
+    --accent-blue: #4cc9f0;
+    --accent-purple: #7b2cbf;
+    --accent-gold: #ffd700;
+    --accent-green: #00ff88;
+    --accent-red: #ff4444;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --text-muted: #666;
+    --glow-blue: 0 0 20px rgba(76, 201, 240, 0.5);
+    --glow-purple: 0 0 20px rgba(123, 44, 191, 0.5);
+    --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.8;
+    min-height: 100vh;
+}
+
+/* Animated background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse at top left, rgba(123, 44, 191, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* System Notification Header */
+.system-alert {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+    border: 2px solid var(--accent-blue);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--glow-blue);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(76, 201, 240, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(76, 201, 240, 0.6); }
+}
+
+.system-alert h1 {
+    font-family: 'Courier New', monospace;
+    color: var(--accent-blue);
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.system-alert .dungeon-name {
+    color: var(--accent-gold);
+    font-size: 1.8em;
+    font-weight: bold;
+    text-shadow: var(--glow-gold);
+}
+
+/* Rank Badge */
+.rank-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 1.2em;
+    margin: 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.rank-E { background: linear-gradient(135deg, #444 0%, #666 100%); color: #fff; }
+.rank-D { background: linear-gradient(135deg, #2a6f97 0%, #4cc9f0 100%); color: #fff; box-shadow: var(--glow-blue); }
+.rank-C { background: linear-gradient(135deg, #006644 0%, #00ff88 100%); color: #000; }
+.rank-B { background: linear-gradient(135deg, #5a189a 0%, #7b2cbf 100%); color: #fff; box-shadow: var(--glow-purple); }
+.rank-A { background: linear-gradient(135deg, #b8860b 0%, #ffd700 100%); color: #000; box-shadow: var(--glow-gold); }
+
+/* Section Cards */
+.section-card {
+    background: var(--bg-card);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-left: 4px solid var(--accent-purple);
+    position: relative;
+    overflow: hidden;
+}
+
+.section-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(123, 44, 191, 0.05) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.section-card h2 {
+    color: var(--accent-blue);
+    font-size: 1.4em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-card h2 .icon {
+    font-size: 1.5em;
+}
+
+.section-card h3 {
+    color: var(--accent-purple);
+    margin: 20px 0 10px;
+}
+
+/* Equipment/Materials List */
+.equipment-list {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 15px 0;
+}
+
+.equipment-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    list-style: none;
+    position: relative;
+    padding-left: 25px;
+}
+
+.equipment-list li::before {
+    content: '◆';
+    position: absolute;
+    left: 0;
+    color: var(--accent-gold);
+}
+
+.equipment-list li:last-child {
+    border-bottom: none;
+}
+
+/* Skills/Learning Targets */
+.skill-box {
+    background: linear-gradient(135deg, rgba(123, 44, 191, 0.2) 0%, rgba(76, 201, 240, 0.1) 100%);
+    border: 1px solid var(--accent-purple);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+}
+
+.skill-box .standard-code {
+    color: var(--accent-gold);
+    font-weight: bold;
+}
+
+/* Strategy Steps */
+.strategy-steps {
+    counter-reset: step;
+}
+
+.strategy-step {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 15px 20px 15px 60px;
+    margin: 15px 0;
+    position: relative;
+}
+
+.strategy-step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 35px;
+    height: 35px;
+    background: var(--accent-purple);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Checklist */
+.checklist-item {
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid var(--accent-green);
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.checklist-item:hover {
+    background: rgba(0, 255, 136, 0.2);
+    transform: translateX(5px);
+}
+
+.checklist-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent-green);
+}
+
+/* Quest Complete Box */
+.quest-complete {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(123, 44, 191, 0.1) 100%);
+    border: 2px solid var(--accent-gold);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    margin-top: 30px;
+}
+
+.quest-complete h2 {
+    color: var(--accent-gold);
+    justify-content: center;
+}
+
+/* Navigation */
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    color: var(--accent-blue);
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s;
+    border: 1px solid var(--accent-blue);
+}
+
+.nav-btn:hover {
+    background: var(--accent-blue);
+    color: var(--bg-primary);
+    box-shadow: var(--glow-blue);
+}
+
+/* Progress Bar */
+.progress-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: var(--bg-secondary);
+    z-index: 1000;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-purple) 0%, var(--accent-blue) 100%);
+    width: 0%;
+    transition: width 0.3s;
+    box-shadow: 0 0 10px var(--accent-blue);
+}
+
+/* Links */
+a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+a:hover {
+    color: var(--accent-gold);
+    text-shadow: 0 0 10px var(--accent-gold);
+}
+
+/* Code blocks */
+pre, code {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 2px 6px;
+    font-family: 'Courier New', monospace;
+    color: var(--accent-green);
+}
+
+pre {
+    padding: 15px;
+    overflow-x: auto;
+    border: 1px solid rgba(76, 201, 240, 0.3);
+}
+
+/* Mission Image */
+.mission-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 15px;
+    margin: 20px 0;
+    border: 2px solid var(--accent-purple);
+    box-shadow: var(--glow-purple);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .system-alert .dungeon-name {
+        font-size: 1.4em;
+    }
+
+    .section-card {
+        padding: 20px 15px;
+    }
+}
+
+/* Tip boxes */
+.tip-box {
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 4px solid var(--accent-gold);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.tip-box strong {
+    color: var(--accent-gold);
+}
+
+/* Warning boxes */
+.warning-box {
+    background: rgba(255, 68, 68, 0.1);
+    border-left: 4px solid var(--accent-red);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.warning-box strong {
+    color: var(--accent-red);
+}
+
+    </style>
+    <style>
+    .mission-content {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .mission-header {
+        text-align: center;
+        padding: 40px 20px;
+        margin-bottom: 30px;
+        background: linear-gradient(135deg, rgba(123, 44, 191, 0.2), rgba(76, 201, 240, 0.2));
+        border-radius: 15px;
+        border: 1px solid var(--accent-purple);
+    }
+
+    .mission-header h1 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 2.5em;
+        color: var(--accent-blue);
+        margin-bottom: 10px;
+    }
+
+    .mission-body {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 40px;
+        border-radius: 15px;
+        border: 1px solid var(--border-color);
+    }
+
+    .mission-body h2 {
+        color: var(--accent-blue);
+        font-family: 'Orbitron', sans-serif;
+        border-bottom: 2px solid var(--accent-purple);
+        padding-bottom: 10px;
+        margin-top: 30px;
+    }
+
+    .mission-body h3 {
+        color: var(--accent-purple);
+        margin-top: 25px;
+    }
+
+    .mission-body p {
+        line-height: 1.8;
+        margin-bottom: 15px;
+    }
+
+    .mission-body pre {
+        background: rgba(0, 0, 0, 0.6);
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+    }
+
+    .mission-body code {
+        background: rgba(76, 201, 240, 0.2);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .mission-body pre code {
+        background: transparent;
+        padding: 0;
+    }
+
+    .mission-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+
+    .mission-body th, .mission-body td {
+        border: 1px solid var(--border-color);
+        padding: 12px;
+        text-align: left;
+    }
+
+    .mission-body th {
+        background: rgba(123, 44, 191, 0.3);
+        color: var(--accent-blue);
+    }
+
+    .mission-body ul, .mission-body ol {
+        margin-left: 20px;
+        margin-bottom: 15px;
+    }
+
+    .mission-body li {
+        margin-bottom: 8px;
+    }
+
+    .system-alert {
+        background: linear-gradient(135deg, rgba(76, 201, 240, 0.2), rgba(123, 44, 191, 0.2));
+        border: 2px solid var(--accent-blue);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        font-family: 'Orbitron', sans-serif;
+    }
+
+    .hunter-tip {
+        background: rgba(0, 255, 136, 0.1);
+        border-left: 4px solid var(--accent-green);
+        padding: 15px 20px;
+        margin: 20px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .system-complete {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(123, 44, 191, 0.2));
+        border: 2px solid #ffd700;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+    }
+
+    .equipment-box {
+        background: rgba(123, 44, 191, 0.15);
+        border: 1px solid var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .skill-box {
+        background: rgba(76, 201, 240, 0.1);
+        border-left: 4px solid var(--accent-blue);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .training-links {
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin: 20px 0;
+    }
+
+    .training-links a {
+        display: block;
+        margin: 8px 0;
+    }
+
+    .quest-box {
+        background: linear-gradient(135deg, rgba(255, 68, 68, 0.1), rgba(123, 44, 191, 0.1));
+        border: 2px solid var(--accent-red);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .checklist-box {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .note-box {
+        background: rgba(76, 201, 240, 0.1);
+        border-left: 4px solid var(--accent-blue);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .quest-complete {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(255, 215, 0, 0.15));
+        border: 2px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: var(--glow-gold);
+    }
+
+    .strategy-box {
+        background: rgba(123, 44, 191, 0.1);
+        border: 1px dashed var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .verbatim-box {
+        background: rgba(255, 215, 0, 0.1);
+        border: 2px solid var(--accent-gold);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        font-style: italic;
+    }
+
+    .back-link {
+        display: inline-block;
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-purple);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+
+    .back-link:hover {
+        background: rgba(123, 44, 191, 0.3);
+        border-color: var(--accent-blue);
+    }
+
+    .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .nav-buttons a {
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-purple);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        transition: all 0.3s;
+    }
+
+    .nav-buttons a:hover {
+        background: rgba(123, 44, 191, 0.3);
+    }
+
+    .nav-buttons .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .mission-image {
+        width: 100%;
+        max-width: 800px;
+        height: auto;
+        border-radius: 15px;
+        margin: 20px auto;
+        display: block;
+        border: 2px solid var(--accent-purple);
+        box-shadow: 0 0 30px rgba(123, 44, 191, 0.4);
+    }
+    </style>
+</head>
+<body>
+    <div class="mission-content">
+        <a href="index.html" class="back-link">← Back to Mission Select</a>
+
+        <div class="mission-header">
+            <span class="rank-badge rank-E">E-RANK</span>
+            <h1>Mission 03</h1>
+            <p style="color: var(--text-secondary); font-size: 1.2em;">Ratios with Money</p>
+            <img src="images/mission_03.png" alt="Mission 03 - Ratios with Money" class="mission-image">
+        </div>
+
+        <div class="mission-body">
+            <h1>Mission 03: Ratios with Money</h1>
+<div class="system-alert">
+<p><strong>[SYSTEM NOTIFICATION]</strong>
+A Tutorial Gate has been detected. Difficulty: E-Rank.
+Hunter, prepare to master the Currency Realm.</p>
+</div>
+
+<h2>The Challenge Awaits</h2>
+<p>Welcome to the <strong>Tutorial Gate: Currency Realm</strong>, Hunter! In this dimension, you'll learn one of the most valuable skills any adventurer can possess - understanding how <strong>ratios</strong> and <strong>percentages</strong> work with money.</p>
+<p>Every successful Hunter needs to manage their gold! Whether you're calculating quest rewards, splitting loot with your party, or determining what percentage of a treasure horde you've claimed - these skills are essential.</p>
+<p>Today, you'll run your own mini-business where you earn money for completing physical tasks. The catch? You need to track your earnings using <strong>unit rates</strong> and calculate your success as a <strong>percentage</strong>!</p>
+<hr />
+<h2>⚔️ Hunter Equipment</h2>
+<div class="equipment-box">
+<p><strong>Gather these items before entering the dungeon:</strong>
+- Set of play money (your training gold)
+- Five dice (to randomize challenges)
+- Paper and pencil (for your earnings ledger)</p>
+</div>
+
+<hr />
+<h2>📜 Skills to Unlock</h2>
+<div class="skill-box">
+<p><strong>6.RP.3b</strong> - I can solve unit rate problems. (Ex: If it took 7 hours to mow 4 lawns, then at that rate, how many lawns could be mowed in 35 hours? At what rate were the lawns being mowed?)</p>
+</div>
+
+<div class="skill-box">
+<p><strong>6.RP.3c</strong> - I can find a percent of a quantity as a rate per 100. (Ex: 30% of a quantity means 30/100 times the quantity)</p>
+</div>
+
+<div class="skill-box">
+<p><strong>6.RP.3c</strong> - I can solve problems involving finding the whole if I am given a part and the percent.</p>
+</div>
+
+<hr />
+<h2>🎓 Training Scrolls</h2>
+<div class="training-links">
+<ul>
+<li><a href="https://www.ck12.org/c/algebra/analyzing-relationships/">Analyzing Relationships | CK-12 Foundation</a></li>
+<li><a href="https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-ratios-prop-topic">Khan Academy: Rates and Ratios Practice</a></li>
+<li><a href="https://www.youtube.com/watch?v=8RoHbXXJTvo">Math Antics Rate Video</a></li>
+<li><a href="https://www.youtube.com/watch?v=JeVSmq1Nrpw">Math Antics Percent Video</a></li>
+<li><a href="https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-ratios-prop-topic/cc-6th-percent/e/finding-percents">Khan Academy Percent Practice</a></li>
+</ul>
+</div>
+
+<h3>Understanding Ratios: A Hunter's Economics Guide</h3>
+<p><strong>What is a Unit Rate?</strong></p>
+<p>A unit rate tells you the cost or value of ONE unit of something. It's your baseline measurement!</p>
+<ul>
+<li><strong>$2 per jumping jack</strong> means for every 1 jumping jack, you earn $2</li>
+<li><strong>$15 per hour</strong> means for every 1 hour of work, you earn $15</li>
+<li><strong>60 miles per hour</strong> means for every 1 hour of driving, you travel 60 miles</li>
+</ul>
+<div class="tip-box">
+<p><strong>Hunter Tip:</strong> To find ANY amount, multiply the unit rate by the quantity!
+- 10 jumping jacks × $2 = $20
+- 5 hours × $15/hour = $75
+- 3 hours × 60 mph = 180 miles</p>
+</div>
+
+<p><strong>What is a Percentage?</strong></p>
+<p>A percentage is just another way to write a ratio where the total is always 100!</p>
+<ul>
+<li><strong>50%</strong> = 50 out of 100 = 50/100 = 0.50 = half</li>
+<li><strong>25%</strong> = 25 out of 100 = 25/100 = 0.25 = one quarter</li>
+<li><strong>100%</strong> = 100 out of 100 = the whole thing!</li>
+</ul>
+<p><strong>The Percentage Formula:</strong></p>
+<pre><code>Percentage = (Part / Whole) × 100
+</code></pre>
+<p>If you did 34 out of 50 possible jumping jacks:
+- 34 ÷ 50 = 0.68
+- 0.68 × 100 = <strong>68%</strong></p>
+<hr />
+<h2>🏰 Dungeon Raid</h2>
+<h3>📜 Official Quest Instructions</h3>
+<div class="verbatim-box">
+<p>We are going to make a chart for keeping track of how much you are going to earn doing something. In my example it will be jumping jacks, but feel free to switch it to something you love doing (like shooting a basket) or need to do (pick up toys). You are going to do "jumping jacks" at a rate of $2/per jumping jack. So for every jumping jack you do, you get $2 (in your money kit). Make a chart to figure out how much money you will get if you do a certain amount of jumping jacks. It will look like this:</p>
+<table>
+<thead>
+<tr>
+<th>Jumping Jacks</th>
+<th>Money</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>$2</td>
+</tr>
+<tr>
+<td>2</td>
+<td>$4</td>
+</tr>
+</tbody>
+</table>
+<p>How much money will you make if you do 10, 16 and 32 jumping jacks? Do as many jumping jacks as you can up to 50. How many did you do? How much money did you earn? If you did all 50 you would have earned $100. You earned some part of the $100 possible. If you did 34 jumping jacks and got $68 then you got 68/100 of the possible amount or 68%. What percent of the possible did you get?</p>
+</div>
+
+<h3>CK12 Account Setup (for online activities)</h3>
+<div class="note-box">
+<p><strong>To create a CK12 account:</strong>
+1. Go to: https://www.ck12.org/student/
+2. Click on the orange JOIN button in the upper right corner
+3. Choose the option for email to sign up
+4. Enter your student's information. CK12 will ask for teacher email - ENTER THE TEACHER'S EMAIL
+5. When complete, the teacher will email you the username and password</p>
+</div>
+
+<hr />
+<h2>💡 Raid Strategy Guide</h2>
+<div class="strategy-box">
+<h3>Step 1: Create Your Earnings Chart</h3>
+<p>Draw a two-column table on your paper:
+| Jumping Jacks | Money Earned |
+|---------------|--------------|
+| 1 | $2 |
+| 2 | $4 |
+| 3 | $6 |
+| ... | ... |</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 2: Calculate Target Amounts</h3>
+<p>Use your unit rate ($2 per jack) to fill in these specific amounts:
+- <strong>10 jacks:</strong> 10 × $2 = <strong>$20</strong>
+- <strong>16 jacks:</strong> 16 × $2 = <strong>$32</strong>
+- <strong>32 jacks:</strong> 32 × $2 = <strong>$64</strong></p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 3: The Physical Challenge</h3>
+<p>Now it's time to MOVE! Do as many jumping jacks as you can (up to 50 maximum).
+- Count carefully!
+- Take breaks if needed - accuracy matters more than speed</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 4: Calculate Your Earnings</h3>
+<p>When you're done, calculate your total earnings:
+- Your jumping jacks × $2 = Your earnings
+- Example: 34 jacks × $2 = <strong>$68</strong></p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 5: Calculate Your Percentage</h3>
+<p>This is the key math skill! Determine what percentage of the maximum you achieved:</p>
+<pre><code>Percentage = (Your Jacks / 50) × 100
+</code></pre>
+<p><strong>Example:</strong> (34 / 50) × 100 = 68%</p>
+<p>This means you earned 68% of the maximum possible reward!</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 6: Count Out Your Play Money</h3>
+<p>Physically count out your earned amount from your play money set. This makes the math REAL!</p>
+</div>
+
+<hr />
+<h2>👑 Guild Master Verification</h2>
+<div class="warning-box">
+<p><strong>STOP!</strong> 🛑 Summon your Guild Master (Parent/Guardian) for verification.</p>
+</div>
+
+<p><strong>Guild Master Instructions:</strong></p>
+<p>Your young Hunter has completed the Currency Realm challenge. Verify their calculations:</p>
+<div class="checklist-box">
+<ul>
+<li>[ ] Check their math: (Number of Jacks) × $2 = Correct earnings?</li>
+<li>[ ] Verify percentage calculation: (Jacks / 50) × 100 = Correct %?</li>
+<li>[ ] If they did 34 jacks: Pay = $68, Percentage = 68%</li>
+<li>[ ] Do they understand that 50 jacks = 100% = $100?</li>
+<li>[ ] Did they complete the verbatim quest instructions in Section 4?</li>
+<li>[ ] Did they review at least one Training Scroll (video)?</li>
+</ul>
+</div>
+
+<hr />
+<h2>✅ Quest Completion</h2>
+<div class="quest-complete">
+<p><strong>Congratulations, Hunter!</strong></p>
+<p>You have successfully cleared the E-Rank Tutorial Gate: Currency Realm.</p>
+<p><strong>To receive credit for this dungeon clear:</strong>
+Submit a video of you completing the jumping jack challenge and calculating your earnings OR a picture of your completed earnings chart with percentage calculation.</p>
+<p><em>Upload to your class portal.</em></p>
+<p><strong>Reward:</strong> +1 Mathematical Power | Ratio &amp; Percentage Skills Unlocked</p>
+</div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="mission_02.html">← Previous Mission</a>
+            <a href="mission_04.html">Next Mission →</a>
+        </div>
+    </div>
+</body>
+</html>

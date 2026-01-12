@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission 08 - Equations (Vacation Planning) | Math Hunter Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+    
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #1a1a2e;
+    --bg-card: #16213e;
+    --accent-blue: #4cc9f0;
+    --accent-purple: #7b2cbf;
+    --accent-gold: #ffd700;
+    --accent-green: #00ff88;
+    --accent-red: #ff4444;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --text-muted: #666;
+    --glow-blue: 0 0 20px rgba(76, 201, 240, 0.5);
+    --glow-purple: 0 0 20px rgba(123, 44, 191, 0.5);
+    --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.8;
+    min-height: 100vh;
+}
+
+/* Animated background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse at top left, rgba(123, 44, 191, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* System Notification Header */
+.system-alert {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+    border: 2px solid var(--accent-blue);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--glow-blue);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(76, 201, 240, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(76, 201, 240, 0.6); }
+}
+
+.system-alert h1 {
+    font-family: 'Courier New', monospace;
+    color: var(--accent-blue);
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.system-alert .dungeon-name {
+    color: var(--accent-gold);
+    font-size: 1.8em;
+    font-weight: bold;
+    text-shadow: var(--glow-gold);
+}
+
+/* Rank Badge */
+.rank-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 1.2em;
+    margin: 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.rank-E { background: linear-gradient(135deg, #444 0%, #666 100%); color: #fff; }
+.rank-D { background: linear-gradient(135deg, #2a6f97 0%, #4cc9f0 100%); color: #fff; box-shadow: var(--glow-blue); }
+.rank-C { background: linear-gradient(135deg, #006644 0%, #00ff88 100%); color: #000; }
+.rank-B { background: linear-gradient(135deg, #5a189a 0%, #7b2cbf 100%); color: #fff; box-shadow: var(--glow-purple); }
+.rank-A { background: linear-gradient(135deg, #b8860b 0%, #ffd700 100%); color: #000; box-shadow: var(--glow-gold); }
+
+/* Section Cards */
+.section-card {
+    background: var(--bg-card);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-left: 4px solid var(--accent-purple);
+    position: relative;
+    overflow: hidden;
+}
+
+.section-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(123, 44, 191, 0.05) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.section-card h2 {
+    color: var(--accent-blue);
+    font-size: 1.4em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-card h2 .icon {
+    font-size: 1.5em;
+}
+
+.section-card h3 {
+    color: var(--accent-purple);
+    margin: 20px 0 10px;
+}
+
+/* Equipment/Materials List */
+.equipment-list {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 15px 0;
+}
+
+.equipment-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    list-style: none;
+    position: relative;
+    padding-left: 25px;
+}
+
+.equipment-list li::before {
+    content: '◆';
+    position: absolute;
+    left: 0;
+    color: var(--accent-gold);
+}
+
+.equipment-list li:last-child {
+    border-bottom: none;
+}
+
+/* Skills/Learning Targets */
+.skill-box {
+    background: linear-gradient(135deg, rgba(123, 44, 191, 0.2) 0%, rgba(76, 201, 240, 0.1) 100%);
+    border: 1px solid var(--accent-purple);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+}
+
+.skill-box .standard-code {
+    color: var(--accent-gold);
+    font-weight: bold;
+}
+
+/* Strategy Steps */
+.strategy-steps {
+    counter-reset: step;
+}
+
+.strategy-step {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 15px 20px 15px 60px;
+    margin: 15px 0;
+    position: relative;
+}
+
+.strategy-step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 35px;
+    height: 35px;
+    background: var(--accent-purple);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Checklist */
+.checklist-item {
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid var(--accent-green);
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.checklist-item:hover {
+    background: rgba(0, 255, 136, 0.2);
+    transform: translateX(5px);
+}
+
+.checklist-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent-green);
+}
+
+/* Quest Complete Box */
+.quest-complete {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(123, 44, 191, 0.1) 100%);
+    border: 2px solid var(--accent-gold);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    margin-top: 30px;
+}
+
+.quest-complete h2 {
+    color: var(--accent-gold);
+    justify-content: center;
+}
+
+/* Navigation */
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    color: var(--accent-blue);
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s;
+    border: 1px solid var(--accent-blue);
+}
+
+.nav-btn:hover {
+    background: var(--accent-blue);
+    color: var(--bg-primary);
+    box-shadow: var(--glow-blue);
+}
+
+/* Progress Bar */
+.progress-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: var(--bg-secondary);
+    z-index: 1000;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-purple) 0%, var(--accent-blue) 100%);
+    width: 0%;
+    transition: width 0.3s;
+    box-shadow: 0 0 10px var(--accent-blue);
+}
+
+/* Links */
+a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+a:hover {
+    color: var(--accent-gold);
+    text-shadow: 0 0 10px var(--accent-gold);
+}
+
+/* Code blocks */
+pre, code {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 2px 6px;
+    font-family: 'Courier New', monospace;
+    color: var(--accent-green);
+}
+
+pre {
+    padding: 15px;
+    overflow-x: auto;
+    border: 1px solid rgba(76, 201, 240, 0.3);
+}
+
+/* Mission Image */
+.mission-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 15px;
+    margin: 20px 0;
+    border: 2px solid var(--accent-purple);
+    box-shadow: var(--glow-purple);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .system-alert .dungeon-name {
+        font-size: 1.4em;
+    }
+
+    .section-card {
+        padding: 20px 15px;
+    }
+}
+
+/* Tip boxes */
+.tip-box {
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 4px solid var(--accent-gold);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.tip-box strong {
+    color: var(--accent-gold);
+}
+
+/* Warning boxes */
+.warning-box {
+    background: rgba(255, 68, 68, 0.1);
+    border-left: 4px solid var(--accent-red);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.warning-box strong {
+    color: var(--accent-red);
+}
+
+    </style>
+    <style>
+    .mission-content {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .mission-header {
+        text-align: center;
+        padding: 40px 20px;
+        margin-bottom: 30px;
+        background: linear-gradient(135deg, rgba(123, 44, 191, 0.2), rgba(76, 201, 240, 0.2));
+        border-radius: 15px;
+        border: 1px solid var(--accent-purple);
+    }
+
+    .mission-header h1 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 2.5em;
+        color: var(--accent-blue);
+        margin-bottom: 10px;
+    }
+
+    .mission-body {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 40px;
+        border-radius: 15px;
+        border: 1px solid var(--border-color);
+    }
+
+    .mission-body h2 {
+        color: var(--accent-blue);
+        font-family: 'Orbitron', sans-serif;
+        border-bottom: 2px solid var(--accent-purple);
+        padding-bottom: 10px;
+        margin-top: 30px;
+    }
+
+    .mission-body h3 {
+        color: var(--accent-purple);
+        margin-top: 25px;
+    }
+
+    .mission-body p {
+        line-height: 1.8;
+        margin-bottom: 15px;
+    }
+
+    .mission-body pre {
+        background: rgba(0, 0, 0, 0.6);
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+    }
+
+    .mission-body code {
+        background: rgba(76, 201, 240, 0.2);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .mission-body pre code {
+        background: transparent;
+        padding: 0;
+    }
+
+    .mission-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+
+    .mission-body th, .mission-body td {
+        border: 1px solid var(--border-color);
+        padding: 12px;
+        text-align: left;
+    }
+
+    .mission-body th {
+        background: rgba(123, 44, 191, 0.3);
+        color: var(--accent-blue);
+    }
+
+    .mission-body ul, .mission-body ol {
+        margin-left: 20px;
+        margin-bottom: 15px;
+    }
+
+    .mission-body li {
+        margin-bottom: 8px;
+    }
+
+    .system-alert {
+        background: linear-gradient(135deg, rgba(76, 201, 240, 0.2), rgba(123, 44, 191, 0.2));
+        border: 2px solid var(--accent-blue);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        font-family: 'Orbitron', sans-serif;
+    }
+
+    .hunter-tip {
+        background: rgba(0, 255, 136, 0.1);
+        border-left: 4px solid var(--accent-green);
+        padding: 15px 20px;
+        margin: 20px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .system-complete {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(123, 44, 191, 0.2));
+        border: 2px solid #ffd700;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+    }
+
+    .equipment-box {
+        background: rgba(123, 44, 191, 0.15);
+        border: 1px solid var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .skill-box {
+        background: rgba(76, 201, 240, 0.1);
+        border-left: 4px solid var(--accent-blue);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .training-links {
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin: 20px 0;
+    }
+
+    .training-links a {
+        display: block;
+        margin: 8px 0;
+    }
+
+    .quest-box {
+        background: linear-gradient(135deg, rgba(255, 68, 68, 0.1), rgba(123, 44, 191, 0.1));
+        border: 2px solid var(--accent-red);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .checklist-box {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .note-box {
+        background: rgba(76, 201, 240, 0.1);
+        border-left: 4px solid var(--accent-blue);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .quest-complete {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(255, 215, 0, 0.15));
+        border: 2px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: var(--glow-gold);
+    }
+
+    .strategy-box {
+        background: rgba(123, 44, 191, 0.1);
+        border: 1px dashed var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .verbatim-box {
+        background: rgba(255, 215, 0, 0.1);
+        border: 2px solid var(--accent-gold);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        font-style: italic;
+    }
+
+    .back-link {
+        display: inline-block;
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-purple);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+
+    .back-link:hover {
+        background: rgba(123, 44, 191, 0.3);
+        border-color: var(--accent-blue);
+    }
+
+    .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .nav-buttons a {
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-purple);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        transition: all 0.3s;
+    }
+
+    .nav-buttons a:hover {
+        background: rgba(123, 44, 191, 0.3);
+    }
+
+    .nav-buttons .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .mission-image {
+        width: 100%;
+        max-width: 800px;
+        height: auto;
+        border-radius: 15px;
+        margin: 20px auto;
+        display: block;
+        border: 2px solid var(--accent-purple);
+        box-shadow: 0 0 30px rgba(123, 44, 191, 0.4);
+    }
+    </style>
+</head>
+<body>
+    <div class="mission-content">
+        <a href="index.html" class="back-link">← Back to Mission Select</a>
+
+        <div class="mission-header">
+            <span class="rank-badge rank-C">C-RANK</span>
+            <h1>Mission 08</h1>
+            <p style="color: var(--text-secondary); font-size: 1.2em;">Equations (Vacation Planning)</p>
+            <img src="images/mission_08.png" alt="Mission 08 - Equations (Vacation Planning)" class="mission-image">
+        </div>
+
+        <div class="mission-body">
+            <h1>Mission 08: Equations Vacation</h1>
+<div class="system-alert">
+<p><strong>[SYSTEM NOTIFICATION]</strong>
+A D-Rank Gate has been detected. Difficulty: Real-World Application.
+Hunter, prepare to plan an expedition using mathematical strategy!</p>
+</div>
+
+<h2>The Challenge Awaits</h2>
+<p>Young Hunter, every successful raid requires planning. Before Hunters enter dangerous Gates, they calculate costs—equipment, supplies, transportation, lodging. Today, you'll practice these essential skills by planning a family expedition to Orlando!</p>
+<p>Variables become real when money is involved. Learn to track dependent and independent variables, and you'll never overspend on a dungeon raid.</p>
+<hr />
+<h2>⚔️ Hunter's Arsenal (Gear Checklist)</h2>
+<p><strong>Gather these exact items before entering the Gate:</strong>
+- Family Vacation Planning worksheet (or blank paper)
+- Paper and pencil for each team member
+- Internet access for research</p>
+<hr />
+<h2>🎯 Mission Objectives</h2>
+<p><strong>Upon completion of this Gate, you will have unlocked:</strong>
+- <strong>Variable Relationships</strong> - Use variables that change in relationship to one another (6.EE.9)
+- <strong>Equation Writing</strong> - Write equations showing dependent variables in terms of independent variables (6.EE.9)
+- <strong>Data Visualization</strong> - Use graphs and tables to show relationships (6.EE.9)</p>
+<hr />
+<h2>📖 The Hunter's Knowledge (Brain Download)</h2>
+<h3>Independent vs. Dependent Variables</h3>
+<p><strong>Independent Variable:</strong> The thing YOU control (the input)
+<strong>Dependent Variable:</strong> The thing that CHANGES based on your choice (the output)</p>
+<pre><code>Example: Hotel Cost
+
+Independent: Number of nights (you choose this)
+Dependent: Total cost (this depends on nights)
+
+If 1 night = $100:
+2 nights = $200
+3 nights = $300
+
+The total DEPENDS on the number of nights.
+</code></pre>
+<h3>Writing Equations with Variables</h3>
+<pre><code>Let n = number of nights
+Let c = total cost
+Price per night = $100
+
+Equation: c = 100 × n
+
+If n = 5:
+c = 100 × 5 = $500
+</code></pre>
+<h3>Making a Table</h3>
+<table>
+<thead>
+<tr>
+<th>Nights (n)</th>
+<th>Cost (c = 100n)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>$100</td>
+</tr>
+<tr>
+<td>2</td>
+<td>$200</td>
+</tr>
+<tr>
+<td>3</td>
+<td>$300</td>
+</tr>
+<tr>
+<td>4</td>
+<td>$400</td>
+</tr>
+<tr>
+<td>5</td>
+<td>$500</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Video Lessons:</strong>
+- Dependent and Independent Variables (6.EE.9)
+- Expressions with Variables | CK-12 Foundation
+- Making Tables and Graphs | CK-12 Foundation</p>
+<hr />
+<h2>🗡️ The Quest (Activity)</h2>
+<h3>📜 Verbatim Instructions:</h3>
+<p>Together: Pretend we are planning a trip to an amusement park in Orlando, Florida. Which amusement park would you like to go to? Research what parks you can visit. What do you need to plan if you want to go on a trip? Discuss: How will we get there? How do we get around once we are there? Where will we stay? What will we eat? What time of year should we go? Is it cold or hot? Does it get colder at night? How late is the park open?</p>
+<p>Help solve problems on the Family Vacation worksheet. Then take the final total and divide by either 6 or 12 months to see how much the family would need to save each month to go on this vacation. They may be able to decide to change some of the activities too.</p>
+<p>Extension: If your family wants to plan a family vacation somewhere else, work together to decide how much it would cost to go to the other location.</p>
+<hr />
+<h3>💡 Hunter's Strategy Guide</h3>
+<p><strong>Phase 1: Choose Your Destination</strong></p>
+<pre><code>Orlando Theme Parks:
+🏰 Walt Disney World
+🎢 Universal Studios
+🌊 SeaWorld
+🦁 Animal Kingdom
+
+Pick one and research current ticket prices!
+</code></pre>
+<p><strong>Phase 2: Calculate All Costs</strong></p>
+<pre><code>╔═══════════════════════════════════════════════╗
+║          🗺️ EXPEDITION BUDGET 🗺️               ║
+╠═══════════════════════════════════════════════╣
+║  CATEGORY          │  COST                    ║
+╠════════════════════╪══════════════════════════╣
+║  Travel (flights)  │  $________               ║
+║  Hotel (per night) │  $________ × ___ nights  ║
+║  Park Tickets      │  $________ × ___ people  ║
+║  Food (per day)    │  $________ × ___ days    ║
+║  Transportation    │  $________               ║
+╠════════════════════╪══════════════════════════╣
+║  GRAND TOTAL       │  $________               ║
+╚═══════════════════════════════════════════════╝
+</code></pre>
+<p><strong>Phase 3: Calculate Monthly Savings</strong></p>
+<pre><code>To save for this trip:
+
+Total Cost ÷ 12 months = Monthly Savings
+
+Example:
+$2,400 ÷ 12 = $200 per month
+
+Or faster (6 months):
+$2,400 ÷ 6 = $400 per month
+</code></pre>
+<p><strong>Phase 4: Write Your Equation</strong></p>
+<pre><code>Let m = number of months
+Let s = amount saved per month
+Let T = total needed
+
+Equation: T = s × m
+
+If you need $2,400 and save $200/month:
+2,400 = 200 × m
+m = 12 months
+</code></pre>
+<hr />
+<h2>👨‍👩‍👧 Parent Captain's Log</h2>
+<blockquote>
+<p><strong>CHECKPOINT!</strong> 🛡️ Summon a parent or guardian.</p>
+</blockquote>
+<p><strong>Verification Protocol:</strong>
+- [ ] Review their research—are the numbers realistic?
+- [ ] Check the final division (Total ÷ 12) for accuracy
+- [ ] Did they complete the verbatim instructions in Section 4?
+- [ ] Did they watch the lesson video?</p>
+<hr />
+<h2>📤 Proof of Completion</h2>
+<p><strong>Submit your evidence:</strong>
+- Video of you doing the activity, OR
+- Picture/scan of your written work</p>
+<p><em>The System awaits your proof, Hunter.</em></p>
+<hr />
+<div class="hunter-tip">
+<p><strong>Hunter's Wisdom:</strong> Professional Hunters always budget their raids! The independent variable (what you control) determines the dependent variable (what happens as a result). Control your inputs, and you control your outcomes.</p>
+</div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="mission_07.html">← Previous Mission</a>
+            <a href="mission_09.html">Next Mission →</a>
+        </div>
+    </div>
+</body>
+</html>

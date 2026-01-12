@@ -3,28 +3,656 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Mission Control</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <title>Math Hunter Academy | Solo Leveling Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Fredoka', sans-serif; background: #f8f9fa; text-align: center; padding: 40px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
-        .card { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 20px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-            text-decoration: none; 
-            color: #2b2d42; 
-            transition: transform 0.3s;
-            border-bottom: 8px solid #4361ee;
-        }
-        .card:hover { transform: translateY(-10px); }
-        .card h2 { margin: 10px 0; color: #4361ee; }
-        .badge { font-size: 3em; display: block; margin-bottom: 10px; }
-        h1 { font-size: 3em; color: #3f37c9; margin-bottom: 40px; }
+    
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #1a1a2e;
+    --bg-card: #16213e;
+    --accent-blue: #4cc9f0;
+    --accent-purple: #7b2cbf;
+    --accent-gold: #ffd700;
+    --accent-green: #00ff88;
+    --accent-red: #ff4444;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --text-muted: #666;
+    --glow-blue: 0 0 20px rgba(76, 201, 240, 0.5);
+    --glow-purple: 0 0 20px rgba(123, 44, 191, 0.5);
+    --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.8;
+    min-height: 100vh;
+}
+
+/* Animated background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse at top left, rgba(123, 44, 191, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* System Notification Header */
+.system-alert {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+    border: 2px solid var(--accent-blue);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--glow-blue);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(76, 201, 240, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(76, 201, 240, 0.6); }
+}
+
+.system-alert h1 {
+    font-family: 'Courier New', monospace;
+    color: var(--accent-blue);
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.system-alert .dungeon-name {
+    color: var(--accent-gold);
+    font-size: 1.8em;
+    font-weight: bold;
+    text-shadow: var(--glow-gold);
+}
+
+/* Rank Badge */
+.rank-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 1.2em;
+    margin: 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.rank-E { background: linear-gradient(135deg, #444 0%, #666 100%); color: #fff; }
+.rank-D { background: linear-gradient(135deg, #2a6f97 0%, #4cc9f0 100%); color: #fff; box-shadow: var(--glow-blue); }
+.rank-C { background: linear-gradient(135deg, #006644 0%, #00ff88 100%); color: #000; }
+.rank-B { background: linear-gradient(135deg, #5a189a 0%, #7b2cbf 100%); color: #fff; box-shadow: var(--glow-purple); }
+.rank-A { background: linear-gradient(135deg, #b8860b 0%, #ffd700 100%); color: #000; box-shadow: var(--glow-gold); }
+
+/* Section Cards */
+.section-card {
+    background: var(--bg-card);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-left: 4px solid var(--accent-purple);
+    position: relative;
+    overflow: hidden;
+}
+
+.section-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(123, 44, 191, 0.05) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.section-card h2 {
+    color: var(--accent-blue);
+    font-size: 1.4em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-card h2 .icon {
+    font-size: 1.5em;
+}
+
+.section-card h3 {
+    color: var(--accent-purple);
+    margin: 20px 0 10px;
+}
+
+/* Equipment/Materials List */
+.equipment-list {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 15px 0;
+}
+
+.equipment-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    list-style: none;
+    position: relative;
+    padding-left: 25px;
+}
+
+.equipment-list li::before {
+    content: '◆';
+    position: absolute;
+    left: 0;
+    color: var(--accent-gold);
+}
+
+.equipment-list li:last-child {
+    border-bottom: none;
+}
+
+/* Skills/Learning Targets */
+.skill-box {
+    background: linear-gradient(135deg, rgba(123, 44, 191, 0.2) 0%, rgba(76, 201, 240, 0.1) 100%);
+    border: 1px solid var(--accent-purple);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+}
+
+.skill-box .standard-code {
+    color: var(--accent-gold);
+    font-weight: bold;
+}
+
+/* Strategy Steps */
+.strategy-steps {
+    counter-reset: step;
+}
+
+.strategy-step {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 15px 20px 15px 60px;
+    margin: 15px 0;
+    position: relative;
+}
+
+.strategy-step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 35px;
+    height: 35px;
+    background: var(--accent-purple);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Checklist */
+.checklist-item {
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid var(--accent-green);
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.checklist-item:hover {
+    background: rgba(0, 255, 136, 0.2);
+    transform: translateX(5px);
+}
+
+.checklist-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent-green);
+}
+
+/* Quest Complete Box */
+.quest-complete {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(123, 44, 191, 0.1) 100%);
+    border: 2px solid var(--accent-gold);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    margin-top: 30px;
+}
+
+.quest-complete h2 {
+    color: var(--accent-gold);
+    justify-content: center;
+}
+
+/* Navigation */
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    color: var(--accent-blue);
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s;
+    border: 1px solid var(--accent-blue);
+}
+
+.nav-btn:hover {
+    background: var(--accent-blue);
+    color: var(--bg-primary);
+    box-shadow: var(--glow-blue);
+}
+
+/* Progress Bar */
+.progress-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: var(--bg-secondary);
+    z-index: 1000;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-purple) 0%, var(--accent-blue) 100%);
+    width: 0%;
+    transition: width 0.3s;
+    box-shadow: 0 0 10px var(--accent-blue);
+}
+
+/* Links */
+a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+a:hover {
+    color: var(--accent-gold);
+    text-shadow: 0 0 10px var(--accent-gold);
+}
+
+/* Code blocks */
+pre, code {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 2px 6px;
+    font-family: 'Courier New', monospace;
+    color: var(--accent-green);
+}
+
+pre {
+    padding: 15px;
+    overflow-x: auto;
+    border: 1px solid rgba(76, 201, 240, 0.3);
+}
+
+/* Mission Image */
+.mission-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 15px;
+    margin: 20px 0;
+    border: 2px solid var(--accent-purple);
+    box-shadow: var(--glow-purple);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .system-alert .dungeon-name {
+        font-size: 1.4em;
+    }
+
+    .section-card {
+        padding: 20px 15px;
+    }
+}
+
+/* Tip boxes */
+.tip-box {
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 4px solid var(--accent-gold);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.tip-box strong {
+    color: var(--accent-gold);
+}
+
+/* Warning boxes */
+.warning-box {
+    background: rgba(255, 68, 68, 0.1);
+    border-left: 4px solid var(--accent-red);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.warning-box strong {
+    color: var(--accent-red);
+}
+
+
+    h1, h2, .system-alert h1, .rank-badge, .gate-card h3 {
+        font-family: 'Orbitron', sans-serif;
+    }
+
+    .hero {
+        text-align: center;
+        padding: 60px 20px;
+        background: linear-gradient(180deg, rgba(123, 44, 191, 0.2) 0%, transparent 100%);
+        margin-bottom: 40px;
+        border-radius: 20px;
+    }
+
+    .hero h1 {
+        font-size: 2.5em;
+        color: var(--accent-gold);
+        text-shadow: var(--glow-gold);
+        margin-bottom: 10px;
+    }
+
+    .hero .subtitle {
+        font-size: 1.3em;
+        color: var(--accent-blue);
+        letter-spacing: 3px;
+        text-transform: uppercase;
+    }
+
+    .gates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 25px;
+        padding: 20px 0;
+    }
+
+    .gate-card {
+        background: var(--bg-card);
+        border-radius: 15px;
+        padding: 25px;
+        text-decoration: none;
+        color: var(--text-primary);
+        border: 2px solid transparent;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .gate-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(transparent, rgba(123, 44, 191, 0.1), transparent 30%);
+        animation: rotate 4s linear infinite;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .gate-card:hover::before {
+        opacity: 1;
+    }
+
+    @keyframes rotate {
+        100% { transform: rotate(360deg); }
+    }
+
+    .gate-card:hover {
+        border-color: var(--accent-purple);
+        transform: translateY(-5px);
+        box-shadow: var(--glow-purple);
+    }
+
+    .gate-card .gate-rank {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 12px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+
+    .gate-card .gate-icon {
+        font-size: 3em;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    .gate-card h3 {
+        color: var(--accent-blue);
+        margin-bottom: 10px;
+        font-size: 1.1em;
+    }
+
+    .gate-card p {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+    }
+
+    .rank-section {
+        margin: 40px 0 20px;
+        padding: 15px 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        border-left: 4px solid;
+    }
+
+    .rank-section h2 {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
     </style>
 </head>
 <body>
-    <h1>🚀 Math Mission Control</h1>
-    <div class="grid">
-<a href="Mission_01_Greatest_Common_Factor.html" class="card"><span class="badge">🛸</span><h2>Mission 01</h2><p>Start Adventure</p></a><a href="Mission_02_Inequality_and_absolute_value.html" class="card"><span class="badge">🛸</span><h2>Mission 02</h2><p>Start Adventure</p></a><a href="Mission_03_Ratios_with_Money.html" class="card"><span class="badge">🛸</span><h2>Mission 03</h2><p>Start Adventure</p></a><a href="Mission_04_Inequalities.html" class="card"><span class="badge">🛸</span><h2>Mission 04</h2><p>Start Adventure</p></a><a href="Mission_05_Expressions.html" class="card"><span class="badge">🛸</span><h2>Mission 05</h2><p>Start Adventure</p></a><a href="Mission_06_Identifying_Parts_of_Expressions.html" class="card"><span class="badge">🛸</span><h2>Mission 06</h2><p>Start Adventure</p></a><a href="Mission_07_Solving_Equations.html" class="card"><span class="badge">🛸</span><h2>Mission 07</h2><p>Start Adventure</p></a><a href="Mission_08_Equations_Vacation.html" class="card"><span class="badge">🛸</span><h2>Mission 08</h2><p>Start Adventure</p></a><a href="Mission_09_Operations_with_Decimals.html" class="card"><span class="badge">🛸</span><h2>Mission 09</h2><p>Start Adventure</p></a><a href="Mission_10_Unit_Ratios.html" class="card"><span class="badge">🛸</span><h2>Mission 10</h2><p>Start Adventure</p></a><a href="Mission_11_Dividing_Fractions.html" class="card"><span class="badge">🛸</span><h2>Mission 11</h2><p>Start Adventure</p></a><a href="Mission_12_Area_of_Triangles.html" class="card"><span class="badge">🛸</span><h2>Mission 12</h2><p>Start Adventure</p></a><a href="Mission_13_Ratios_Tables.html" class="card"><span class="badge">🛸</span><h2>Mission 13</h2><p>Start Adventure</p></a><a href="Mission_14_Averages.html" class="card"><span class="badge">🛸</span><h2>Mission 14</h2><p>Start Adventure</p></a><a href="Mission_15_Unit_Conversion.html" class="card"><span class="badge">🛸</span><h2>Mission 15</h2><p>Start Adventure</p></a></div></body></html>
+    <div class="container">
+        <div class="hero">
+            <h1>⚔️ MATH HUNTER ACADEMY</h1>
+            <p class="subtitle">Solo Leveling Edition</p>
+            <p style="margin-top: 20px; color: var(--text-secondary); max-width: 600px; margin-left: auto; margin-right: auto;">
+                Welcome, Hunter. 15 Dungeon Gates have appeared. Each contains mathematical challenges
+                aligned to the ancient Common Core Standards. Complete them all to achieve S-Rank mastery.
+            </p>
+            <a href="la_index.html" class="nav-btn" style="margin-top: 25px; display: inline-flex; background: linear-gradient(135deg, rgba(0, 212, 170, 0.2), rgba(76, 201, 240, 0.2)); border-color: #00d4aa;">
+                <span style="font-size: 1.2em;">📚</span> Language Arts Hunter Academy
+            </a>
+        </div>
+
+        
+        <div class="rank-section" style="border-color: #888888;">
+            <h2><span class="rank-badge rank-E">E-RANK</span> Tutorial Gates</h2>
+        </div>
+        <div class="gates-grid">
+        
+            <a href="mission_01.html" class="gate-card">
+                <span class="gate-rank rank-E">E-RANK</span>
+                <span class="gate-icon">🌀</span>
+                <h3>Mission 01</h3>
+                <p>Greatest Common Factor</p>
+            </a>
+            
+            <a href="mission_02.html" class="gate-card">
+                <span class="gate-rank rank-E">E-RANK</span>
+                <span class="gate-icon">⚡</span>
+                <h3>Mission 02</h3>
+                <p>Inequality & Absolute Value</p>
+            </a>
+            
+            <a href="mission_03.html" class="gate-card">
+                <span class="gate-rank rank-E">E-RANK</span>
+                <span class="gate-icon">💰</span>
+                <h3>Mission 03</h3>
+                <p>Ratios with Money</p>
+            </a>
+            </div>
+        <div class="rank-section" style="border-color: #4cc9f0;">
+            <h2><span class="rank-badge rank-D">D-RANK</span> Basic Dungeons</h2>
+        </div>
+        <div class="gates-grid">
+        
+            <a href="mission_04.html" class="gate-card">
+                <span class="gate-rank rank-D">D-RANK</span>
+                <span class="gate-icon">📊</span>
+                <h3>Mission 04</h3>
+                <p>Inequalities</p>
+            </a>
+            
+            <a href="mission_05.html" class="gate-card">
+                <span class="gate-rank rank-D">D-RANK</span>
+                <span class="gate-icon">🔮</span>
+                <h3>Mission 05</h3>
+                <p>Expressions</p>
+            </a>
+            
+            <a href="mission_06.html" class="gate-card">
+                <span class="gate-rank rank-D">D-RANK</span>
+                <span class="gate-icon">🧩</span>
+                <h3>Mission 06</h3>
+                <p>Identifying Parts of Expressions</p>
+            </a>
+            </div>
+        <div class="rank-section" style="border-color: #00ff88;">
+            <h2><span class="rank-badge rank-C">C-RANK</span> Intermediate Raids</h2>
+        </div>
+        <div class="gates-grid">
+        
+            <a href="mission_07.html" class="gate-card">
+                <span class="gate-rank rank-C">C-RANK</span>
+                <span class="gate-icon">⚖️</span>
+                <h3>Mission 07</h3>
+                <p>Solving Equations</p>
+            </a>
+            
+            <a href="mission_08.html" class="gate-card">
+                <span class="gate-rank rank-C">C-RANK</span>
+                <span class="gate-icon">✈️</span>
+                <h3>Mission 08</h3>
+                <p>Equations (Vacation Planning)</p>
+            </a>
+            
+            <a href="mission_09.html" class="gate-card">
+                <span class="gate-rank rank-C">C-RANK</span>
+                <span class="gate-icon">💎</span>
+                <h3>Mission 09</h3>
+                <p>Operations with Decimals</p>
+            </a>
+            </div>
+        <div class="rank-section" style="border-color: #7b2cbf;">
+            <h2><span class="rank-badge rank-B">B-RANK</span> Advanced Dungeons</h2>
+        </div>
+        <div class="gates-grid">
+        
+            <a href="mission_10.html" class="gate-card">
+                <span class="gate-rank rank-B">B-RANK</span>
+                <span class="gate-icon">🏀</span>
+                <h3>Mission 10</h3>
+                <p>Unit Ratios</p>
+            </a>
+            
+            <a href="mission_11.html" class="gate-card">
+                <span class="gate-rank rank-B">B-RANK</span>
+                <span class="gate-icon">🍕</span>
+                <h3>Mission 11</h3>
+                <p>Dividing Fractions</p>
+            </a>
+            
+            <a href="mission_12.html" class="gate-card">
+                <span class="gate-rank rank-B">B-RANK</span>
+                <span class="gate-icon">📐</span>
+                <h3>Mission 12</h3>
+                <p>Area of Triangles</p>
+            </a>
+            </div>
+        <div class="rank-section" style="border-color: #ffd700;">
+            <h2><span class="rank-badge rank-A">A-RANK</span> Elite Raids</h2>
+        </div>
+        <div class="gates-grid">
+        
+            <a href="mission_13.html" class="gate-card">
+                <span class="gate-rank rank-A">A-RANK</span>
+                <span class="gate-icon">📈</span>
+                <h3>Mission 13</h3>
+                <p>Ratios Tables</p>
+            </a>
+            
+            <a href="mission_14.html" class="gate-card">
+                <span class="gate-rank rank-A">A-RANK</span>
+                <span class="gate-icon">🎲</span>
+                <h3>Mission 14</h3>
+                <p>Averages</p>
+            </a>
+            
+            <a href="mission_15.html" class="gate-card">
+                <span class="gate-rank rank-A">A-RANK</span>
+                <span class="gate-icon">📏</span>
+                <h3>Mission 15</h3>
+                <p>Unit Conversion</p>
+            </a>
+            </div>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission 01 - Greatest Common Factor | Math Hunter Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+    
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #1a1a2e;
+    --bg-card: #16213e;
+    --accent-blue: #4cc9f0;
+    --accent-purple: #7b2cbf;
+    --accent-gold: #ffd700;
+    --accent-green: #00ff88;
+    --accent-red: #ff4444;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --text-muted: #666;
+    --glow-blue: 0 0 20px rgba(76, 201, 240, 0.5);
+    --glow-purple: 0 0 20px rgba(123, 44, 191, 0.5);
+    --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.8;
+    min-height: 100vh;
+}
+
+/* Animated background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse at top left, rgba(123, 44, 191, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* System Notification Header */
+.system-alert {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+    border: 2px solid var(--accent-blue);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--glow-blue);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(76, 201, 240, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(76, 201, 240, 0.6); }
+}
+
+.system-alert h1 {
+    font-family: 'Courier New', monospace;
+    color: var(--accent-blue);
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.system-alert .dungeon-name {
+    color: var(--accent-gold);
+    font-size: 1.8em;
+    font-weight: bold;
+    text-shadow: var(--glow-gold);
+}
+
+/* Rank Badge */
+.rank-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 1.2em;
+    margin: 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.rank-E { background: linear-gradient(135deg, #444 0%, #666 100%); color: #fff; }
+.rank-D { background: linear-gradient(135deg, #2a6f97 0%, #4cc9f0 100%); color: #fff; box-shadow: var(--glow-blue); }
+.rank-C { background: linear-gradient(135deg, #006644 0%, #00ff88 100%); color: #000; }
+.rank-B { background: linear-gradient(135deg, #5a189a 0%, #7b2cbf 100%); color: #fff; box-shadow: var(--glow-purple); }
+.rank-A { background: linear-gradient(135deg, #b8860b 0%, #ffd700 100%); color: #000; box-shadow: var(--glow-gold); }
+
+/* Section Cards */
+.section-card {
+    background: var(--bg-card);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-left: 4px solid var(--accent-purple);
+    position: relative;
+    overflow: hidden;
+}
+
+.section-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(123, 44, 191, 0.05) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.section-card h2 {
+    color: var(--accent-blue);
+    font-size: 1.4em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-card h2 .icon {
+    font-size: 1.5em;
+}
+
+.section-card h3 {
+    color: var(--accent-purple);
+    margin: 20px 0 10px;
+}
+
+/* Equipment/Materials List */
+.equipment-list {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 15px 0;
+}
+
+.equipment-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    list-style: none;
+    position: relative;
+    padding-left: 25px;
+}
+
+.equipment-list li::before {
+    content: '◆';
+    position: absolute;
+    left: 0;
+    color: var(--accent-gold);
+}
+
+.equipment-list li:last-child {
+    border-bottom: none;
+}
+
+/* Skills/Learning Targets */
+.skill-box {
+    background: linear-gradient(135deg, rgba(123, 44, 191, 0.2) 0%, rgba(76, 201, 240, 0.1) 100%);
+    border: 1px solid var(--accent-purple);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+}
+
+.skill-box .standard-code {
+    color: var(--accent-gold);
+    font-weight: bold;
+}
+
+/* Strategy Steps */
+.strategy-steps {
+    counter-reset: step;
+}
+
+.strategy-step {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 15px 20px 15px 60px;
+    margin: 15px 0;
+    position: relative;
+}
+
+.strategy-step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 35px;
+    height: 35px;
+    background: var(--accent-purple);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Checklist */
+.checklist-item {
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid var(--accent-green);
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.checklist-item:hover {
+    background: rgba(0, 255, 136, 0.2);
+    transform: translateX(5px);
+}
+
+.checklist-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent-green);
+}
+
+/* Quest Complete Box */
+.quest-complete {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(123, 44, 191, 0.1) 100%);
+    border: 2px solid var(--accent-gold);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    margin-top: 30px;
+}
+
+.quest-complete h2 {
+    color: var(--accent-gold);
+    justify-content: center;
+}
+
+/* Navigation */
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    color: var(--accent-blue);
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s;
+    border: 1px solid var(--accent-blue);
+}
+
+.nav-btn:hover {
+    background: var(--accent-blue);
+    color: var(--bg-primary);
+    box-shadow: var(--glow-blue);
+}
+
+/* Progress Bar */
+.progress-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: var(--bg-secondary);
+    z-index: 1000;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-purple) 0%, var(--accent-blue) 100%);
+    width: 0%;
+    transition: width 0.3s;
+    box-shadow: 0 0 10px var(--accent-blue);
+}
+
+/* Links */
+a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+a:hover {
+    color: var(--accent-gold);
+    text-shadow: 0 0 10px var(--accent-gold);
+}
+
+/* Code blocks */
+pre, code {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 2px 6px;
+    font-family: 'Courier New', monospace;
+    color: var(--accent-green);
+}
+
+pre {
+    padding: 15px;
+    overflow-x: auto;
+    border: 1px solid rgba(76, 201, 240, 0.3);
+}
+
+/* Mission Image */
+.mission-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 15px;
+    margin: 20px 0;
+    border: 2px solid var(--accent-purple);
+    box-shadow: var(--glow-purple);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .system-alert .dungeon-name {
+        font-size: 1.4em;
+    }
+
+    .section-card {
+        padding: 20px 15px;
+    }
+}
+
+/* Tip boxes */
+.tip-box {
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 4px solid var(--accent-gold);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.tip-box strong {
+    color: var(--accent-gold);
+}
+
+/* Warning boxes */
+.warning-box {
+    background: rgba(255, 68, 68, 0.1);
+    border-left: 4px solid var(--accent-red);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.warning-box strong {
+    color: var(--accent-red);
+}
+
+    </style>
+    <style>
+    .mission-content {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .mission-header {
+        text-align: center;
+        padding: 40px 20px;
+        margin-bottom: 30px;
+        background: linear-gradient(135deg, rgba(123, 44, 191, 0.2), rgba(76, 201, 240, 0.2));
+        border-radius: 15px;
+        border: 1px solid var(--accent-purple);
+    }
+
+    .mission-header h1 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 2.5em;
+        color: var(--accent-blue);
+        margin-bottom: 10px;
+    }
+
+    .mission-body {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 40px;
+        border-radius: 15px;
+        border: 1px solid var(--border-color);
+    }
+
+    .mission-body h2 {
+        color: var(--accent-blue);
+        font-family: 'Orbitron', sans-serif;
+        border-bottom: 2px solid var(--accent-purple);
+        padding-bottom: 10px;
+        margin-top: 30px;
+    }
+
+    .mission-body h3 {
+        color: var(--accent-purple);
+        margin-top: 25px;
+    }
+
+    .mission-body p {
+        line-height: 1.8;
+        margin-bottom: 15px;
+    }
+
+    .mission-body pre {
+        background: rgba(0, 0, 0, 0.6);
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+    }
+
+    .mission-body code {
+        background: rgba(76, 201, 240, 0.2);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .mission-body pre code {
+        background: transparent;
+        padding: 0;
+    }
+
+    .mission-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+
+    .mission-body th, .mission-body td {
+        border: 1px solid var(--border-color);
+        padding: 12px;
+        text-align: left;
+    }
+
+    .mission-body th {
+        background: rgba(123, 44, 191, 0.3);
+        color: var(--accent-blue);
+    }
+
+    .mission-body ul, .mission-body ol {
+        margin-left: 20px;
+        margin-bottom: 15px;
+    }
+
+    .mission-body li {
+        margin-bottom: 8px;
+    }
+
+    .system-alert {
+        background: linear-gradient(135deg, rgba(76, 201, 240, 0.2), rgba(123, 44, 191, 0.2));
+        border: 2px solid var(--accent-blue);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        font-family: 'Orbitron', sans-serif;
+    }
+
+    .hunter-tip {
+        background: rgba(0, 255, 136, 0.1);
+        border-left: 4px solid var(--accent-green);
+        padding: 15px 20px;
+        margin: 20px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .system-complete {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(123, 44, 191, 0.2));
+        border: 2px solid #ffd700;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+    }
+
+    .equipment-box {
+        background: rgba(123, 44, 191, 0.15);
+        border: 1px solid var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .skill-box {
+        background: rgba(76, 201, 240, 0.1);
+        border-left: 4px solid var(--accent-blue);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .training-links {
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin: 20px 0;
+    }
+
+    .training-links a {
+        display: block;
+        margin: 8px 0;
+    }
+
+    .quest-box {
+        background: linear-gradient(135deg, rgba(255, 68, 68, 0.1), rgba(123, 44, 191, 0.1));
+        border: 2px solid var(--accent-red);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .checklist-box {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .note-box {
+        background: rgba(76, 201, 240, 0.1);
+        border-left: 4px solid var(--accent-blue);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .quest-complete {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(255, 215, 0, 0.15));
+        border: 2px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: var(--glow-gold);
+    }
+
+    .strategy-box {
+        background: rgba(123, 44, 191, 0.1);
+        border: 1px dashed var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .verbatim-box {
+        background: rgba(255, 215, 0, 0.1);
+        border: 2px solid var(--accent-gold);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        font-style: italic;
+    }
+
+    .back-link {
+        display: inline-block;
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-purple);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+
+    .back-link:hover {
+        background: rgba(123, 44, 191, 0.3);
+        border-color: var(--accent-blue);
+    }
+
+    .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .nav-buttons a {
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-purple);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        transition: all 0.3s;
+    }
+
+    .nav-buttons a:hover {
+        background: rgba(123, 44, 191, 0.3);
+    }
+
+    .nav-buttons .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .mission-image {
+        width: 100%;
+        max-width: 800px;
+        height: auto;
+        border-radius: 15px;
+        margin: 20px auto;
+        display: block;
+        border: 2px solid var(--accent-purple);
+        box-shadow: 0 0 30px rgba(123, 44, 191, 0.4);
+    }
+    </style>
+</head>
+<body>
+    <div class="mission-content">
+        <a href="index.html" class="back-link">← Back to Mission Select</a>
+
+        <div class="mission-header">
+            <span class="rank-badge rank-E">E-RANK</span>
+            <h1>Mission 01</h1>
+            <p style="color: var(--text-secondary); font-size: 1.2em;">Greatest Common Factor</p>
+            <img src="images/mission_01.png" alt="Mission 01 - Greatest Common Factor" class="mission-image">
+        </div>
+
+        <div class="mission-body">
+            <h1>Mission 01: Greatest Common Factor</h1>
+<div class="system-alert">
+<p><strong>[SYSTEM NOTIFICATION]</strong>
+A Tutorial Gate has been detected. Difficulty: E-Rank.
+Hunter, this is your first test. Prove your worth.</p>
+</div>
+
+<h2>The Challenge Awaits</h2>
+<p>Welcome, young Hunter. Before you can face the monsters in higher-rank dungeons, you must first master the fundamental skills that all elite Hunters possess. Today, you enter the <strong>Tutorial Gate: Number Foundations</strong>.</p>
+<p>Your mission? Learn to identify the <strong>Greatest Common Factor (GCF)</strong> - a technique that allows you to break down any number into its core components. Think of it like analyzing a monster's weaknesses before battle. Every number has factors - smaller numbers that divide into it evenly. Finding the GCF between two numbers is like finding the strongest common weakness between two enemies.</p>
+<hr />
+<h2>⚔️ Hunter Equipment</h2>
+<div class="equipment-box">
+<p><strong>Gather these items before entering the dungeon:</strong>
+- 80 identical items (Cheerios, beans, pennies, blocks, or Legos work great)
+- Two dice (your random number generators)
+- A pencil and scratch paper (for battle calculations)</p>
+</div>
+
+<hr />
+<h2>📜 Skills to Unlock</h2>
+<div class="skill-box">
+<p><strong>Common Core Standard 6.NS.4 (Part 1)</strong>
+I can find the greatest common factor of two whole numbers less than or equal to 100 and the least common multiple of two whole numbers less than or equal to 12.</p>
+</div>
+
+<div class="skill-box">
+<p><strong>Common Core Standard 6.NS.4 (Part 2)</strong>
+Use the distributive property to express a sum of two whole numbers 1-100 with a common factor as a multiple of a sum of two whole numbers with no common factor.
+<em>Example: Express 36 + 8 as 4(9 + 2)</em></p>
+</div>
+
+<hr />
+<h2>🎓 Training Scrolls</h2>
+<p>Before entering the dungeon, study these ancient scrolls:</p>
+<div class="training-links">
+<ul>
+<li><a href="https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-factors-and-multiples">Greatest Common Factor Video</a></li>
+<li><a href="https://www.ck12.org/c/arithmetic/greatest-common-factor/">Using Greatest Common Factor | CK-12 Foundation</a></li>
+<li><a href="https://www.ck12.org/c/arithmetic/least-common-multiple/">Using Least Common Multiple | CK-12 Foundation</a></li>
+</ul>
+</div>
+
+<h3>Understanding Factors: A Hunter's Guide</h3>
+<p><strong>What exactly is a factor?</strong> A factor is any number that divides evenly into another number with no remainder.</p>
+<p>Think of it this way: if you have 12 gold coins from a dungeon raid, you could split them:
+- Into <strong>1 pile</strong> of 12 coins
+- Into <strong>2 piles</strong> of 6 coins each
+- Into <strong>3 piles</strong> of 4 coins each
+- Into <strong>4 piles</strong> of 3 coins each
+- Into <strong>6 piles</strong> of 2 coins each
+- Into <strong>12 piles</strong> of 1 coin each</p>
+<p>So the factors of 12 are: <strong>1, 2, 3, 4, 6, 12</strong></p>
+<p><strong>What is the Greatest Common Factor?</strong> When you compare two numbers and list all their factors, the GCF is the <strong>largest number that appears in both lists</strong>. It's the "common ground" - like finding the strongest skill that two Hunters both possess.</p>
+<div class="tip-box">
+<p><strong>Pro Hunter Tip:</strong> The GCF is extremely useful! It helps you simplify fractions, distribute items equally, and solve complex problems more easily.</p>
+</div>
+
+<hr />
+<h2>🏰 Dungeon Raid</h2>
+<h3>📜 Official Quest Instructions</h3>
+<div class="verbatim-box">
+<p>You are going to need several pieces of scratch paper today, a pencil and two dice. Split your first piece of paper into half. Roll your two dice and multiply the two dice and write the product at the top of one side of the paper, for example if you roll a two and a four - write 8. Roll your dice again and write the product on the top of the other side of the paper. You are going to find the greatest common factor of these two numbers. To find the factors you are looking for what numbers can be multiplied together to get that number. You can do this by gathering that number of items and splitting them into even piles and writing down the number in each pile. For example if your number was 12. You could make 1 pile of 12, 2 piles or 6, 3 piles of 4 - so you would write the factors as 1,2,3,4,6,12. Do the same thing with your second number. For example if it is 18, the factors would be 1,2,3,6,9,18. To find the greatest common factor, you circle the biggest number that the two sides have in common. In this case it is 6. Repeat the activity several times.</p>
+</div>
+
+<h3>Additional Practice</h3>
+<ul>
+<li><a href="https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-factors-and-multiples/cc-6th-gcf/e/greatest_common_divisor">Khan Academy - Greatest Common Factor</a></li>
+</ul>
+<div class="note-box">
+<p>For some online activities you will need a free CK12 account.</p>
+<p><strong>To create a CK12 account:</strong>
+1. Go to: https://www.ck12.org/student/
+2. Click on the orange JOIN button in the upper right corner
+3. Choose the option for email to sign up
+4. Enter your student's information. CK12 will ask students to input their teacher email. PLEASE ENTER THE TEACHER'S EMAIL and the teacher will complete the registration process.
+5. When registration is complete, the teacher will email you the username and password for your student account.</p>
+</div>
+
+<hr />
+<h2>💡 Raid Strategy Guide</h2>
+<p>Follow this step-by-step battle plan to conquer the dungeon:</p>
+<div class="strategy-box">
+<h3>Step 1: Prepare Your Battlefield</h3>
+<p>Take a piece of scratch paper and draw a vertical line down the middle to create two columns - LEFT and RIGHT.</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 2: Generate Your First Number (Left Side)</h3>
+<p>Roll both dice and multiply the numbers together.
+- Example: You roll a 3 and a 4 → 3 × 4 = <strong>12</strong>
+- Write "12" at the top of the LEFT column</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 3: Generate Your Second Number (Right Side)</h3>
+<p>Roll both dice again and multiply.
+- Example: You roll a 3 and a 6 → 3 × 6 = <strong>18</strong>
+- Write "18" at the top of the RIGHT column</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 4: Find All Factors (The Core Technique)</h3>
+<p>This is where your items come in! Count out the exact number of items matching your first number (12 items).</p>
+<p><strong>Test each split:</strong>
+- Can you make 1 pile? Yes! (1 pile of 12) → Write down <strong>1</strong> and <strong>12</strong>
+- Can you make 2 equal piles? Yes! (2 piles of 6) → Write down <strong>2</strong> and <strong>6</strong>
+- Can you make 3 equal piles? Yes! (3 piles of 4) → Write down <strong>3</strong> and <strong>4</strong>
+- Can you make 5 equal piles? No! (12 ÷ 5 has a remainder)</p>
+<p><strong>Factors of 12: 1, 2, 3, 4, 6, 12</strong></p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 5: Find Factors of the Second Number</h3>
+<p>Repeat the process with your second number (18 items).</p>
+<p><strong>Factors of 18: 1, 2, 3, 6, 9, 18</strong></p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 6: Identify the Champion (GCF)</h3>
+<p>Compare both lists and circle every number that appears on BOTH sides:
+- 12: <strong>1</strong>, <strong>2</strong>, <strong>3</strong>, 4, <strong>6</strong>, 12
+- 18: <strong>1</strong>, <strong>2</strong>, <strong>3</strong>, <strong>6</strong>, 9, 18</p>
+<p>Common factors: 1, 2, 3, 6</p>
+<p><strong>The GREATEST Common Factor = 6</strong> (the biggest circled number!)</p>
+</div>
+
+<div class="strategy-box">
+<h3>Step 7: Repeat for Mastery</h3>
+<p>Complete this process at least 3-5 more times with different dice rolls. Each repetition makes you stronger!</p>
+</div>
+
+<hr />
+<h2>👑 Guild Master Verification</h2>
+<div class="warning-box">
+<p><strong>STOP!</strong> 🛑 Summon your Guild Master (Parent/Guardian) for verification.</p>
+</div>
+
+<p><strong>Guild Master Instructions:</strong></p>
+<p>Your young Hunter has attempted to clear the Tutorial Gate. Verify their success by checking:</p>
+<div class="checklist-box">
+<ul>
+<li>[ ] Factor lists are complete and accurate (For 12: did they list 1, 2, 3, 4, 6, 12?)</li>
+<li>[ ] The GCF is correctly identified (the LARGEST number common to both lists)</li>
+<li>[ ] They completed the verbatim quest instructions in Section 4</li>
+<li>[ ] They reviewed at least one Training Scroll (lesson video)</li>
+<li>[ ] They repeated the activity multiple times as instructed</li>
+</ul>
+</div>
+
+<hr />
+<h2>✅ Quest Completion</h2>
+<div class="quest-complete">
+<p><strong>Congratulations, Hunter!</strong></p>
+<p>You have successfully cleared the E-Rank Tutorial Gate: Number Foundations.</p>
+<p><strong>To receive credit for this dungeon clear:</strong>
+Submit a video of you completing the activity OR a picture/scan of your written work showing your factor lists and GCF solutions.</p>
+<p><em>Upload to your class portal.</em></p>
+<p><strong>Reward:</strong> +1 Mathematical Power | GCF Skill Unlocked</p>
+</div>
+        </div>
+
+        <div class="nav-buttons">
+            <span class="disabled">← Previous Mission</span>
+            <a href="mission_02.html">Next Mission →</a>
+        </div>
+    </div>
+</body>
+</html>

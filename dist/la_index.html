@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Arts Hunter Academy | Solo Leveling Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        --bg-primary: #0a0a0f;
+        --bg-secondary: #1a1a2e;
+        --bg-card: #16213e;
+        --accent-blue: #4cc9f0;
+        --accent-purple: #7b2cbf;
+        --accent-gold: #ffd700;
+        --accent-green: #00ff88;
+        --accent-red: #ff4444;
+        --accent-teal: #00d4aa;
+        --text-primary: #e0e0e0;
+        --text-secondary: #a0a0a0;
+        --glow-blue: 0 0 20px rgba(76, 201, 240, 0.5);
+        --glow-purple: 0 0 20px rgba(123, 44, 191, 0.5);
+        --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+        --glow-teal: 0 0 20px rgba(0, 212, 170, 0.5);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.8;
+        min-height: 100vh;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background:
+            radial-gradient(ellipse at top left, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+            radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+    .nav-back {
+        display: inline-block;
+        padding: 10px 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--accent-teal);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+    .nav-back:hover {
+        background: rgba(0, 212, 170, 0.2);
+        box-shadow: var(--glow-teal);
+    }
+
+    h1, h2, .rank-badge, .gate-card h3 { font-family: 'Orbitron', sans-serif; }
+
+    .hero {
+        text-align: center;
+        padding: 60px 20px;
+        background: linear-gradient(180deg, rgba(0, 212, 170, 0.2) 0%, transparent 100%);
+        margin-bottom: 40px;
+        border-radius: 20px;
+        border: 1px solid rgba(0, 212, 170, 0.3);
+    }
+
+    .hero h1 {
+        font-size: 2.5em;
+        color: var(--accent-teal);
+        text-shadow: var(--glow-teal);
+        margin-bottom: 10px;
+    }
+
+    .hero .subtitle {
+        font-size: 1.3em;
+        color: var(--accent-blue);
+        letter-spacing: 3px;
+        text-transform: uppercase;
+    }
+
+    .hero .student-name {
+        font-size: 1.5em;
+        color: var(--accent-gold);
+        margin-top: 15px;
+        text-shadow: var(--glow-gold);
+    }
+
+    .gates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 25px;
+        padding: 20px 0;
+    }
+
+    .gate-card {
+        background: var(--bg-card);
+        border-radius: 15px;
+        padding: 25px;
+        text-decoration: none;
+        color: var(--text-primary);
+        border: 2px solid transparent;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .gate-card::before {
+        content: '';
+        position: absolute;
+        top: -50%; left: -50%;
+        width: 200%; height: 200%;
+        background: conic-gradient(transparent, rgba(0, 212, 170, 0.1), transparent 30%);
+        animation: rotate 4s linear infinite;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .gate-card:hover::before { opacity: 1; }
+
+    @keyframes rotate { 100% { transform: rotate(360deg); } }
+
+    .gate-card:hover {
+        border-color: var(--accent-teal);
+        transform: translateY(-5px);
+        box-shadow: var(--glow-teal);
+    }
+
+    .gate-card .gate-rank {
+        position: absolute;
+        top: 15px; right: 15px;
+        padding: 5px 12px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+
+    .gate-card .gate-icon { font-size: 2.5em; margin-bottom: 15px; display: block; }
+    .gate-card h3 { color: var(--accent-teal); margin-bottom: 8px; font-size: 1.1em; }
+    .gate-card p { color: var(--text-secondary); font-size: 0.9em; line-height: 1.5; }
+
+    .rank-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 5px;
+        font-weight: bold;
+        font-size: 1.2em;
+        margin: 10px 0;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+    }
+
+    .rank-E { background: linear-gradient(135deg, #444 0%, #666 100%); color: #fff; }
+    .rank-D { background: linear-gradient(135deg, #2a6f97 0%, #4cc9f0 100%); color: #fff; box-shadow: var(--glow-blue); }
+    .rank-C { background: linear-gradient(135deg, #006644 0%, #00ff88 100%); color: #000; }
+    .rank-B { background: linear-gradient(135deg, #5a189a 0%, #7b2cbf 100%); color: #fff; box-shadow: var(--glow-purple); }
+    .rank-A { background: linear-gradient(135deg, #b8860b 0%, #ffd700 100%); color: #000; box-shadow: var(--glow-gold); }
+
+    .rank-section {
+        margin: 40px 0 20px;
+        padding: 15px 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        border-left: 4px solid;
+    }
+
+    .rank-section h2 { display: flex; align-items: center; gap: 15px; }
+
+    .skill-tag {
+        display: inline-block;
+        background: rgba(0, 212, 170, 0.2);
+        border: 1px solid var(--accent-teal);
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 0.75em;
+        margin-top: 10px;
+        color: var(--accent-teal);
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="nav-back">&#8592; Math Hunter Academy</a>
+
+        <div class="hero">
+            <h1>LANGUAGE ARTS HUNTER ACADEMY</h1>
+            <p class="subtitle">Solo Leveling Edition</p>
+            <p class="student-name">Hunter: Hyro Brady</p>
+            <p style="margin-top: 20px; color: var(--text-secondary); max-width: 700px; margin-left: auto; margin-right: auto;">
+                Welcome, Hunter. 15 Literary Dungeon Gates have manifested. Each contains reading and writing challenges
+                aligned to the Power Standards. Master text structure, main ideas, arguments, narratives, and grammar
+                to achieve S-Rank mastery in Language Arts.
+            </p>
+        </div>
+
+        <div class="rank-section" style="border-color: #888888;">
+            <h2><span class="rank-badge rank-E">E-RANK</span> Reading Foundations</h2>
+        </div>
+        <div class="gates-grid">
+            <a href="la_mission_01.html" class="gate-card">
+                <span class="gate-rank rank-E">E-RANK</span>
+                <span class="gate-icon">📜</span>
+                <h3>Mission 01: Text Structure</h3>
+                <p>Evaluate the overall organization and structure of poems and stories</p>
+                <span class="skill-tag">PS1 - Structure Analysis</span>
+            </a>
+
+            <a href="la_mission_02.html" class="gate-card">
+                <span class="gate-rank rank-E">E-RANK</span>
+                <span class="gate-icon">💡</span>
+                <h3>Mission 02: Main Ideas</h3>
+                <p>Identify and explain the main idea by referencing specific details</p>
+                <span class="skill-tag">PS2 - Main Idea</span>
+            </a>
+
+            <a href="la_mission_03.html" class="gate-card">
+                <span class="gate-rank rank-E">E-RANK</span>
+                <span class="gate-icon">⚖️</span>
+                <h3>Mission 03: Evaluating Arguments</h3>
+                <p>Evaluate arguments and determine if evidence is sufficient</p>
+                <span class="skill-tag">PS3 - Argument Analysis</span>
+            </a>
+        </div>
+
+        <div class="rank-section" style="border-color: #4cc9f0;">
+            <h2><span class="rank-badge rank-D">D-RANK</span> Narrative Analysis</h2>
+        </div>
+        <div class="gates-grid">
+            <a href="la_mission_04.html" class="gate-card">
+                <span class="gate-rank rank-D">D-RANK</span>
+                <span class="gate-icon">📖</span>
+                <h3>Mission 04: Plot & Characters</h3>
+                <p>Describe how plots unfold and characters develop through conflict</p>
+                <span class="skill-tag">PS4 - Narrative Elements</span>
+            </a>
+
+            <a href="la_mission_05.html" class="gate-card">
+                <span class="gate-rank rank-D">D-RANK</span>
+                <span class="gate-icon">🔍</span>
+                <h3>Mission 05: Evidence & Claims</h3>
+                <p>Analyze informational text to support evidence of claims</p>
+                <span class="skill-tag">PS5 - Text Evidence</span>
+            </a>
+
+            <a href="la_mission_06.html" class="gate-card">
+                <span class="gate-rank rank-D">D-RANK</span>
+                <span class="gate-icon">👁️</span>
+                <h3>Mission 06: Point of View</h3>
+                <p>Evaluate how authors incorporate points of view</p>
+                <span class="skill-tag">PS6 - Author's Perspective</span>
+            </a>
+        </div>
+
+        <div class="rank-section" style="border-color: #00ff88;">
+            <h2><span class="rank-badge rank-C">C-RANK</span> Comparative Analysis</h2>
+        </div>
+        <div class="gates-grid">
+            <a href="la_mission_07.html" class="gate-card">
+                <span class="gate-rank rank-C">C-RANK</span>
+                <span class="gate-icon">🎭</span>
+                <h3>Mission 07: Comparing Formats</h3>
+                <p>Compare how different authors develop similar themes across formats</p>
+                <span class="skill-tag">PS7 - Media Comparison</span>
+            </a>
+
+            <a href="la_mission_08.html" class="gate-card">
+                <span class="gate-rank rank-C">C-RANK</span>
+                <span class="gate-icon">✨</span>
+                <h3>Mission 08: Figurative Language</h3>
+                <p>Determine meaning of words, phrases, and figurative language</p>
+                <span class="skill-tag">PS8 - Literary Devices</span>
+            </a>
+
+            <a href="la_mission_09.html" class="gate-card">
+                <span class="gate-rank rank-C">C-RANK</span>
+                <span class="gate-icon">✍️</span>
+                <h3>Mission 09: Narrative Writing</h3>
+                <p>Compose narrative writing with effective techniques</p>
+                <span class="skill-tag">PS9 - Creative Writing</span>
+            </a>
+        </div>
+
+        <div class="rank-section" style="border-color: #7b2cbf;">
+            <h2><span class="rank-badge rank-B">B-RANK</span> Writing Mastery</h2>
+        </div>
+        <div class="gates-grid">
+            <a href="la_mission_10.html" class="gate-card">
+                <span class="gate-rank rank-B">B-RANK</span>
+                <span class="gate-icon">🏗️</span>
+                <h3>Mission 10: Organized Writing</h3>
+                <p>Organize ideas with logical sequencing in writing</p>
+                <span class="skill-tag">PS10 - Essay Structure</span>
+            </a>
+
+            <a href="la_mission_11.html" class="gate-card">
+                <span class="gate-rank rank-B">B-RANK</span>
+                <span class="gate-icon">💪</span>
+                <h3>Mission 11: Argumentative Writing</h3>
+                <p>Write arguments with clear reasons and relevant evidence</p>
+                <span class="skill-tag">PS11 - Persuasion</span>
+            </a>
+
+            <a href="la_mission_12.html" class="gate-card">
+                <span class="gate-rank rank-B">B-RANK</span>
+                <span class="gate-icon">📚</span>
+                <h3>Mission 12: Source Selection</h3>
+                <p>Select relevant and credible sources for research</p>
+                <span class="skill-tag">PS12 - Research Skills</span>
+            </a>
+        </div>
+
+        <div class="rank-section" style="border-color: #ffd700;">
+            <h2><span class="rank-badge rank-A">A-RANK</span> Language Mastery</h2>
+        </div>
+        <div class="gates-grid">
+            <a href="la_mission_13.html" class="gate-card">
+                <span class="gate-rank rank-A">A-RANK</span>
+                <span class="gate-icon">📝</span>
+                <h3>Mission 13: Academic Vocabulary</h3>
+                <p>Acquire and use academic and domain-specific words</p>
+                <span class="skill-tag">PS13 - Vocabulary</span>
+            </a>
+
+            <a href="la_mission_14.html" class="gate-card">
+                <span class="gate-rank rank-A">A-RANK</span>
+                <span class="gate-icon">🔧</span>
+                <h3>Mission 14: Grammar & Conventions</h3>
+                <p>Demonstrate command of standard English grammar</p>
+                <span class="skill-tag">PS14 - Grammar</span>
+            </a>
+
+            <a href="la_mission_15.html" class="gate-card">
+                <span class="gate-rank rank-A">A-RANK</span>
+                <span class="gate-icon">🎯</span>
+                <h3>Mission 15: Pronoun Mastery</h3>
+                <p>Identify and use all pronouns correctly</p>
+                <span class="skill-tag">PS15 - Pronouns</span>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

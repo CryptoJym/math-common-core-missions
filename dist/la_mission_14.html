@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LA Mission 14 - Grammar & Conventions | Language Arts Hunter Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        --bg-primary: #0a0a0f; --bg-secondary: #1a1a2e; --bg-card: #16213e;
+        --accent-blue: #4cc9f0; --accent-purple: #7b2cbf; --accent-gold: #ffd700;
+        --accent-green: #00ff88; --accent-red: #ff4444; --accent-teal: #00d4aa;
+        --text-primary: #e0e0e0; --text-secondary: #a0a0a0;
+        --border-color: rgba(76, 201, 240, 0.3); --card-bg: rgba(22, 33, 62, 0.8);
+        --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.8; min-height: 100vh; }
+    body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at top left, rgba(0, 212, 170, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.1) 0%, transparent 50%); pointer-events: none; z-index: -1; }
+    .mission-content { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .back-link { display: inline-block; padding: 10px 20px; background: var(--card-bg); border: 1px solid var(--accent-teal); color: var(--accent-blue); text-decoration: none; border-radius: 5px; margin-bottom: 20px; transition: all 0.3s; }
+    .back-link:hover { background: rgba(0, 212, 170, 0.2); }
+    .mission-header { text-align: center; padding: 40px 20px; margin-bottom: 30px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(123, 44, 191, 0.2)); border-radius: 15px; border: 1px solid var(--accent-gold); }
+    .mission-header h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2em; color: var(--accent-gold); margin-bottom: 10px; text-shadow: var(--glow-gold); }
+    .rank-badge { display: inline-block; padding: 8px 20px; border-radius: 5px; font-weight: bold; font-size: 1em; margin: 10px 0; text-transform: uppercase; letter-spacing: 3px; font-family: 'Orbitron', sans-serif; }
+    .rank-A { background: linear-gradient(135deg, #b8860b 0%, #ffd700 100%); color: #000; box-shadow: var(--glow-gold); }
+    .mission-body { background: rgba(0, 0, 0, 0.4); padding: 40px; border-radius: 15px; border: 1px solid var(--border-color); }
+    .mission-body h2 { color: var(--accent-gold); font-family: 'Orbitron', sans-serif; border-bottom: 2px solid var(--accent-purple); padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px; }
+    .mission-body h3 { color: var(--accent-purple); margin-top: 25px; margin-bottom: 15px; }
+    .mission-body p { line-height: 1.8; margin-bottom: 15px; }
+    .system-alert { background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(123, 44, 191, 0.2)); border: 2px solid var(--accent-gold); border-radius: 10px; padding: 20px; margin: 20px 0; font-family: 'Orbitron', sans-serif; }
+    .equipment-box { background: rgba(123, 44, 191, 0.15); border: 1px solid var(--accent-purple); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .equipment-box ul { margin-left: 20px; } .equipment-box li { margin-bottom: 8px; }
+    .skill-box { background: rgba(255, 215, 0, 0.1); border-left: 4px solid var(--accent-gold); padding: 15px 20px; margin: 15px 0; border-radius: 0 10px 10px 0; }
+    .training-links { background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .training-links a { display: block; color: var(--accent-blue); margin: 10px 0; padding: 10px 15px; background: rgba(76, 201, 240, 0.1); border-radius: 5px; text-decoration: none; transition: all 0.3s; }
+    .training-links a:hover { background: rgba(76, 201, 240, 0.2); color: var(--accent-gold); }
+    .quest-box { background: linear-gradient(135deg, rgba(255, 68, 68, 0.1), rgba(123, 44, 191, 0.1)); border: 2px solid var(--accent-red); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .strategy-box { background: rgba(123, 44, 191, 0.1); border: 1px dashed var(--accent-purple); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .checklist-box { background: rgba(0, 255, 136, 0.1); border: 1px solid var(--accent-green); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .checklist-box ul { margin-left: 20px; } .checklist-box li { margin-bottom: 10px; }
+    .quest-complete { background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(255, 215, 0, 0.15)); border: 2px solid var(--accent-green); border-radius: 10px; padding: 25px; margin: 30px 0; text-align: center; }
+    .warning-box { background: rgba(255, 68, 68, 0.1); border-left: 4px solid var(--accent-red); padding: 15px 20px; margin: 15px 0; border-radius: 0 10px 10px 0; }
+    .nav-buttons { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+    .nav-buttons a, .nav-buttons span { padding: 10px 20px; background: var(--card-bg); border: 1px solid var(--accent-purple); color: var(--accent-blue); text-decoration: none; border-radius: 5px; transition: all 0.3s; }
+    .nav-buttons a:hover { background: rgba(123, 44, 191, 0.3); }
+    hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
+    a { color: var(--accent-blue); } a:hover { color: var(--accent-gold); }
+    </style>
+</head>
+<body>
+    <div class="mission-content">
+        <a href="la_index.html" class="back-link">&#8592; Back to Mission Select</a>
+        <div class="mission-header">
+            <span class="rank-badge rank-A">A-RANK</span>
+            <h1>Mission 14: Grammar & Conventions</h1>
+            <p style="color: var(--text-secondary); font-size: 1.2em;">Demonstrate Command of Standard English Grammar</p>
+        </div>
+
+        <div class="mission-body">
+            <div class="system-alert">
+                <p><strong>[SYSTEM NOTIFICATION]</strong><br>
+                A Literary Gate has been detected. Difficulty: A-Rank.<br>
+                Hunter Hyro, master the rules of grammar - the foundation of all powerful writing!</p>
+            </div>
+
+            <h2>The Challenge Awaits</h2>
+            <p><strong>Grammar and conventions</strong> are the rules that govern how we write and speak. Like the combat rules that guide hunters in battle, mastering grammar ensures your writing is clear, professional, and powerful.</p>
+            <p>Your mission? Demonstrate mastery of pronoun usage and paragraph editing through multiple practice exercises.</p>
+
+            <hr>
+
+            <h2>Hunter Equipment</h2>
+            <div class="equipment-box">
+                <ul>
+                    <li>Pencil and eraser</li>
+                    <li>Grammar reference guide</li>
+                    <li>Editing checklist</li>
+                </ul>
+            </div>
+
+            <hr>
+
+            <h2>Skills to Unlock</h2>
+            <div class="skill-box">
+                <p><strong>Power Standard PS14</strong><br>
+                The student will demonstrate command of standard English grammar.</p>
+            </div>
+
+            <hr>
+
+            <h2>Training Scrolls</h2>
+            <p><strong>Pronoun Types:</strong></p>
+            <ul>
+                <li><strong>Subjective:</strong> I, you, he, she, it, we, they (used as subjects)</li>
+                <li><strong>Objective:</strong> me, you, him, her, it, us, them (used as objects)</li>
+                <li><strong>Possessive:</strong> my, your, his, her, its, our, their (show ownership)</li>
+            </ul>
+
+            <hr>
+
+            <h2>Dungeon Raid</h2>
+            <div class="quest-box">
+                <h3>Official Quest Instructions</h3>
+                <p>Students will complete multiple worksheets focusing on pronoun shifts, pronoun types, corrections, and paragraph editing.</p>
+            </div>
+
+            <h3>Your Quest Materials</h3>
+            <div class="training-links">
+                <a href="https://drive.google.com/file/d/14g6N6iINWwT-ia-uQzlvl_219XfYAuxP/view?usp=sharing" target="_blank">Shifts In Pronouns - Complete this worksheet</a>
+                <a href="https://drive.google.com/file/d/1Fz81c409mpOy4vN0MU4t7nQ_Z7gu-99y/view?usp=sharing" target="_blank">Subjective/Objective/Possessive Pronouns - Complete this worksheet</a>
+                <a href="https://drive.google.com/file/d/1eCHHTtq-6Hk64MvMJ7d_zLWal8RfLbYx/view?usp=sharing" target="_blank">Corrections Using Pronouns - Complete this worksheet</a>
+                <a href="https://drive.google.com/file/d/15s4zhXZQaSVi5QUvTHUxH5NrT0ZPX0Y6/view?usp=sharing" target="_blank">Editing Paragraph Directions - Read these instructions</a>
+                <a href="https://drive.google.com/file/d/1hNghUswkTK4cPzZaGuJxsTjqqf5A7YV2/view?usp=sharing" target="_blank">Eleanor Roosevelt Editing Paragraph - Edit this paragraph</a>
+            </div>
+
+            <hr>
+
+            <h2>Raid Strategy Guide</h2>
+            <div class="strategy-box">
+                <h3>Step 1: Know Your Pronoun Cases</h3>
+                <p><strong>Subject:</strong> "She wrote the essay" (doing the action)<br>
+                <strong>Object:</strong> "Give the book to her" (receiving the action)<br>
+                <strong>Possessive:</strong> "That is her book" (showing ownership)</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 2: Avoid Pronoun Shifts</h3>
+                <p>Keep pronouns consistent. If you start with "you," don't switch to "one" or "they" mid-paragraph. Pick a perspective and stick with it.</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 3: Check Pronoun-Antecedent Agreement</h3>
+                <p>Pronouns must match their antecedents (the words they replace) in number and gender. "Each student" takes "his or her," not "their."</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 4: Edit Carefully</h3>
+                <p>When editing, read slowly. Check each sentence for subject-verb agreement, pronoun usage, punctuation, and spelling.</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 5: Complete All Exercises</h3>
+                <p>Work through each worksheet. The Eleanor Roosevelt paragraph is your final boss - apply everything you've learned!</p>
+            </div>
+
+            <hr>
+
+            <h2>Guild Master Verification</h2>
+            <div class="warning-box">
+                <p><strong>STOP!</strong> Summon your Guild Master (Parent/Guardian) for verification.</p>
+            </div>
+            <div class="checklist-box">
+                <ul>
+                    <li>[ ] Shifts In Pronouns worksheet complete</li>
+                    <li>[ ] Subjective/Objective/Possessive worksheet complete</li>
+                    <li>[ ] Corrections Using Pronouns worksheet complete</li>
+                    <li>[ ] Eleanor Roosevelt paragraph edited correctly</li>
+                    <li>[ ] All grammar rules applied correctly</li>
+                </ul>
+            </div>
+
+            <hr>
+
+            <h2>Quest Completion</h2>
+            <div class="quest-complete">
+                <p><strong>Congratulations, Hunter!</strong></p>
+                <p>You have cleared the A-Rank Literary Gate: Grammar & Conventions.</p>
+                <p><strong>Upload all completed worksheets and edited paragraph to Boost.</strong></p>
+                <p><strong>Reward:</strong> +5 Language Power | Grammar Mastery Skill Unlocked</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="la_mission_13.html">&#8592; Previous Mission</a>
+            <a href="la_mission_15.html">Next Mission &#8594;</a>
+        </div>
+    </div>
+</body>
+</html>

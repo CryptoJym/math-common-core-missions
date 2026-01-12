@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LA Mission 01 - Text Structure | Language Arts Hunter Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        --bg-primary: #0a0a0f;
+        --bg-secondary: #1a1a2e;
+        --bg-card: #16213e;
+        --accent-blue: #4cc9f0;
+        --accent-purple: #7b2cbf;
+        --accent-gold: #ffd700;
+        --accent-green: #00ff88;
+        --accent-red: #ff4444;
+        --accent-teal: #00d4aa;
+        --text-primary: #e0e0e0;
+        --text-secondary: #a0a0a0;
+        --border-color: rgba(76, 201, 240, 0.3);
+        --card-bg: rgba(22, 33, 62, 0.8);
+        --glow-blue: 0 0 20px rgba(76, 201, 240, 0.5);
+        --glow-purple: 0 0 20px rgba(123, 44, 191, 0.5);
+        --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+        --glow-teal: 0 0 20px rgba(0, 212, 170, 0.5);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.8;
+        min-height: 100vh;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background:
+            radial-gradient(ellipse at top left, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+            radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    .mission-content { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+    .back-link {
+        display: inline-block;
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-teal);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+    .back-link:hover { background: rgba(0, 212, 170, 0.2); }
+
+    .mission-header {
+        text-align: center;
+        padding: 40px 20px;
+        margin-bottom: 30px;
+        background: linear-gradient(135deg, rgba(0, 212, 170, 0.2), rgba(76, 201, 240, 0.2));
+        border-radius: 15px;
+        border: 1px solid var(--accent-teal);
+    }
+
+    .mission-header h1 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 2.2em;
+        color: var(--accent-teal);
+        margin-bottom: 10px;
+    }
+
+    .rank-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 5px;
+        font-weight: bold;
+        font-size: 1em;
+        margin: 10px 0;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        font-family: 'Orbitron', sans-serif;
+    }
+    .rank-E { background: linear-gradient(135deg, #444 0%, #666 100%); color: #fff; }
+
+    .mission-body {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 40px;
+        border-radius: 15px;
+        border: 1px solid var(--border-color);
+    }
+
+    .mission-body h2 {
+        color: var(--accent-teal);
+        font-family: 'Orbitron', sans-serif;
+        border-bottom: 2px solid var(--accent-purple);
+        padding-bottom: 10px;
+        margin-top: 30px;
+        margin-bottom: 20px;
+    }
+
+    .mission-body h3 { color: var(--accent-purple); margin-top: 25px; margin-bottom: 15px; }
+
+    .mission-body p { line-height: 1.8; margin-bottom: 15px; }
+
+    .system-alert {
+        background: linear-gradient(135deg, rgba(0, 212, 170, 0.2), rgba(123, 44, 191, 0.2));
+        border: 2px solid var(--accent-teal);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        font-family: 'Orbitron', sans-serif;
+    }
+
+    .equipment-box {
+        background: rgba(123, 44, 191, 0.15);
+        border: 1px solid var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .equipment-box ul { margin-left: 20px; }
+    .equipment-box li { margin-bottom: 8px; }
+
+    .skill-box {
+        background: rgba(0, 212, 170, 0.1);
+        border-left: 4px solid var(--accent-teal);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .training-links {
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .training-links a {
+        display: block;
+        color: var(--accent-blue);
+        margin: 10px 0;
+        padding: 10px 15px;
+        background: rgba(76, 201, 240, 0.1);
+        border-radius: 5px;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    .training-links a:hover {
+        background: rgba(76, 201, 240, 0.2);
+        color: var(--accent-gold);
+    }
+
+    .quest-box {
+        background: linear-gradient(135deg, rgba(255, 68, 68, 0.1), rgba(123, 44, 191, 0.1));
+        border: 2px solid var(--accent-red);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .strategy-box {
+        background: rgba(123, 44, 191, 0.1);
+        border: 1px dashed var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .checklist-box {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    .checklist-box ul { margin-left: 20px; }
+    .checklist-box li { margin-bottom: 10px; }
+
+    .quest-complete {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(255, 215, 0, 0.15));
+        border: 2px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 25px;
+        margin: 30px 0;
+        text-align: center;
+        box-shadow: var(--glow-gold);
+    }
+
+    .warning-box {
+        background: rgba(255, 68, 68, 0.1);
+        border-left: 4px solid var(--accent-red);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .nav-buttons a, .nav-buttons span {
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-purple);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        transition: all 0.3s;
+    }
+    .nav-buttons a:hover { background: rgba(123, 44, 191, 0.3); }
+    .nav-buttons .disabled { opacity: 0.5; pointer-events: none; }
+
+    hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
+
+    a { color: var(--accent-blue); }
+    a:hover { color: var(--accent-gold); }
+    </style>
+</head>
+<body>
+    <div class="mission-content">
+        <a href="la_index.html" class="back-link">&#8592; Back to Mission Select</a>
+
+        <div class="mission-header">
+            <span class="rank-badge rank-E">E-RANK</span>
+            <h1>Mission 01: Text Structure</h1>
+            <p style="color: var(--text-secondary); font-size: 1.2em;">Evaluate Organization and Structure</p>
+        </div>
+
+        <div class="mission-body">
+            <div class="system-alert">
+                <p><strong>[SYSTEM NOTIFICATION]</strong><br>
+                A Literary Gate has been detected. Difficulty: E-Rank.<br>
+                Hunter Hyro, your first Language Arts challenge awaits. Prove your analytical prowess.</p>
+            </div>
+
+            <h2>The Challenge Awaits</h2>
+            <p>Welcome, young Hunter. Before you can face the complex texts in higher-rank dungeons, you must first master the fundamental skill of understanding <strong>text structure</strong>. Today, you enter the <strong>Literary Gate: Structure Analysis</strong>.</p>
+            <p>Your mission? Learn to evaluate how <strong>poems and stories are organized</strong> and explain how different sections contribute to the overall meaning. Think of it like mapping a dungeon - understanding the layout helps you conquer it.</p>
+
+            <hr>
+
+            <h2>Hunter Equipment</h2>
+            <div class="equipment-box">
+                <p><strong>Gather these items before entering the dungeon:</strong></p>
+                <ul>
+                    <li>Pencil and paper for notes</li>
+                    <li>Highlighters (for marking text structure elements)</li>
+                    <li>A quiet reading space</li>
+                </ul>
+            </div>
+
+            <hr>
+
+            <h2>Skills to Unlock</h2>
+            <div class="skill-box">
+                <p><strong>Power Standard PS1</strong><br>
+                The student will evaluate the overall organization and structure of a text and explain how sections contribute to the whole and the development of ideas.</p>
+            </div>
+
+            <hr>
+
+            <h2>Training Scrolls</h2>
+            <p>Before entering the dungeon, study this resource to prepare:</p>
+            <div class="training-links">
+                <a href="https://www.youtube.com/watch?v=X15BI8xL0W0" target="_blank">Rhyme Scheme Video - Learn about poem structure patterns</a>
+            </div>
+
+            <h3>Understanding Text Structure: A Hunter's Guide</h3>
+            <p><strong>What is text structure?</strong> Text structure is how an author organizes information in a piece of writing. Different types of texts use different structures:</p>
+            <ul>
+                <li><strong>Poems</strong> - Use stanzas, rhyme schemes, and rhythm patterns</li>
+                <li><strong>Stories</strong> - Use beginning, middle, end; exposition, rising action, climax, falling action, resolution</li>
+                <li><strong>Informational texts</strong> - Use cause/effect, compare/contrast, problem/solution, chronological order</li>
+            </ul>
+
+            <hr>
+
+            <h2>Dungeon Raid</h2>
+            <div class="quest-box">
+                <h3>Official Quest Instructions</h3>
+                <p>Students will independently read the following poem and story. After which they will complete the following questions demonstrating their understanding of text structure.</p>
+            </div>
+
+            <h3>Your Quest Materials</h3>
+            <div class="training-links">
+                <a href="https://drive.google.com/file/d/1kr2CeaHgPrqgwvQwrzK9MSJnHT9pphx5/view?usp=sharing" target="_blank">Poem Structure - Read this poem</a>
+                <a href="https://drive.google.com/file/d/1S7HX5CZbp5ytIKSgkYUYjtGBNwQm2WP0/view?usp=sharing" target="_blank">Poem Questions - Complete these questions</a>
+                <a href="https://drive.google.com/file/d/1AWl6pu2GPox5kz0qeOtM27HRK3R_9Hdq/view?usp=sharing" target="_blank">Story Structure - Read this story</a>
+                <a href="https://drive.google.com/file/d/1UBK9f8Mjjpoh-maOrotStGf4BTJXVPR0/view?usp=sharing" target="_blank">Story Questions - Complete these questions</a>
+            </div>
+
+            <hr>
+
+            <h2>Raid Strategy Guide</h2>
+            <div class="strategy-box">
+                <h3>Step 1: Read the Poem First</h3>
+                <p>Read through the poem once without stopping. Get a feel for the overall message and mood.</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 2: Analyze Poem Structure</h3>
+                <p>Read again and identify:<br>
+                - How many stanzas are there?<br>
+                - What is the rhyme scheme? (ABAB, AABB, etc.)<br>
+                - How does each stanza contribute to the overall meaning?</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 3: Answer Poem Questions</h3>
+                <p>Complete the Poem Questions worksheet, referencing specific parts of the text in your answers.</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 4: Read the Story</h3>
+                <p>Read the story and identify the major structural elements: beginning, middle, and end.</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 5: Analyze Story Structure</h3>
+                <p>Identify:<br>
+                - The exposition (introduction of characters/setting)<br>
+                - The rising action (building tension)<br>
+                - The climax (turning point)<br>
+                - The resolution (how it ends)</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 6: Complete Story Questions</h3>
+                <p>Answer all questions about how the story's structure contributes to its meaning.</p>
+            </div>
+
+            <hr>
+
+            <h2>Guild Master Verification</h2>
+            <div class="warning-box">
+                <p><strong>STOP!</strong> Summon your Guild Master (Parent/Guardian) for verification.</p>
+            </div>
+
+            <p><strong>Guild Master Instructions:</strong><br>
+            Your young Hunter has attempted to clear the Literary Gate. Verify their success by checking:</p>
+            <div class="checklist-box">
+                <ul>
+                    <li>[ ] They read both the poem and the story completely</li>
+                    <li>[ ] They watched the Rhyme Scheme training video</li>
+                    <li>[ ] Poem questions are answered with text evidence</li>
+                    <li>[ ] Story questions demonstrate understanding of narrative structure</li>
+                    <li>[ ] Answers explain how structure contributes to meaning</li>
+                </ul>
+            </div>
+
+            <hr>
+
+            <h2>Quest Completion</h2>
+            <div class="quest-complete">
+                <p><strong>Congratulations, Hunter!</strong></p>
+                <p>You have cleared the E-Rank Literary Gate: Text Structure.</p>
+                <p><strong>To receive credit:</strong><br>
+                Upload your completed Poem Questions and Story Questions worksheets to Boost.</p>
+                <p><strong>Reward:</strong> +1 Reading Power | Text Structure Analysis Skill Unlocked</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <span class="disabled">&#8592; Previous Mission</span>
+            <a href="la_mission_02.html">Next Mission &#8594;</a>
+        </div>
+    </div>
+</body>
+</html>

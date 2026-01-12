@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LA Mission 12 - Source Selection | Language Arts Hunter Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        --bg-primary: #0a0a0f; --bg-secondary: #1a1a2e; --bg-card: #16213e;
+        --accent-blue: #4cc9f0; --accent-purple: #7b2cbf; --accent-gold: #ffd700;
+        --accent-green: #00ff88; --accent-red: #ff4444; --accent-teal: #00d4aa;
+        --text-primary: #e0e0e0; --text-secondary: #a0a0a0;
+        --border-color: rgba(76, 201, 240, 0.3); --card-bg: rgba(22, 33, 62, 0.8);
+        --glow-purple: 0 0 20px rgba(123, 44, 191, 0.5);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.8; min-height: 100vh; }
+    body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at top left, rgba(0, 212, 170, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.1) 0%, transparent 50%); pointer-events: none; z-index: -1; }
+    .mission-content { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .back-link { display: inline-block; padding: 10px 20px; background: var(--card-bg); border: 1px solid var(--accent-teal); color: var(--accent-blue); text-decoration: none; border-radius: 5px; margin-bottom: 20px; transition: all 0.3s; }
+    .back-link:hover { background: rgba(0, 212, 170, 0.2); }
+    .mission-header { text-align: center; padding: 40px 20px; margin-bottom: 30px; background: linear-gradient(135deg, rgba(123, 44, 191, 0.3), rgba(76, 201, 240, 0.2)); border-radius: 15px; border: 1px solid var(--accent-purple); }
+    .mission-header h1 { font-family: 'Orbitron', sans-serif; font-size: 2.2em; color: var(--accent-purple); margin-bottom: 10px; text-shadow: var(--glow-purple); }
+    .rank-badge { display: inline-block; padding: 8px 20px; border-radius: 5px; font-weight: bold; font-size: 1em; margin: 10px 0; text-transform: uppercase; letter-spacing: 3px; font-family: 'Orbitron', sans-serif; }
+    .rank-B { background: linear-gradient(135deg, #5a189a 0%, #7b2cbf 100%); color: #fff; box-shadow: var(--glow-purple); }
+    .mission-body { background: rgba(0, 0, 0, 0.4); padding: 40px; border-radius: 15px; border: 1px solid var(--border-color); }
+    .mission-body h2 { color: var(--accent-purple); font-family: 'Orbitron', sans-serif; border-bottom: 2px solid var(--accent-blue); padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px; }
+    .mission-body h3 { color: var(--accent-blue); margin-top: 25px; margin-bottom: 15px; }
+    .mission-body p { line-height: 1.8; margin-bottom: 15px; }
+    .system-alert { background: linear-gradient(135deg, rgba(123, 44, 191, 0.2), rgba(76, 201, 240, 0.2)); border: 2px solid var(--accent-purple); border-radius: 10px; padding: 20px; margin: 20px 0; font-family: 'Orbitron', sans-serif; }
+    .equipment-box { background: rgba(123, 44, 191, 0.15); border: 1px solid var(--accent-purple); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .equipment-box ul { margin-left: 20px; } .equipment-box li { margin-bottom: 8px; }
+    .skill-box { background: rgba(123, 44, 191, 0.1); border-left: 4px solid var(--accent-purple); padding: 15px 20px; margin: 15px 0; border-radius: 0 10px 10px 0; }
+    .training-links { background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .training-links a { display: block; color: var(--accent-blue); margin: 10px 0; padding: 10px 15px; background: rgba(76, 201, 240, 0.1); border-radius: 5px; text-decoration: none; transition: all 0.3s; }
+    .training-links a:hover { background: rgba(76, 201, 240, 0.2); color: var(--accent-gold); }
+    .quest-box { background: linear-gradient(135deg, rgba(255, 68, 68, 0.1), rgba(123, 44, 191, 0.1)); border: 2px solid var(--accent-red); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .strategy-box { background: rgba(123, 44, 191, 0.1); border: 1px dashed var(--accent-purple); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .checklist-box { background: rgba(0, 255, 136, 0.1); border: 1px solid var(--accent-green); border-radius: 10px; padding: 20px; margin: 20px 0; }
+    .checklist-box ul { margin-left: 20px; } .checklist-box li { margin-bottom: 10px; }
+    .quest-complete { background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(255, 215, 0, 0.15)); border: 2px solid var(--accent-green); border-radius: 10px; padding: 25px; margin: 30px 0; text-align: center; }
+    .warning-box { background: rgba(255, 68, 68, 0.1); border-left: 4px solid var(--accent-red); padding: 15px 20px; margin: 15px 0; border-radius: 0 10px 10px 0; }
+    .nav-buttons { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+    .nav-buttons a, .nav-buttons span { padding: 10px 20px; background: var(--card-bg); border: 1px solid var(--accent-purple); color: var(--accent-blue); text-decoration: none; border-radius: 5px; transition: all 0.3s; }
+    .nav-buttons a:hover { background: rgba(123, 44, 191, 0.3); }
+    hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
+    a { color: var(--accent-blue); } a:hover { color: var(--accent-gold); }
+    </style>
+</head>
+<body>
+    <div class="mission-content">
+        <a href="la_index.html" class="back-link">&#8592; Back to Mission Select</a>
+        <div class="mission-header">
+            <span class="rank-badge rank-B">B-RANK</span>
+            <h1>Mission 12: Source Selection</h1>
+            <p style="color: var(--text-secondary); font-size: 1.2em;">Select Relevant and Credible Sources</p>
+        </div>
+
+        <div class="mission-body">
+            <div class="system-alert">
+                <p><strong>[SYSTEM NOTIFICATION]</strong><br>
+                A Literary Gate has been detected. Difficulty: B-Rank.<br>
+                Hunter Hyro, learn to identify trustworthy sources - your research depends on it!</p>
+            </div>
+
+            <h2>The Challenge Awaits</h2>
+            <p>Not all sources are created equal. Like choosing the right weapons for a raid, selecting <strong>credible sources</strong> is essential for strong research. You must learn to evaluate reliability, relevance, and accuracy.</p>
+            <p>Your mission? Learn to distinguish between credible and unreliable sources, and understand when different types of sources are appropriate.</p>
+
+            <hr>
+
+            <h2>Hunter Equipment</h2>
+            <div class="equipment-box">
+                <ul>
+                    <li>Pencil and highlighter</li>
+                    <li>Source evaluation checklist</li>
+                    <li>Critical thinking mindset</li>
+                </ul>
+            </div>
+
+            <hr>
+
+            <h2>Skills to Unlock</h2>
+            <div class="skill-box">
+                <p><strong>Power Standard PS12</strong><br>
+                The student will select relevant and credible sources for research.</p>
+            </div>
+
+            <hr>
+
+            <h2>Training Scrolls</h2>
+            <p><strong>Evaluating Sources - CRAAP Test:</strong></p>
+            <ul>
+                <li><strong>Currency:</strong> Is the information recent enough?</li>
+                <li><strong>Relevance:</strong> Does it relate to your topic?</li>
+                <li><strong>Authority:</strong> Who wrote it? Are they qualified?</li>
+                <li><strong>Accuracy:</strong> Can the information be verified?</li>
+                <li><strong>Purpose:</strong> Why was it written? Is it biased?</li>
+            </ul>
+
+            <hr>
+
+            <h2>Dungeon Raid</h2>
+            <div class="quest-box">
+                <h3>Official Quest Instructions</h3>
+                <p>Students will complete the Different Sources worksheet, demonstrating their ability to evaluate and select appropriate sources for research.</p>
+            </div>
+
+            <h3>Your Quest Materials</h3>
+            <div class="training-links">
+                <a href="https://drive.google.com/file/d/1I95Gi2uii7vGn1CaJ1yolhoy1UX2GcAN/view?usp=sharing" target="_blank">Different Sources - Complete this worksheet</a>
+            </div>
+
+            <hr>
+
+            <h2>Raid Strategy Guide</h2>
+            <div class="strategy-box">
+                <h3>Step 1: Understand Source Types</h3>
+                <p>Primary sources = original documents (diaries, interviews)<br>
+                Secondary sources = analysis of primary sources (textbooks, articles)<br>
+                Tertiary sources = summaries (encyclopedias, databases)</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 2: Check the Author</h3>
+                <p>Who wrote this? What are their qualifications? Do they have expertise in this topic?</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 3: Verify the Publisher</h3>
+                <p>Is this from a reputable organization? Academic journals, established news sources, and .edu/.gov sites are generally more reliable.</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 4: Look for Bias</h3>
+                <p>Does the source present only one side? Is it trying to sell something or push an agenda? Look for balanced presentation of facts.</p>
+            </div>
+
+            <div class="strategy-box">
+                <h3>Step 5: Check the Date</h3>
+                <p>When was this published? For some topics, recent sources are essential. For historical topics, older sources may be valuable.</p>
+            </div>
+
+            <hr>
+
+            <h2>Guild Master Verification</h2>
+            <div class="warning-box">
+                <p><strong>STOP!</strong> Summon your Guild Master (Parent/Guardian) for verification.</p>
+            </div>
+            <div class="checklist-box">
+                <ul>
+                    <li>[ ] Understands different types of sources</li>
+                    <li>[ ] Can evaluate source credibility</li>
+                    <li>[ ] Identifies potential bias in sources</li>
+                    <li>[ ] Knows when to use different source types</li>
+                    <li>[ ] Worksheet is complete</li>
+                </ul>
+            </div>
+
+            <hr>
+
+            <h2>Quest Completion</h2>
+            <div class="quest-complete">
+                <p><strong>Congratulations, Hunter!</strong></p>
+                <p>You have cleared the B-Rank Literary Gate: Source Selection.</p>
+                <p><strong>Upload your completed Different Sources worksheet to Boost.</strong></p>
+                <p><strong>Reward:</strong> +4 Research Power | Source Evaluation Skill Unlocked</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="la_mission_11.html">&#8592; Previous Mission</a>
+            <a href="la_mission_13.html">Next Mission &#8594;</a>
+        </div>
+    </div>
+</body>
+</html>

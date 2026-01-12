@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission 11 - Dividing Fractions | Math Hunter Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+    
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #1a1a2e;
+    --bg-card: #16213e;
+    --accent-blue: #4cc9f0;
+    --accent-purple: #7b2cbf;
+    --accent-gold: #ffd700;
+    --accent-green: #00ff88;
+    --accent-red: #ff4444;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --text-muted: #666;
+    --glow-blue: 0 0 20px rgba(76, 201, 240, 0.5);
+    --glow-purple: 0 0 20px rgba(123, 44, 191, 0.5);
+    --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.8;
+    min-height: 100vh;
+}
+
+/* Animated background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse at top left, rgba(123, 44, 191, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* System Notification Header */
+.system-alert {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+    border: 2px solid var(--accent-blue);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--glow-blue);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(76, 201, 240, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(76, 201, 240, 0.6); }
+}
+
+.system-alert h1 {
+    font-family: 'Courier New', monospace;
+    color: var(--accent-blue);
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.system-alert .dungeon-name {
+    color: var(--accent-gold);
+    font-size: 1.8em;
+    font-weight: bold;
+    text-shadow: var(--glow-gold);
+}
+
+/* Rank Badge */
+.rank-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 1.2em;
+    margin: 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.rank-E { background: linear-gradient(135deg, #444 0%, #666 100%); color: #fff; }
+.rank-D { background: linear-gradient(135deg, #2a6f97 0%, #4cc9f0 100%); color: #fff; box-shadow: var(--glow-blue); }
+.rank-C { background: linear-gradient(135deg, #006644 0%, #00ff88 100%); color: #000; }
+.rank-B { background: linear-gradient(135deg, #5a189a 0%, #7b2cbf 100%); color: #fff; box-shadow: var(--glow-purple); }
+.rank-A { background: linear-gradient(135deg, #b8860b 0%, #ffd700 100%); color: #000; box-shadow: var(--glow-gold); }
+
+/* Section Cards */
+.section-card {
+    background: var(--bg-card);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-left: 4px solid var(--accent-purple);
+    position: relative;
+    overflow: hidden;
+}
+
+.section-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(123, 44, 191, 0.05) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.section-card h2 {
+    color: var(--accent-blue);
+    font-size: 1.4em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-card h2 .icon {
+    font-size: 1.5em;
+}
+
+.section-card h3 {
+    color: var(--accent-purple);
+    margin: 20px 0 10px;
+}
+
+/* Equipment/Materials List */
+.equipment-list {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 15px 0;
+}
+
+.equipment-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    list-style: none;
+    position: relative;
+    padding-left: 25px;
+}
+
+.equipment-list li::before {
+    content: '◆';
+    position: absolute;
+    left: 0;
+    color: var(--accent-gold);
+}
+
+.equipment-list li:last-child {
+    border-bottom: none;
+}
+
+/* Skills/Learning Targets */
+.skill-box {
+    background: linear-gradient(135deg, rgba(123, 44, 191, 0.2) 0%, rgba(76, 201, 240, 0.1) 100%);
+    border: 1px solid var(--accent-purple);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+}
+
+.skill-box .standard-code {
+    color: var(--accent-gold);
+    font-weight: bold;
+}
+
+/* Strategy Steps */
+.strategy-steps {
+    counter-reset: step;
+}
+
+.strategy-step {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 15px 20px 15px 60px;
+    margin: 15px 0;
+    position: relative;
+}
+
+.strategy-step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 35px;
+    height: 35px;
+    background: var(--accent-purple);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Checklist */
+.checklist-item {
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid var(--accent-green);
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.checklist-item:hover {
+    background: rgba(0, 255, 136, 0.2);
+    transform: translateX(5px);
+}
+
+.checklist-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent-green);
+}
+
+/* Quest Complete Box */
+.quest-complete {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(123, 44, 191, 0.1) 100%);
+    border: 2px solid var(--accent-gold);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    margin-top: 30px;
+}
+
+.quest-complete h2 {
+    color: var(--accent-gold);
+    justify-content: center;
+}
+
+/* Navigation */
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    color: var(--accent-blue);
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s;
+    border: 1px solid var(--accent-blue);
+}
+
+.nav-btn:hover {
+    background: var(--accent-blue);
+    color: var(--bg-primary);
+    box-shadow: var(--glow-blue);
+}
+
+/* Progress Bar */
+.progress-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: var(--bg-secondary);
+    z-index: 1000;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-purple) 0%, var(--accent-blue) 100%);
+    width: 0%;
+    transition: width 0.3s;
+    box-shadow: 0 0 10px var(--accent-blue);
+}
+
+/* Links */
+a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+a:hover {
+    color: var(--accent-gold);
+    text-shadow: 0 0 10px var(--accent-gold);
+}
+
+/* Code blocks */
+pre, code {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 2px 6px;
+    font-family: 'Courier New', monospace;
+    color: var(--accent-green);
+}
+
+pre {
+    padding: 15px;
+    overflow-x: auto;
+    border: 1px solid rgba(76, 201, 240, 0.3);
+}
+
+/* Mission Image */
+.mission-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 15px;
+    margin: 20px 0;
+    border: 2px solid var(--accent-purple);
+    box-shadow: var(--glow-purple);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .system-alert .dungeon-name {
+        font-size: 1.4em;
+    }
+
+    .section-card {
+        padding: 20px 15px;
+    }
+}
+
+/* Tip boxes */
+.tip-box {
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 4px solid var(--accent-gold);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.tip-box strong {
+    color: var(--accent-gold);
+}
+
+/* Warning boxes */
+.warning-box {
+    background: rgba(255, 68, 68, 0.1);
+    border-left: 4px solid var(--accent-red);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.warning-box strong {
+    color: var(--accent-red);
+}
+
+    </style>
+    <style>
+    .mission-content {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .mission-header {
+        text-align: center;
+        padding: 40px 20px;
+        margin-bottom: 30px;
+        background: linear-gradient(135deg, rgba(123, 44, 191, 0.2), rgba(76, 201, 240, 0.2));
+        border-radius: 15px;
+        border: 1px solid var(--accent-purple);
+    }
+
+    .mission-header h1 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 2.5em;
+        color: var(--accent-blue);
+        margin-bottom: 10px;
+    }
+
+    .mission-body {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 40px;
+        border-radius: 15px;
+        border: 1px solid var(--border-color);
+    }
+
+    .mission-body h2 {
+        color: var(--accent-blue);
+        font-family: 'Orbitron', sans-serif;
+        border-bottom: 2px solid var(--accent-purple);
+        padding-bottom: 10px;
+        margin-top: 30px;
+    }
+
+    .mission-body h3 {
+        color: var(--accent-purple);
+        margin-top: 25px;
+    }
+
+    .mission-body p {
+        line-height: 1.8;
+        margin-bottom: 15px;
+    }
+
+    .mission-body pre {
+        background: rgba(0, 0, 0, 0.6);
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+    }
+
+    .mission-body code {
+        background: rgba(76, 201, 240, 0.2);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .mission-body pre code {
+        background: transparent;
+        padding: 0;
+    }
+
+    .mission-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+
+    .mission-body th, .mission-body td {
+        border: 1px solid var(--border-color);
+        padding: 12px;
+        text-align: left;
+    }
+
+    .mission-body th {
+        background: rgba(123, 44, 191, 0.3);
+        color: var(--accent-blue);
+    }
+
+    .mission-body ul, .mission-body ol {
+        margin-left: 20px;
+        margin-bottom: 15px;
+    }
+
+    .mission-body li {
+        margin-bottom: 8px;
+    }
+
+    .system-alert {
+        background: linear-gradient(135deg, rgba(76, 201, 240, 0.2), rgba(123, 44, 191, 0.2));
+        border: 2px solid var(--accent-blue);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        font-family: 'Orbitron', sans-serif;
+    }
+
+    .hunter-tip {
+        background: rgba(0, 255, 136, 0.1);
+        border-left: 4px solid var(--accent-green);
+        padding: 15px 20px;
+        margin: 20px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .system-complete {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(123, 44, 191, 0.2));
+        border: 2px solid #ffd700;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+    }
+
+    .equipment-box {
+        background: rgba(123, 44, 191, 0.15);
+        border: 1px solid var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .skill-box {
+        background: rgba(76, 201, 240, 0.1);
+        border-left: 4px solid var(--accent-blue);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .training-links {
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin: 20px 0;
+    }
+
+    .training-links a {
+        display: block;
+        margin: 8px 0;
+    }
+
+    .quest-box {
+        background: linear-gradient(135deg, rgba(255, 68, 68, 0.1), rgba(123, 44, 191, 0.1));
+        border: 2px solid var(--accent-red);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .checklist-box {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .note-box {
+        background: rgba(76, 201, 240, 0.1);
+        border-left: 4px solid var(--accent-blue);
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .quest-complete {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(255, 215, 0, 0.15));
+        border: 2px solid var(--accent-green);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: var(--glow-gold);
+    }
+
+    .strategy-box {
+        background: rgba(123, 44, 191, 0.1);
+        border: 1px dashed var(--accent-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .verbatim-box {
+        background: rgba(255, 215, 0, 0.1);
+        border: 2px solid var(--accent-gold);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        font-style: italic;
+    }
+
+    .back-link {
+        display: inline-block;
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-purple);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+
+    .back-link:hover {
+        background: rgba(123, 44, 191, 0.3);
+        border-color: var(--accent-blue);
+    }
+
+    .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .nav-buttons a {
+        padding: 10px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--accent-purple);
+        color: var(--accent-blue);
+        text-decoration: none;
+        border-radius: 5px;
+        transition: all 0.3s;
+    }
+
+    .nav-buttons a:hover {
+        background: rgba(123, 44, 191, 0.3);
+    }
+
+    .nav-buttons .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .mission-image {
+        width: 100%;
+        max-width: 800px;
+        height: auto;
+        border-radius: 15px;
+        margin: 20px auto;
+        display: block;
+        border: 2px solid var(--accent-purple);
+        box-shadow: 0 0 30px rgba(123, 44, 191, 0.4);
+    }
+    </style>
+</head>
+<body>
+    <div class="mission-content">
+        <a href="index.html" class="back-link">← Back to Mission Select</a>
+
+        <div class="mission-header">
+            <span class="rank-badge rank-B">B-RANK</span>
+            <h1>Mission 11</h1>
+            <p style="color: var(--text-secondary); font-size: 1.2em;">Dividing Fractions</p>
+            <img src="images/mission_11.png" alt="Mission 11 - Dividing Fractions" class="mission-image">
+        </div>
+
+        <div class="mission-body">
+            <h1>Mission 11: Dividing Fractions</h1>
+<div class="system-alert">
+<p><strong>[SYSTEM NOTIFICATION]</strong>
+A C-Rank Gate has been detected. Difficulty: Advanced.
+Hunter, prepare to slice through the Fraction Realm!</p>
+</div>
+
+<h2>The Challenge Awaits</h2>
+<p>Young Hunter, fractions are everywhere—dividing loot, splitting party resources, calculating potion dosages. But <strong>dividing</strong> fractions? That's where many Hunters fall.</p>
+<p>Today, you learn the secret technique: <strong>"Keep, Change, Flip."</strong> Master it, and no fraction puzzle will defeat you.</p>
+<hr />
+<h2>⚔️ Hunter's Arsenal (Gear Checklist)</h2>
+<p><strong>Gather these exact items before entering the Gate:</strong>
+- Circle fraction manipulatives (or cut paper plates into sections)
+- Paper and pencil</p>
+<hr />
+<h2>🎯 Mission Objectives</h2>
+<p><strong>Upon completion of this Gate, you will have unlocked:</strong>
+- <strong>Fraction Division</strong> - Divide two fractions (6.NS.1a)
+- <strong>Visual Problem Solving</strong> - Use fraction models to solve word problems (6.NS.1b)
+- <strong>Quotient Interpretation</strong> - Explain what the answer means in context (6.NS.1c)</p>
+<hr />
+<h2>📖 The Hunter's Knowledge (Brain Download)</h2>
+<h3>The Secret Technique: Keep, Change, Flip!</h3>
+<p>To divide fractions, follow these three steps:</p>
+<pre><code>2/3 ÷ 1/2 = ?
+
+Step 1: KEEP the first fraction    → 2/3
+Step 2: CHANGE ÷ to ×              → ×
+Step 3: FLIP the second fraction   → 2/1
+
+2/3 × 2/1 = 4/3 = 1⅓
+</code></pre>
+<h3>Why Does This Work?</h3>
+<p>Dividing by a fraction is the same as multiplying by its reciprocal:</p>
+<pre><code>Dividing by 1/2 means: &quot;How many halves fit in here?&quot;
+
+In 2/3 of a pizza, there is 1⅓ halves.
+</code></pre>
+<h3>Visual Understanding</h3>
+<pre><code>Original pizza: 2/3 remaining
+┌───┬───┬───┐
+│ ▓ │ ▓ │   │
+└───┴───┴───┘
+  2/3 shaded
+
+Question: How many 1/2 portions fit in 2/3?
+
+Answer: 1 full half + 1/3 of a half = 1⅓
+</code></pre>
+<p><strong>Video Lessons:</strong>
+- Effect of Dividing with Fractions | CK-12 Foundation
+- Quotients of Fractions | CK-12 Foundation
+- Dividing Fractions Video
+- Flipping the Fractions | CK-12 PLIX Series</p>
+<hr />
+<h2>🗡️ The Quest (Activity)</h2>
+<h3>📜 Verbatim Instructions:</h3>
+<p>Get the fraction manipulatives ready for the students.</p>
+<p>Review the rules for dividing fractions.</p>
+<p>Ask the students if they had ⅔ of a pizza and they divide the ⅔ by ½ how many pieces would they have? Give other similar problems such as ¾ ÷ ¼ ; ⅖ ÷ ½</p>
+<p><strong>Family Pizza Night Challenge:</strong>
+Your family got 4 kinds of pizza for dinner last night. 1/3 of the pineapple, 1/4 of the pepperoni and 1/2 of the cheese is left. You want to split each kind in 1/2 with your brother. How much pizza will you get?</p>
+<hr />
+<h3>💡 Hunter's Strategy Guide</h3>
+<p><strong>Problem 1: ⅔ ÷ ½</strong></p>
+<pre><code>Keep:   2/3
+Change: ÷ → ×
+Flip:   1/2 → 2/1
+
+2/3 × 2/1 = 4/3 = 1⅓
+
+Answer: You would have 1⅓ pieces
+</code></pre>
+<p><strong>Problem 2: ¾ ÷ ¼</strong></p>
+<pre><code>Keep:   3/4
+Change: ÷ → ×
+Flip:   1/4 → 4/1
+
+3/4 × 4/1 = 12/4 = 3
+
+Answer: 3 pieces (because 3 quarters contain 3 quarter-portions)
+</code></pre>
+<p><strong>Problem 3: ⅖ ÷ ½</strong></p>
+<pre><code>Keep:   2/5
+Change: ÷ → ×
+Flip:   1/2 → 2/1
+
+2/5 × 2/1 = 4/5
+
+Answer: 4/5 of a piece
+</code></pre>
+<p><strong>Family Pizza Challenge:</strong></p>
+<pre><code>Leftover pizza portions, split with brother:
+
+Pineapple: 1/3 ÷ 2 = 1/3 × 1/2 = 1/6
+Pepperoni: 1/4 ÷ 2 = 1/4 × 1/2 = 1/8
+Cheese:    1/2 ÷ 2 = 1/2 × 1/2 = 1/4
+
+YOU get: 1/6 pineapple + 1/8 pepperoni + 1/4 cheese
+</code></pre>
+<hr />
+<h2>👨‍👩‍👧 Parent Captain's Log</h2>
+<blockquote>
+<p><strong>CHECKPOINT!</strong> 🛡️ Summon a parent or guardian.</p>
+</blockquote>
+<p><strong>Verification Protocol:</strong>
+- [ ] This is tricky! Check visually with fraction pieces
+- [ ] 1/3 split in half is 1/6, NOT 2/3 (they shouldn't just multiply by 2)
+- [ ] Did they complete the verbatim instructions in Section 4?
+- [ ] Did they watch the lesson video?</p>
+<hr />
+<h2>📤 Proof of Completion</h2>
+<p><strong>Submit your evidence:</strong>
+- Video of you doing the activity, OR
+- Picture/scan of your written work</p>
+<p><em>The System awaits your proof, Hunter.</em></p>
+<hr />
+<div class="hunter-tip">
+<p><strong>Hunter's Wisdom:</strong> "Keep, Change, Flip" is your secret weapon! When you see a division sign with fractions, immediately flip the second fraction and multiply. It's the fastest way through the Fraction Gate!</p>
+</div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="mission_10.html">← Previous Mission</a>
+            <a href="mission_12.html">Next Mission →</a>
+        </div>
+    </div>
+</body>
+</html>
