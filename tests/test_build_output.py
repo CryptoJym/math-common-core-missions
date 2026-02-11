@@ -366,6 +366,12 @@ class TestProgressJS:
         assert "onConflict" in self.content or "upsert" in self.content, \
             "progress.js must use upsert to avoid duplicate rows"
 
+    def test_xp_only_awarded_on_first_completion(self):
+        assert "wasAlreadyCompleted" in self.content, \
+            "progress.js must check if mission was already completed before awarding XP"
+        assert "!wasAlreadyCompleted" in self.content, \
+            "progress.js must guard XP award with !wasAlreadyCompleted"
+
 
 # ---------------------------------------------------------------------------
 # Test: Build script integration

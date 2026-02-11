@@ -17,6 +17,18 @@ async function saveChecklistState(missionNumber, checkboxStates) {
   const sb = MHA_Auth.getSupabase();
   const allChecked = Object.values(checkboxStates).every(v => v === true);
 
+  // Check if mission was already completed before this save
+  let wasAlreadyCompleted = false;
+  if (allChecked) {
+    const { data: existing } = await sb
+      .from('mission_progress')
+      .select('completed')
+      .eq('user_id', session.user.id)
+      .eq('mission_number', missionNumber)
+      .single();
+    wasAlreadyCompleted = existing?.completed === true;
+  }
+
   await sb.from('mission_progress').upsert({
     user_id: session.user.id,
     mission_number: missionNumber,
@@ -27,8 +39,8 @@ async function saveChecklistState(missionNumber, checkboxStates) {
     onConflict: 'user_id,mission_number'
   });
 
-  // Award XP on first completion
-  if (allChecked) {
+  // Award XP only on first completion (false → true transition)
+  if (allChecked && !wasAlreadyCompleted) {
     const xpReward = getXPForMission(missionNumber);
     await updateXP(session.user.id, xpReward);
   }
