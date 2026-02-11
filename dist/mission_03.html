@@ -391,6 +391,109 @@ pre {
     color: var(--accent-red);
 }
 
+/* User Nav Bar */
+.user-nav {
+    position: fixed;
+    top: 6px;
+    right: 0;
+    left: 0;
+    z-index: 999;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 15px;
+    padding: 8px 20px;
+    background: rgba(10, 10, 15, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(76, 201, 240, 0.2);
+}
+
+.user-nav-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-nav-rank {
+    background: linear-gradient(135deg, var(--accent-purple), #5a189a);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.user-nav-name {
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+.user-nav-xp {
+    color: var(--accent-gold);
+    font-size: 0.85em;
+}
+
+.user-nav-logout {
+    background: transparent;
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85em;
+    transition: all 0.3s;
+}
+
+.user-nav-logout:hover {
+    background: var(--accent-red);
+    color: #fff;
+}
+
+.user-nav-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9em;
+    padding: 4px 12px;
+    border: 1px solid var(--accent-blue);
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.user-nav-login:hover {
+    background: var(--accent-blue);
+    color: var(--bg-primary);
+}
+
+/* Completion Badge on gate cards */
+.completion-badge {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #006644, var(--accent-green));
+    color: #000;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.7em;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.gate-card.mission-cleared {
+    border-color: rgba(0, 255, 136, 0.3);
+}
+
+/* Push body content down when user-nav is present */
+body.has-user-nav {
+    padding-top: 50px;
+}
+
     </style>
     <style>
     .mission-content {
@@ -820,49 +923,6 @@ Hunter, prepare to master the Currency Realm.</p>
 </div>
 
 <hr />
-<h2>Claude Code Training</h2>
-<div class="system-alert">
-    <p><strong>[TRAINING PROTOCOL ACTIVATED]</strong><br>
-    Before attempting the assignment, you must train with your AI companion. Claude will guide you through the concepts and verify your understanding.</p>
-</div>
-
-<div class="training-links">
-    <h3>Step 1: Open Your Terminal</h3>
-    <p>Open a terminal on your computer and run this command to start Claude Code:</p>
-    <div class="skill-box" style="background: #1a1a2e; font-family: monospace;">
-        <code>claude --dangerously-skip-permissions</code>
-    </div>
-
-    <h3>Step 2: Summon Your Guide</h3>
-    <p>Copy and paste this prompt to begin your training:</p>
-    <div class="quest-box" style="background: #0a0a0f;">
-        <pre style="white-space: pre-wrap; color: var(--accent-blue);">Hey Claude, I'm Hunter Hyro on Mission 03 about unit rates and percentages.
-I need to master these before my money assignment.
-
-Be my training guide and:
-1. Explain what a unit rate is with real examples I'd actually use
-2. Show me how percentages work (what does 30% really mean?)
-3. Give me 3 practice problems finding unit rates and percentages
-4. Quiz me with a Boss Challenge about savings goals
-5. Have me explain how to find a unit rate in my own words
-
-Only tell me "Quest Unlocked" when I truly understand. Don't let me skip ahead!
-Start with a simple unit rate example like cost per item.</pre>
-    </div>
-
-    <h3>Step 3: Complete Your Training</h3>
-    <p>Work through all phases with Claude:</p>
-    <ul>
-        <li><strong>Phase 1:</strong> Learn the concept (Claude explains)</li>
-        <li><strong>Phase 2:</strong> Answer checkpoint questions</li>
-        <li><strong>Phase 3:</strong> Complete 3 skill trials</li>
-        <li><strong>Phase 4:</strong> Pass the Boss Challenge</li>
-        <li><strong>Phase 5:</strong> Teach the concept back to Claude</li>
-    </ul>
-    <p style="color: var(--accent-gold);"><strong>You cannot proceed until Claude says "Quest Unlocked"!</strong></p>
-</div>
-
-<hr />
 <h2>👑 Guild Master Verification</h2>
 <div class="warning-box">
 <p><strong>STOP!</strong> 🛑 Summon your Guild Master (Parent/Guardian) for verification.</p>
@@ -898,5 +958,17 @@ Submit a video of you completing the jumping jack challenge and calculating your
             <a href="mission_04.html">Next Mission →</a>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/progress.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await MHA_Auth.initAuthUI(false);
+            document.body.classList.add('has-user-nav');
+            await MHA_Progress.initMissionProgress(3);
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hunter Registration | Math Hunter Academy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        --bg-primary: #0a0a0f;
+        --bg-secondary: #1a1a2e;
+        --bg-card: #16213e;
+        --accent-blue: #4cc9f0;
+        --accent-purple: #7b2cbf;
+        --accent-gold: #ffd700;
+        --accent-green: #00ff88;
+        --accent-red: #ff4444;
+        --text-primary: #e0e0e0;
+        --text-secondary: #a0a0a0;
+        --glow-blue: 0 0 20px rgba(76, 201, 240, 0.5);
+        --glow-purple: 0 0 20px rgba(123, 44, 191, 0.5);
+        --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: 'Rajdhani', sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background:
+            radial-gradient(ellipse at top left, rgba(123, 44, 191, 0.15) 0%, transparent 50%),
+            radial-gradient(ellipse at bottom right, rgba(76, 201, 240, 0.15) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    .auth-container {
+        width: 100%;
+        max-width: 440px;
+        padding: 20px;
+    }
+
+    .auth-card {
+        background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+        border: 2px solid var(--accent-blue);
+        border-radius: 15px;
+        padding: 40px 35px;
+        box-shadow: var(--glow-blue);
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 35px;
+    }
+
+    .auth-header h1 {
+        font-family: 'Orbitron', sans-serif;
+        color: var(--accent-gold);
+        font-size: 1.6em;
+        text-shadow: var(--glow-gold);
+        margin-bottom: 8px;
+    }
+
+    .auth-header p {
+        color: var(--accent-blue);
+        font-size: 1.1em;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .form-group {
+        margin-bottom: 22px;
+    }
+
+    .form-group label {
+        display: block;
+        color: var(--accent-blue);
+        font-weight: 700;
+        margin-bottom: 8px;
+        font-size: 0.95em;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 14px 16px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(76, 201, 240, 0.3);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 1em;
+        font-family: 'Rajdhani', sans-serif;
+        transition: all 0.3s;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 15px rgba(76, 201, 240, 0.3);
+    }
+
+    .form-group input::placeholder {
+        color: var(--text-secondary);
+    }
+
+    .auth-btn {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #006644 0%, var(--accent-green) 100%);
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1em;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-top: 10px;
+    }
+
+    .auth-btn:hover {
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        transform: translateY(-2px);
+    }
+
+    .auth-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .auth-error {
+        background: rgba(255, 68, 68, 0.15);
+        border: 1px solid var(--accent-red);
+        border-radius: 8px;
+        padding: 12px 16px;
+        color: var(--accent-red);
+        margin-bottom: 20px;
+        display: none;
+        font-size: 0.95em;
+    }
+
+    .auth-success {
+        background: rgba(0, 255, 136, 0.15);
+        border: 1px solid var(--accent-green);
+        border-radius: 8px;
+        padding: 12px 16px;
+        color: var(--accent-green);
+        margin-bottom: 20px;
+        display: none;
+        font-size: 0.95em;
+    }
+
+    .auth-links {
+        text-align: center;
+        margin-top: 25px;
+    }
+
+    .auth-links a {
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .auth-links a:hover {
+        color: var(--accent-gold);
+        text-shadow: 0 0 10px var(--accent-gold);
+    }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>HUNTER REGISTRATION</h1>
+                <p>Join the Guild</p>
+            </div>
+
+            <div class="auth-error" id="authError"></div>
+            <div class="auth-success" id="authSuccess"></div>
+
+            <form id="signupForm" onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label for="displayName">Hunter Name</label>
+                    <input type="text" id="displayName" placeholder="Choose your hunter name" required minlength="2" maxlength="30">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Hunter ID (Email)</label>
+                    <input type="email" id="email" placeholder="hunter@academy.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Secret Key (Password)</label>
+                    <input type="password" id="password" placeholder="Min 6 characters" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Secret Key</label>
+                    <input type="password" id="confirmPassword" placeholder="Re-enter your secret key" required minlength="6">
+                </div>
+
+                <button type="submit" class="auth-btn" id="submitBtn">Awaken as a Hunter</button>
+            </form>
+
+            <div class="auth-links">
+                <p>Already a Hunter? <a href="login.html">Enter the Gate</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // If already logged in, redirect to index
+        (async () => {
+            const session = await MHA_Auth.getSession();
+            if (session) window.location.href = 'index.html';
+        })();
+
+        async function handleSignup(e) {
+            e.preventDefault();
+            const errorEl = document.getElementById('authError');
+            const successEl = document.getElementById('authSuccess');
+            const btn = document.getElementById('submitBtn');
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+
+            const displayName = document.getElementById('displayName').value.trim();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                errorEl.textContent = 'Passwords do not match.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Awakening...';
+
+            try {
+                const data = await MHA_Auth.signUp(email, password, displayName);
+
+                if (data.session) {
+                    // Auto-confirmed, go to index
+                    window.location.href = 'index.html';
+                } else {
+                    // Email confirmation required
+                    successEl.textContent = 'Registration complete! Check your email to confirm your Hunter ID, then log in.';
+                    successEl.style.display = 'block';
+                    document.getElementById('signupForm').style.display = 'none';
+                }
+            } catch (err) {
+                errorEl.textContent = err.message || 'Registration failed. Try again.';
+                errorEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Awaken as a Hunter';
+            }
+        }
+    </script>
+</body>
+</html>
