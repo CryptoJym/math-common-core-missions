@@ -7,6 +7,7 @@ Converts enhanced markdown missions to themed HTML
 import os
 import re
 import glob
+import shutil
 import markdown
 
 # Configuration
@@ -418,6 +419,109 @@ pre {
 .warning-box strong {
     color: var(--accent-red);
 }
+
+/* User Nav Bar */
+.user-nav {
+    position: fixed;
+    top: 6px;
+    right: 0;
+    left: 0;
+    z-index: 999;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 15px;
+    padding: 8px 20px;
+    background: rgba(10, 10, 15, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(76, 201, 240, 0.2);
+}
+
+.user-nav-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-nav-rank {
+    background: linear-gradient(135deg, var(--accent-purple), #5a189a);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.user-nav-name {
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+.user-nav-xp {
+    color: var(--accent-gold);
+    font-size: 0.85em;
+}
+
+.user-nav-logout {
+    background: transparent;
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85em;
+    transition: all 0.3s;
+}
+
+.user-nav-logout:hover {
+    background: var(--accent-red);
+    color: #fff;
+}
+
+.user-nav-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9em;
+    padding: 4px 12px;
+    border: 1px solid var(--accent-blue);
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.user-nav-login:hover {
+    background: var(--accent-blue);
+    color: var(--bg-primary);
+}
+
+/* Completion Badge on gate cards */
+.completion-badge {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #006644, var(--accent-green));
+    color: #000;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.7em;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.gate-card.mission-cleared {
+    border-color: rgba(0, 255, 136, 0.3);
+}
+
+/* Push body content down when user-nav is present */
+body.has-user-nav {
+    padding-top: 50px;
+}
 """
 
 # HTML Template for missions
@@ -460,6 +564,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/progress.js"></script>
     <script>
         // Progress bar based on scroll
         window.addEventListener('scroll', () => {{
@@ -469,13 +577,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             document.getElementById('progressBar').style.width = progress + '%';
         }});
 
-        // Checklist persistence
-        document.querySelectorAll('.checklist-item input').forEach((checkbox, index) => {{
-            const key = 'mission_{mission_num}_check_' + index;
-            checkbox.checked = localStorage.getItem(key) === 'true';
-            checkbox.addEventListener('change', () => {{
-                localStorage.setItem(key, checkbox.checked);
-            }});
+        // Init auth UI and mission progress tracking
+        document.addEventListener('DOMContentLoaded', async () => {{
+            await MHA_Auth.initAuthUI(false);
+            document.body.classList.add('has-user-nav');
+            await MHA_Progress.initMissionProgress({mission_num});
         }});
     </script>
 </body>
@@ -622,6 +728,18 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         {gate_cards}
 
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/progress.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {{
+            await MHA_Auth.initAuthUI(false);
+            document.body.classList.add('has-user-nav');
+            await MHA_Progress.initIndexProgress();
+        }});
+    </script>
 </body>
 </html>
 """
@@ -1029,6 +1147,18 @@ MISSION_TEMPLATE = """<!DOCTYPE html>
             {next_link}
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/progress.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {{
+            await MHA_Auth.initAuthUI(false);
+            document.body.classList.add('has-user-nav');
+            await MHA_Progress.initMissionProgress({mission_num});
+        }});
+    </script>
 </body>
 </html>
 """
@@ -1078,10 +1208,25 @@ def generate_mission_pages():
 
         print(f"Generated: mission_{mission_num:02d}.html")
 
+def copy_static_assets():
+    """Copy static auth pages and JS to dist"""
+    static_dir = os.path.join(os.path.dirname(OUTPUT_DIR), 'static_auth')
+    if os.path.exists(static_dir):
+        for item in os.listdir(static_dir):
+            src = os.path.join(static_dir, item)
+            dst = os.path.join(OUTPUT_DIR, item)
+            if os.path.isdir(src):
+                shutil.copytree(src, dst, dirs_exist_ok=True)
+            else:
+                shutil.copy2(src, dst)
+        print("Copied static auth assets")
+
+
 def main():
     create_directories()
     generate_index()
     generate_mission_pages()
+    copy_static_assets()
     print("\nBuild complete! Site generated in:", OUTPUT_DIR)
     print(f"Open {os.path.join(OUTPUT_DIR, 'index.html')} to view the site.")
 
