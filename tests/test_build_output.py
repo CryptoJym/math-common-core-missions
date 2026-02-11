@@ -324,6 +324,14 @@ class TestAuthJS:
     def test_creates_supabase_client(self):
         assert "createClient" in self.content
 
+    def test_shows_login_signup_links_for_anonymous_users(self):
+        assert "login.html" in self.content, \
+            "auth.js must show a login link for anonymous users"
+        assert "signup.html" in self.content, \
+            "auth.js must show a signup link for anonymous users"
+        assert "GUEST" in self.content, \
+            "auth.js must show GUEST badge for anonymous users"
+
     def test_reads_config(self):
         assert "MHA_CONFIG" in self.content
 

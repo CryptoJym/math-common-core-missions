@@ -88,24 +88,35 @@ async function initAuthUI(requireLogin = false) {
     return;
   }
 
-  if (!session) return;
-
-  const profile = await getProfile();
-  const displayName = profile?.display_name || session.user.email;
-  const hunterRank = profile?.hunter_rank || 'E-Rank';
-  const xp = profile?.xp_total || 0;
-
   // Create user nav element
   const userNav = document.createElement('div');
   userNav.className = 'user-nav';
-  userNav.innerHTML = `
-    <div class="user-nav-info">
-      <span class="user-nav-rank">${hunterRank}</span>
-      <span class="user-nav-name">${displayName}</span>
-      <span class="user-nav-xp">${xp} XP</span>
-    </div>
-    <button class="user-nav-logout" onclick="signOut()">Logout</button>
-  `;
+
+  if (!session) {
+    // Show login/signup links for anonymous users
+    userNav.innerHTML = `
+      <div class="user-nav-info">
+        <span class="user-nav-rank" style="background: linear-gradient(135deg, #444, #666);">GUEST</span>
+        <span style="color: var(--text-secondary); font-size: 0.9em;">Progress won't be saved</span>
+      </div>
+      <a href="login.html" class="user-nav-login">Login</a>
+      <a href="signup.html" class="user-nav-login" style="border-color: var(--accent-green); color: var(--accent-green);">Sign Up</a>
+    `;
+  } else {
+    const profile = await getProfile();
+    const displayName = profile?.display_name || session.user.email;
+    const hunterRank = profile?.hunter_rank || 'E-Rank';
+    const xp = profile?.xp_total || 0;
+
+    userNav.innerHTML = `
+      <div class="user-nav-info">
+        <span class="user-nav-rank">${hunterRank}</span>
+        <span class="user-nav-name">${displayName}</span>
+        <span class="user-nav-xp">${xp} XP</span>
+      </div>
+      <button class="user-nav-logout" onclick="signOut()">Logout</button>
+    `;
+  }
 
   // Insert at top of body
   document.body.insertBefore(userNav, document.body.firstChild);
