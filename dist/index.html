@@ -781,7 +781,8 @@ body.has-user-nav {
             // Show Brady-only portal link for the Brady account.
             const session = await MHA_Auth.getSession();
             const email = String(session?.user?.email || '').trim().toLowerCase();
-            if (email === 'bradyhyro67@gmail.com') {
+            const allowed = ['bradyhyro67@gmail.com', 'james@jamesbrady.org'];
+            if (allowed.includes(email)) {
                 const portal = document.getElementById('bradyPortal');
                 if (portal) portal.style.display = 'block';
             }

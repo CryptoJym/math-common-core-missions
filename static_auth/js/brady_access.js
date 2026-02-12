@@ -8,10 +8,18 @@
  *      read/write Brady's private progress/journal tables.
  */
 
-const BRADY_EMAIL = 'bradyhyro67@gmail.com';
+const BRADY_ALLOWED_EMAILS = [
+  'bradyhyro67@gmail.com',
+  'james@jamesbrady.org',
+];
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
+}
+
+function isAllowedEmail(email) {
+  const normalized = normalizeEmail(email);
+  return BRADY_ALLOWED_EMAILS.includes(normalized);
 }
 
 function safeNextPath(raw) {
@@ -43,7 +51,7 @@ function bradyIndexUrl(extraParams = {}) {
 async function ensureAllowedStudentRow(session) {
   const sb = MHA_Auth.getSupabase();
   const email = normalizeEmail(session?.user?.email);
-  if (email !== BRADY_EMAIL) return;
+  if (!isAllowedEmail(email)) return;
 
   // This will succeed only for Brady because of RLS on allowed_students.
   const { error } = await sb.from('allowed_students').upsert({
@@ -67,7 +75,7 @@ async function requireBrady(opts = {}) {
   }
 
   const email = normalizeEmail(session.user.email);
-  if (email !== BRADY_EMAIL) {
+  if (!isAllowedEmail(email)) {
     window.location.href = bradyIndexUrl({ unauthorized: 1 });
     return null;
   }
@@ -84,12 +92,12 @@ async function copyTextFromEl(id) {
 }
 
 window.MHA_Brady = {
-  BRADY_EMAIL,
+  BRADY_ALLOWED_EMAILS,
   requireBrady,
   bradyLoginUrl,
   bradyIndexUrl,
   copyTextFromEl,
   normalizeEmail,
+  isAllowedEmail,
   safeNextPath,
 };
-
