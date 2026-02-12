@@ -189,6 +189,142 @@ async function clearDailyDraft(session, dayISO, practiceKind, assignmentId) {
   if (error) throw error;
 }
 
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const f = file;
+    if (!f) return reject(new Error('No file selected.'));
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error('File read failed.'));
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '');
+      const idx = dataUrl.indexOf(',');
+      const base64 = idx >= 0 ? dataUrl.slice(idx + 1) : '';
+      if (!base64) return reject(new Error('Unable to read file.'));
+      resolve(base64);
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+async function loadSectionArtifacts(session, dayISO, practiceKind, assignmentId) {
+  const sb = MHA_Auth.getSupabase();
+  const { data, error } = await sb
+    .from('brady_artifacts')
+    .select('id,practice_kind,assignment_id,filename,mime_type,size_bytes,created_at')
+    .eq('user_id', session.user.id)
+    .eq('day', dayISO)
+    .eq('practice_kind', practiceKind)
+    .eq('assignment_id', assignmentId)
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (error) throw error;
+  return data || [];
+}
+
+async function loadArtifactContent(session, artifactId) {
+  const sb = MHA_Auth.getSupabase();
+  const { data, error } = await sb
+    .from('brady_artifacts')
+    .select('id,filename,mime_type,content_base64')
+    .eq('user_id', session.user.id)
+    .eq('id', artifactId)
+    .limit(1);
+  if (error) throw error;
+  return (data && data[0]) ? data[0] : null;
+}
+
+async function deleteArtifact(session, artifactId) {
+  const sb = MHA_Auth.getSupabase();
+  const { error } = await sb
+    .from('brady_artifacts')
+    .delete()
+    .eq('user_id', session.user.id)
+    .eq('id', artifactId);
+  if (error) throw error;
+}
+
+function base64ToBlob(base64, mimeType) {
+  const binary = atob(String(base64 || ''));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mimeType || 'application/octet-stream' });
+}
+
+function renderArtifactsList(sectionKey, artifacts) {
+  const el = document.getElementById(`${sectionKey}UploadList`);
+  if (!el) return;
+
+  const rows = artifacts || [];
+  if (rows.length === 0) {
+    el.innerHTML = '<span style="color: var(--text-secondary);">No uploads yet.</span>';
+    return;
+  }
+
+  const fmtSize = (n) => {
+    const bytes = Number(n);
+    if (!Number.isFinite(bytes)) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${Math.round(bytes / (1024 * 1024) * 10) / 10} MB`;
+  };
+
+  el.innerHTML = `
+    <div style="display:grid; gap:8px;">
+      ${rows.map((r) => `
+        <div style="display:flex; gap:10px; align-items:center; justify-content:space-between;">
+          <div>
+            <span class="mono">${escapeHtml(formatLocalTime(r.created_at))}</span>
+            <span style="margin-left:8px;">${escapeHtml(r.filename)}</span>
+            <span style="margin-left:8px; color: var(--text-secondary);" class="mono">${escapeHtml(fmtSize(r.size_bytes))}</span>
+          </div>
+          <div class="btn-row" style="margin:0;">
+            <button class="btn secondary" type="button" data-open-artifact="${escapeHtml(r.id)}">Open</button>
+            <button class="btn danger" type="button" data-delete-artifact="${escapeHtml(r.id)}">Delete</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function bindArtifactsListHandlers(sectionKey, session, refresh) {
+  const el = document.getElementById(`${sectionKey}UploadList`);
+  if (!el) return;
+
+  Array.from(el.querySelectorAll('button[data-open-artifact]')).forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-open-artifact');
+      if (!id) return;
+      try {
+        const row = await loadArtifactContent(session, id);
+        if (!row) throw new Error('File not found.');
+        const blob = base64ToBlob(row.content_base64, row.mime_type);
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      } catch (e) {
+        setAlert(e?.message || 'Unable to open file.');
+      }
+    });
+  });
+
+  Array.from(el.querySelectorAll('button[data-delete-artifact]')).forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-delete-artifact');
+      if (!id) return;
+      try {
+        btn.disabled = true;
+        await deleteArtifact(session, id);
+        await refresh();
+      } catch (e) {
+        setAlert(e?.message || 'Delete failed.');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
 function findLatestPassingAttempt(attempts, kind, assignmentId, passPercent) {
   const pp = Number(passPercent || 80);
   for (const row of (attempts || [])) {
@@ -429,6 +565,22 @@ function renderQuizSection(sectionKey, title, subtitleHtml, quiz, seed, status) 
       <button class="btn" type="button" id="${escapeHtml(sectionKey)}Submit">Submit & Grade</button>
       <button class="btn secondary" type="button" id="${escapeHtml(sectionKey)}New">New Version</button>
     </div>
+
+    <div class="section" style="margin-top:14px;">
+      <h2>Upload Work (Optional)</h2>
+      <div class="small">Upload a photo or PDF of scratch work. Max 8 MB per file.</div>
+      <div class="field-row" style="margin-top:10px;">
+        <div>
+          <label for="${escapeHtml(sectionKey)}UploadFile">File</label>
+          <input id="${escapeHtml(sectionKey)}UploadFile" type="file" accept="application/pdf,image/*,text/plain">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn secondary" type="button" id="${escapeHtml(sectionKey)}UploadBtn">Upload</button>
+        <span class="small" id="${escapeHtml(sectionKey)}UploadMsg"></span>
+      </div>
+      <div class="small" id="${escapeHtml(sectionKey)}UploadList" style="margin-top:10px;"></div>
+    </div>
   `;
 }
 
@@ -659,6 +811,85 @@ function bindDraftAutosave(opts) {
   });
 
   return { saveNow, setStatus };
+}
+
+function bindUploadHandlers(opts) {
+  const {
+    session,
+    dayISO,
+    practiceKind,
+    assignmentId,
+    sectionKey,
+  } = opts;
+
+  const fileEl = document.getElementById(`${sectionKey}UploadFile`);
+  const uploadBtn = document.getElementById(`${sectionKey}UploadBtn`);
+  const msgEl = document.getElementById(`${sectionKey}UploadMsg`);
+
+  const setMsg = (msg) => { if (msgEl) msgEl.textContent = msg || ''; };
+
+  const refresh = async () => {
+    try {
+      const rows = await loadSectionArtifacts(session, dayISO, practiceKind, assignmentId);
+      renderArtifactsList(sectionKey, rows);
+      bindArtifactsListHandlers(sectionKey, session, refresh);
+    } catch (e) {
+      renderArtifactsList(sectionKey, []);
+      setMsg(e?.message || 'Unable to load uploads.');
+    }
+  };
+
+  if (!assignmentId) {
+    if (uploadBtn) uploadBtn.disabled = true;
+    if (fileEl) fileEl.disabled = true;
+    setMsg('Uploads unavailable: missing assignment id.');
+    return;
+  }
+
+  void refresh();
+
+  if (uploadBtn) {
+    uploadBtn.addEventListener('click', async () => {
+      setAlert('');
+      setMsg('');
+      const file = fileEl?.files?.[0] || null;
+      if (!file) {
+        setMsg('Select a file first.');
+        return;
+      }
+
+      if (Number(file.size) > 8_000_000) {
+        setMsg('File is too large. Max 8 MB.');
+        return;
+      }
+
+      uploadBtn.disabled = true;
+      setMsg('Uploading…');
+      try {
+        const base64 = await readFileAsBase64(file);
+        const sb = MHA_Auth.getSupabase();
+        const { error } = await sb.from('brady_artifacts').insert({
+          user_id: session.user.id,
+          day: dayISO,
+          practice_kind: practiceKind,
+          assignment_id: assignmentId,
+          filename: file.name || 'upload',
+          mime_type: file.type || 'application/octet-stream',
+          size_bytes: Number(file.size) || 0,
+          content_base64: base64,
+        });
+        if (error) throw error;
+
+        if (fileEl) fileEl.value = '';
+        setMsg('Uploaded.');
+        await refresh();
+      } catch (e) {
+        setMsg(e?.message || 'Upload failed.');
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    });
+  }
 }
 
 function bindQuizSectionHandlers(opts) {
@@ -1019,6 +1250,35 @@ async function main() {
       quiz: aiQuizLive,
     });
     if (aiRestored.restored > 0) aiAutosave.setStatus(`Draft restored (${aiRestored.restored} answered).`);
+
+    bindUploadHandlers({
+      session: gate.session,
+      dayISO,
+      practiceKind: 'daily_warmup',
+      assignmentId: warmupAssignmentId,
+      sectionKey: 'warmup',
+    });
+    bindUploadHandlers({
+      session: gate.session,
+      dayISO,
+      practiceKind: 'daily_target',
+      assignmentId: targetAssignmentId,
+      sectionKey: 'target',
+    });
+    bindUploadHandlers({
+      session: gate.session,
+      dayISO,
+      practiceKind: 'daily_mixed',
+      assignmentId: mixedAssignmentId,
+      sectionKey: 'mixed',
+    });
+    bindUploadHandlers({
+      session: gate.session,
+      dayISO,
+      practiceKind: 'daily_ai',
+      assignmentId: aiAssignmentId,
+      sectionKey: 'ai',
+    });
 
     bindQuizSectionHandlers({
       session: gate.session,
