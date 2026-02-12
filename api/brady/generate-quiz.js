@@ -319,7 +319,7 @@ async function handler(req, res) {
     }
 
     const prompt = buildQuizPrompt({ assignment, passPercent, focusTags, latestScorePercent });
-    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    const model = process.env.OPENAI_MODEL || 'gpt-5.2';
     const quiz = await callOpenAIForQuiz({ model, prompt });
 
     // Force pass percent to match the assignment (do not let the model change it).
@@ -360,4 +360,3 @@ module.exports._internal = {
   buildQuizPrompt,
   validateGeneratedQuiz,
 };
-
