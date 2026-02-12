@@ -29,6 +29,135 @@ function setAlert(msg) {
   el.style.display = 'block';
 }
 
+const LOCKOUT_DAYS = 3;
+const LOCKOUT_MS = LOCKOUT_DAYS * 24 * 60 * 60 * 1000;
+let lockoutTimerId = null;
+
+function formatCountdown(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
+function computeLockedUntil(latestAttempt, passPercent) {
+  if (!latestAttempt) return null;
+  const score = Number(latestAttempt.score_percent);
+  if (!Number.isFinite(score)) return null;
+  if (score >= Number(passPercent)) return null;
+
+  const t = latestAttempt.attempted_at ? new Date(latestAttempt.attempted_at).getTime() : NaN;
+  if (!Number.isFinite(t)) return null;
+  return new Date(t + LOCKOUT_MS);
+}
+
+function computeFocusTagsFromAttempt(attempt, assignment) {
+  const out = {};
+  const results = attempt?.results && typeof attempt.results === 'object' ? attempt.results : null;
+  if (!results) return out;
+
+  const addTag = (tag) => {
+    const k = String(tag || '').trim();
+    if (!k) return;
+    out[k] = (out[k] || 0) + 1;
+  };
+
+  // Preferred: tags were saved with each question result.
+  for (const [qid, r] of Object.entries(results)) {
+    void qid;
+    if (!r || typeof r !== 'object') continue;
+    if (r.correct !== false) continue;
+    const tags = Array.isArray(r.tags) ? r.tags : [];
+    tags.forEach(addTag);
+  }
+
+  const hasAny = Object.keys(out).length > 0;
+  if (hasAny) return out;
+
+  // Fallback: reconstruct the quiz from the attempt seed and read tags from questions.
+  const seed = Number(attempt?.seed);
+  if (!Number.isFinite(seed)) return out;
+  try {
+    const quiz = BRADY_QUIZ.buildQuiz(assignment, seed);
+    const byId = {};
+    for (const q of (quiz.questions || [])) byId[q.id] = q;
+    for (const [qid, r] of Object.entries(results)) {
+      if (!r || typeof r !== 'object') continue;
+      if (r.correct !== false) continue;
+      const q = byId[qid];
+      const tags = Array.isArray(q?.tags) ? q.tags : [];
+      tags.forEach(addTag);
+    }
+  } catch (_) {
+    // no-op
+  }
+  return out;
+}
+
+function buildAgentPromptText(assignment, passPercent, latestAttempt, focusTags) {
+  const standards = (assignment?.standards || []).join(', ');
+  const focusLines = Object.entries(focusTags || {})
+    .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+    .slice(0, 8)
+    .map(([k, v]) => `- ${k}: missed in ${v} question(s)`)
+    .join('\n');
+
+  const score = Number(latestAttempt?.score_percent);
+  const when = latestAttempt?.attempted_at ? new Date(latestAttempt.attempted_at).toLocaleString() : '';
+
+  return [
+    'You are an expert tutor and curriculum designer.',
+    '',
+    `Create a brand-new auto-graded quiz for this assignment: "${assignment?.title || assignment?.id}".`,
+    standards ? `Standards: ${standards}` : 'Standards: (not provided)',
+    assignment?.learningTargets?.length ? `Learning targets:\n- ${assignment.learningTargets.join('\n- ')}` : 'Learning targets: (not provided)',
+    '',
+    Number.isFinite(score) ? `Most recent attempt: ${score}% (pass >= ${passPercent}%) at ${when}` : `Pass threshold: ${passPercent}%`,
+    '',
+    'The student missed these skill tags (highest priority first):',
+    focusLines || '- (no tag data available; generate a balanced version)',
+    '',
+    'Requirements:',
+    '- Output EXACTLY 10 questions.',
+    '- Each question must be auto-gradable and include an answer key.',
+    '- For each question include: id (q1..q10), type (mc|number|fraction|set_numbers|expanded_sum), prompt, choices (if mc), answer, explanation, tags.',
+    '- Keep wording clear; no trick questions.',
+    '- Make it similar difficulty to the original assignment, but focus on the missed tags.',
+    '',
+    'Return only JSON (no markdown).',
+  ].join('\n');
+}
+
+async function copyToClipboard(text) {
+  const s = String(text || '');
+  if (!s) return false;
+  try {
+    await navigator.clipboard.writeText(s);
+    return true;
+  } catch (_) {
+    // Fallback
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = s;
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return Boolean(ok);
+    } catch (_) {
+      return false;
+    }
+  }
+}
+
 function parseFractionInput(raw) {
   const s = String(raw || '').trim();
   if (!s) return null;
@@ -267,6 +396,135 @@ function renderResults(summary) {
   `;
 }
 
+function setQuestionInputValue(q, rawValue) {
+  const id = `ans_${q.id}`;
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  const v = rawValue == null ? '' : String(rawValue);
+  el.value = v;
+}
+
+function setQuizInputsDisabled(quiz, disabled) {
+  for (const q of (quiz.questions || [])) {
+    const id = `ans_${q.id}`;
+    const el = document.getElementById(id);
+    if (el) el.disabled = Boolean(disabled);
+  }
+}
+
+function applyStoredFeedback(quiz, storedResults) {
+  const results = storedResults && typeof storedResults === 'object' ? storedResults : {};
+  for (const q of (quiz.questions || [])) {
+    const r = results[q.id];
+    if (!r || typeof r !== 'object') continue;
+    const feedbackEl = document.getElementById(`feedback_${q.id}`);
+    if (!feedbackEl) continue;
+
+    const correct = r.correct === true;
+    if (correct) {
+      feedbackEl.innerHTML = `<span style="color: var(--accent-green);">Correct.</span>`;
+    } else {
+      const expected = r.expected != null ? String(r.expected) : '';
+      const explanation = r.explanation != null ? String(r.explanation) : '';
+      feedbackEl.innerHTML = `<span style="color: var(--accent-red);">Incorrect.</span> Expected: <span class="mono">${escapeHtml(expected)}</span>${explanation ? `<div class="small" style="margin-top:6px;">${escapeHtml(explanation)}</div>` : ''}`;
+    }
+  }
+}
+
+function renderLockoutPanel(assignment, passPercent, latestAttempt, lockedUntil, focusTags) {
+  const el = document.getElementById('resultsContainer');
+  if (!el) return;
+
+  const score = Number(latestAttempt?.score_percent);
+  const attemptedAt = latestAttempt?.attempted_at ? new Date(latestAttempt.attempted_at).toLocaleString() : '';
+  const unlockAt = lockedUntil ? lockedUntil.toLocaleString() : '';
+
+  const focusHtml = Object.entries(focusTags || {})
+    .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+    .slice(0, 10)
+    .map(([k, v]) => `<span class="pill mono">${escapeHtml(k)}:${escapeHtml(v)}</span>`)
+    .join('');
+
+  const agentPrompt = buildAgentPromptText(assignment, passPercent, latestAttempt, focusTags);
+
+  el.style.display = 'block';
+  el.innerHTML = `
+    <h2>Lockout</h2>
+    <div class="small">
+      ${Number.isFinite(score) ? `Most recent score: <span class="mono">${escapeHtml(score)}</span>% (pass >= <span class="mono">${escapeHtml(passPercent)}</span>%)` : ''}
+      ${attemptedAt ? ` on <span class="mono">${escapeHtml(attemptedAt)}</span>.` : ''}
+      ${unlockAt ? ` Locked until <span class="mono">${escapeHtml(unlockAt)}</span>.` : ''}
+    </div>
+    <div class="pill-row" style="margin-top:10px;">
+      ${focusHtml || '<span class="pill">No focus tags available</span>'}
+    </div>
+    <div class="section" style="margin-top:14px;">
+      <h2>What To Do During Lockout</h2>
+      <div class="btn-row">
+        <a class="btn secondary" href="daily.html" style="text-decoration:none; display:inline-flex; align-items:center;">Daily Training</a>
+        <a class="btn secondary" href="reading.html" style="text-decoration:none; display:inline-flex; align-items:center;">Reading Log</a>
+        <a class="btn secondary" href="assignments.html" style="text-decoration:none; display:inline-flex; align-items:center;">Assignments</a>
+      </div>
+    </div>
+    <div class="ai-box">
+      <h4>Agent Prompt (Paste Into ChatGPT / Claude / Codex)</h4>
+      <textarea class="ai-prompt mono" id="agentPromptText" readonly></textarea>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn secondary" type="button" id="copyAgentPrompt">Copy Prompt</button>
+        <span class="small" id="copyAgentPromptMsg"></span>
+      </div>
+    </div>
+  `;
+
+  const ta = document.getElementById('agentPromptText');
+  if (ta) ta.value = agentPrompt;
+  const copyBtn = document.getElementById('copyAgentPrompt');
+  const copyMsg = document.getElementById('copyAgentPromptMsg');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      const ok = await copyToClipboard(agentPrompt);
+      if (copyMsg) copyMsg.textContent = ok ? 'Copied.' : 'Copy failed.';
+    });
+  }
+}
+
+function startLockoutCountdown(passPercent, latestAttempt, lockedUntil) {
+  if (lockoutTimerId) {
+    clearInterval(lockoutTimerId);
+    lockoutTimerId = null;
+  }
+
+  if (!lockedUntil) return;
+  const unlockAt = lockedUntil.getTime();
+  if (!Number.isFinite(unlockAt)) return;
+
+  const score = Number(latestAttempt?.score_percent);
+
+  const tick = () => {
+    const now = Date.now();
+    const remaining = unlockAt - now;
+    if (remaining <= 0) {
+      setAlert('');
+      if (lockoutTimerId) {
+        clearInterval(lockoutTimerId);
+        lockoutTimerId = null;
+      }
+      return;
+    }
+    const when = lockedUntil.toLocaleString();
+    const parts = [];
+    parts.push('LOCKED');
+    if (Number.isFinite(score)) parts.push(`score ${score}%`);
+    parts.push(`unlock in ${formatCountdown(remaining)}`);
+    parts.push(`(${when})`);
+    setAlert(parts.join(' | '));
+  };
+
+  tick();
+  lockoutTimerId = setInterval(tick, 1000);
+}
+
 async function loadAttemptHistory(session, assignmentId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
@@ -278,6 +536,19 @@ async function loadAttemptHistory(session, assignmentId) {
     .limit(10);
   if (error) throw error;
   return data || [];
+}
+
+async function loadLatestAttempt(session, assignmentId) {
+  const sb = MHA_Auth.getSupabase();
+  const { data, error } = await sb
+    .from('brady_assignment_attempts')
+    .select('attempted_at,score_percent,correct_questions,total_questions,seed,answers,results')
+    .eq('user_id', session.user.id)
+    .eq('assignment_id', assignmentId)
+    .order('attempted_at', { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  return (data && data[0]) ? data[0] : null;
 }
 
 function renderAttemptHistory(rows) {
@@ -388,14 +659,41 @@ async function main() {
       return;
     }
 
+    const passPercent = Number(a.passPercent || 80);
+
+    let latestAttempt = null;
+    try {
+      latestAttempt = await loadLatestAttempt(gate.session, a.id);
+    } catch (_) {
+      // It's OK if the attempts table doesn't exist yet.
+      latestAttempt = null;
+    }
+
+    const lockedUntil = computeLockedUntil(latestAttempt, passPercent);
+    const isLocked = Boolean(lockedUntil && Date.now() < lockedUntil.getTime());
+
+    let focusTags = {};
+    if (latestAttempt && Number(latestAttempt.score_percent) < passPercent) {
+      focusTags = computeFocusTagsFromAttempt(latestAttempt, a);
+    }
+
     // Seed: allow specifying in URL for repeatability.
     const seedRaw = url.searchParams.get('seed');
     let seed = Number(seedRaw);
+    if (isLocked) {
+      const attemptSeed = Number(latestAttempt?.seed);
+      if (Number.isFinite(attemptSeed)) seed = attemptSeed;
+    }
     if (!Number.isFinite(seed)) {
       seed = (Date.now() & 0xffffffff) >>> 0;
     }
 
-    const quiz = BRADY_QUIZ.buildQuiz(a, seed);
+    const quizOptions = (!isLocked && Object.keys(focusTags).length > 0)
+      ? { focusTags }
+      : undefined;
+    const quiz = isLocked
+      ? BRADY_QUIZ.buildQuiz(a, seed)
+      : BRADY_QUIZ.buildQuiz(a, seed, quizOptions);
 
     document.title = `${a.title} | Math Hunter Academy`;
     const titleEl = document.getElementById('assignmentTitle');
@@ -418,73 +716,136 @@ async function main() {
     const retakeBtn = document.getElementById('retakeQuiz');
     const submitMsg = document.getElementById('submitMsg');
 
-    if (retakeBtn) {
-      retakeBtn.addEventListener('click', () => {
-        const nextSeed = (Date.now() & 0xffffffff) >>> 0;
-        window.location.href = `assignment.html?id=${encodeURIComponent(a.id)}&seed=${encodeURIComponent(nextSeed)}`;
-      });
-    }
+    if (isLocked) {
+      // Review mode: show the last attempt and lock out retakes.
+      const attemptAnswers = latestAttempt?.answers && typeof latestAttempt.answers === 'object' ? latestAttempt.answers : {};
+      for (const q of (quiz.questions || [])) setQuestionInputValue(q, attemptAnswers[q.id]);
+      setQuizInputsDisabled(quiz, true);
+      applyStoredFeedback(quiz, latestAttempt?.results);
 
-    if (submitBtn) {
-      submitBtn.addEventListener('click', async () => {
-        setAlert('');
-        if (submitMsg) submitMsg.textContent = 'Grading…';
-        submitBtn.disabled = true;
+      if (submitBtn) submitBtn.style.display = 'none';
+      if (retakeBtn) retakeBtn.style.display = 'none';
+      if (submitMsg) submitMsg.textContent = '';
 
-        try {
-          const answers = {};
-          const results = {};
-          let correct = 0;
+      renderLockoutPanel(a, passPercent, latestAttempt, lockedUntil, focusTags);
+      startLockoutCountdown(passPercent, latestAttempt, lockedUntil);
+    } else {
+      // If we were previously counting down, stop.
+      if (lockoutTimerId) {
+        clearInterval(lockoutTimerId);
+        lockoutTimerId = null;
+      }
 
-          for (const q of quiz.questions) {
-            const raw = getAnswerFromDom(q);
-            answers[q.id] = raw;
-            const r = gradeQuestion(q, raw);
-            results[q.id] = r;
-            if (r.correct) correct++;
+      // Optional hint: this version is adaptive if last attempt failed.
+      if (submitMsg && latestAttempt && Number(latestAttempt.score_percent) < passPercent && Object.keys(focusTags).length > 0) {
+        submitMsg.textContent = `Adaptive version (focus: ${Object.keys(focusTags).slice(0, 4).join(', ')})`;
+      }
 
-            const feedbackEl = document.getElementById(`feedback_${q.id}`);
-            if (feedbackEl) {
-              if (r.correct) {
-                feedbackEl.innerHTML = `<span style="color: var(--accent-green);">Correct.</span>`;
-              } else {
-                feedbackEl.innerHTML = `<span style="color: var(--accent-red);">Incorrect.</span> Expected: <span class="mono">${escapeHtml(r.expected)}</span>${r.explanation ? `<div class="small" style="margin-top:6px;">${escapeHtml(r.explanation)}</div>` : ''}`;
+      if (retakeBtn) {
+        retakeBtn.addEventListener('click', () => {
+          const nextSeed = (Date.now() & 0xffffffff) >>> 0;
+          window.location.href = `assignment.html?id=${encodeURIComponent(a.id)}&seed=${encodeURIComponent(nextSeed)}`;
+        });
+      }
+
+      if (submitBtn) {
+        submitBtn.addEventListener('click', async () => {
+          setAlert('');
+          if (submitMsg) submitMsg.textContent = 'Grading…';
+          submitBtn.disabled = true;
+
+          try {
+            const answers = {};
+            const results = {};
+            let correct = 0;
+            const missing = [];
+
+            for (let idx = 0; idx < quiz.questions.length; idx++) {
+              const q = quiz.questions[idx];
+              const raw = getAnswerFromDom(q);
+              answers[q.id] = raw;
+
+              const isMissing = raw == null || String(raw).trim() === '';
+              if (isMissing) {
+                missing.push(idx + 1);
+                continue;
+              }
+
+              const r = gradeQuestion(q, raw);
+              results[q.id] = { ...r, tags: q.tags || [] };
+              if (r.correct) correct++;
+
+              const feedbackEl = document.getElementById(`feedback_${q.id}`);
+              if (feedbackEl) {
+                if (r.correct) {
+                  feedbackEl.innerHTML = `<span style="color: var(--accent-green);">Correct.</span>`;
+                } else {
+                  feedbackEl.innerHTML = `<span style="color: var(--accent-red);">Incorrect.</span> Expected: <span class="mono">${escapeHtml(r.expected)}</span>${r.explanation ? `<div class="small" style="margin-top:6px;">${escapeHtml(r.explanation)}</div>` : ''}`;
+                }
               }
             }
+
+            if (missing.length > 0) {
+              setAlert(`Answer every question before submitting. Missing: ${missing.map((n) => `#${n}`).join(', ')}`);
+              if (submitMsg) submitMsg.textContent = '';
+              return;
+            }
+
+            const total = quiz.questions.length;
+            const scorePercent = Math.round((correct / total) * 100);
+            const passed = scorePercent >= quiz.passPercent;
+
+            const summary = {
+              assignmentId: a.id,
+              seed,
+              passPercent: quiz.passPercent,
+              totalQuestions: total,
+              correctQuestions: correct,
+              scorePercent,
+              passed,
+            };
+
+            renderResults(summary);
+
+            // Save attempt + update mastery.
+            await saveAttempt(gate.session, a.id, seed, summary, answers, results);
+            await upsertProgressFromScore(gate.session, a.id, scorePercent, quiz.passPercent);
+
+            // Refresh history UI.
+            const history = await loadAttemptHistory(gate.session, a.id);
+            renderAttemptHistory(history);
+
+            if (passed) {
+              if (submitMsg) submitMsg.textContent = 'Saved. Mastered.';
+              return;
+            }
+
+            // If not passed, lock out and show the lockout panel based on the actual saved row.
+            let latest = null;
+            try {
+              latest = await loadLatestAttempt(gate.session, a.id);
+            } catch (_) {
+              latest = null;
+            }
+
+            const lu = computeLockedUntil(latest, quiz.passPercent);
+            const ft = computeFocusTagsFromAttempt(latest || { seed, results }, a);
+
+            setQuizInputsDisabled(quiz, true);
+            if (submitBtn) submitBtn.style.display = 'none';
+            if (retakeBtn) retakeBtn.style.display = 'none';
+            if (submitMsg) submitMsg.textContent = '';
+
+            renderLockoutPanel(a, quiz.passPercent, latest || { score_percent: scorePercent, attempted_at: new Date().toISOString() }, lu || new Date(Date.now() + LOCKOUT_MS), ft);
+            startLockoutCountdown(quiz.passPercent, latest || { score_percent: scorePercent, attempted_at: new Date().toISOString() }, lu || new Date(Date.now() + LOCKOUT_MS));
+          } catch (e) {
+            setAlert(e?.message || 'Save failed. (If this is the first time, the attempts table may not be installed yet.)');
+            if (submitMsg) submitMsg.textContent = '';
+          } finally {
+            submitBtn.disabled = false;
           }
-
-          const total = quiz.questions.length;
-          const scorePercent = Math.round((correct / total) * 100);
-          const passed = scorePercent >= quiz.passPercent;
-
-          const summary = {
-            assignmentId: a.id,
-            seed,
-            passPercent: quiz.passPercent,
-            totalQuestions: total,
-            correctQuestions: correct,
-            scorePercent,
-            passed,
-          };
-
-          renderResults(summary);
-
-          // Save attempt + update mastery.
-          await saveAttempt(gate.session, a.id, seed, summary, answers, results);
-          await upsertProgressFromScore(gate.session, a.id, scorePercent, quiz.passPercent);
-
-          // Refresh history UI.
-          const history = await loadAttemptHistory(gate.session, a.id);
-          renderAttemptHistory(history);
-
-          if (submitMsg) submitMsg.textContent = passed ? 'Saved. Mastered.' : 'Saved. Not mastered yet.';
-        } catch (e) {
-          setAlert(e?.message || 'Save failed. (If this is the first time, the attempts table may not be installed yet.)');
-          if (submitMsg) submitMsg.textContent = '';
-        } finally {
-          submitBtn.disabled = false;
-        }
-      });
+        });
+      }
     }
 
     // Auto-scroll to quiz top on load.
@@ -501,4 +862,3 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', main);
-
