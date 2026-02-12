@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reading & Journal | Math Hunter Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="brady.css">
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <h1>Reading & Journal</h1>
+      <p>Track minutes and write what the reading changed in you today</p>
+    </div>
+
+    <div id="alert" class="alert" style="display:none;"></div>
+
+    <div class="section">
+      <h2>Log Today</h2>
+      <div class="field-row">
+        <div>
+          <label for="day">Date</label>
+          <input id="day" type="date">
+        </div>
+        <div>
+          <label for="book">Book</label>
+          <select id="book"></select>
+        </div>
+        <div>
+          <label for="minutes">Minutes</label>
+          <input id="minutes" type="number" min="0" max="600" step="5" placeholder="e.g. 20">
+        </div>
+        <div>
+          <label for="journal">Journal (what you felt and how it impacted you)</label>
+          <textarea id="journal" placeholder="What did you read? What did it make you think/feel? What will you do differently today because of it?"></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" type="button" id="saveReading">Save</button>
+        <button class="btn secondary" type="button" id="fillPrompt">AI Reflection Prompt</button>
+      </div>
+
+      <div class="ai-box" id="aiBox" style="display:none;">
+        <h4>AI Co-Learning (Reading)</h4>
+        <div class="small">
+          Use this to learn the book deeper and also learn how to “ask AI the right way.”
+        </div>
+        <div style="margin-top:10px;">
+          <label>ChatGPT Web App Prompt</label>
+          <textarea class="ai-prompt" id="chatgptPrompt" readonly></textarea>
+          <div class="btn-row">
+            <button class="btn secondary" type="button" data-copy="chatgptPrompt">Copy</button>
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <label>Codex CLI Prompt</label>
+          <textarea class="ai-prompt" id="codexPrompt" readonly></textarea>
+          <div class="btn-row">
+            <button class="btn secondary" type="button" data-copy="codexPrompt">Copy</button>
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <label>Claude Code Prompt</label>
+          <textarea class="ai-prompt" id="claudePrompt" readonly></textarea>
+          <div class="btn-row">
+            <button class="btn secondary" type="button" data-copy="claudePrompt">Copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>History</h2>
+      <div id="readingSummary" class="small">Loading…</div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Book</th>
+            <th>Minutes</th>
+            <th>Journal</th>
+          </tr>
+        </thead>
+        <tbody id="readingRows"></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Back</h2>
+      <div class="btn-row">
+        <a class="btn secondary" href="index.html" style="text-decoration:none; display:inline-flex; align-items:center;">← Brady HQ</a>
+        <a class="btn secondary" href="../index.html" style="text-decoration:none; display:inline-flex; align-items:center;">🏰 Main HQ</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/brady_access.js"></script>
+  <script src="../js/brady_reading.js"></script>
+</body>
+</html>
+

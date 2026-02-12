@@ -155,9 +155,20 @@
         font-size: 0.95em;
     }
 
+    .auth-success {
+        background: rgba(0, 255, 136, 0.15);
+        border: 1px solid var(--accent-green);
+        border-radius: 8px;
+        padding: 12px 16px;
+        color: var(--accent-green);
+        margin-bottom: 20px;
+        display: none;
+        font-size: 0.95em;
+    }
+
     .auth-links {
         text-align: center;
-        margin-top: 25px;
+        margin-top: 18px;
     }
 
     .auth-links a {
@@ -185,6 +196,31 @@
     .guest-link:hover {
         color: var(--text-primary);
     }
+
+    .auth-secondary-btn {
+        width: 100%;
+        padding: 10px 14px;
+        margin-top: 12px;
+        background: rgba(76, 201, 240, 0.08);
+        color: var(--accent-blue);
+        border: 1px solid rgba(76, 201, 240, 0.4);
+        border-radius: 8px;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 0.95em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .auth-secondary-btn:hover {
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 10px rgba(76, 201, 240, 0.35);
+    }
+
+    .auth-secondary-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
     </style>
 </head>
 <body>
@@ -196,6 +232,7 @@
             </div>
 
             <div class="auth-error" id="authError"></div>
+            <div class="auth-success" id="authSuccess"></div>
 
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
@@ -211,8 +248,12 @@
                 <button type="submit" class="auth-btn" id="submitBtn">Enter the Gate</button>
             </form>
 
+            <button type="button" class="auth-secondary-btn" id="resendBtn" onclick="handleResendConfirmation()">
+                Resend confirmation email
+            </button>
+
             <div class="auth-links">
-                <p>New Hunter? <a href="signup.html">Register at the Guild</a></p>
+                <p>New Hunter? <a id="signupLink" href="signup.html">Register at the Guild</a></p>
             </div>
 
             <a href="index.html" class="guest-link">Continue as Guest (progress won't be saved)</a>
@@ -225,15 +266,46 @@
     <script>
         // If already logged in, redirect to index
         (async () => {
+            const url = new URL(window.location.href);
+            const safeNext = (raw) => {
+                const value = (raw || '').trim();
+                if (!value) return '';
+                if (value.includes('://') || value.startsWith('//')) return '';
+                if (value.toLowerCase().startsWith('javascript:')) return '';
+                return value;
+            };
+            const next = safeNext(url.searchParams.get('next'));
+            const signupLink = document.getElementById('signupLink');
+            if (signupLink && next) {
+                signupLink.href = `signup.html?next=${encodeURIComponent(next)}`;
+            }
+
+            const errorEl = document.getElementById('authError');
+            const successEl = document.getElementById('authSuccess');
+            const redirectState = await MHA_Auth.processAuthRedirect();
+
+            if (redirectState.error) {
+                errorEl.textContent = MHA_Auth.getFriendlyAuthMessage(redirectState.error, 'login');
+                errorEl.style.display = 'block';
+            } else if (redirectState.confirmed) {
+                successEl.textContent = 'Email confirmed. You can sign in now.';
+                successEl.style.display = 'block';
+            }
+
+            MHA_Auth.clearAuthRedirectParams();
             const session = await MHA_Auth.getSession();
-            if (session) window.location.href = 'index.html';
+            if (session) {
+                window.location.href = next || 'index.html';
+            }
         })();
 
         async function handleLogin(e) {
             e.preventDefault();
             const errorEl = document.getElementById('authError');
+            const successEl = document.getElementById('authSuccess');
             const btn = document.getElementById('submitBtn');
             errorEl.style.display = 'none';
+            successEl.style.display = 'none';
             btn.disabled = true;
             btn.textContent = 'Entering...';
 
@@ -241,12 +313,45 @@
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 await MHA_Auth.signIn(email, password);
-                window.location.href = 'index.html';
+                const url = new URL(window.location.href);
+                const rawNext = url.searchParams.get('next');
+                const next = (rawNext && !rawNext.includes('://') && !rawNext.startsWith('//')) ? rawNext : '';
+                window.location.href = next || 'index.html';
             } catch (err) {
-                errorEl.textContent = err.message || 'Login failed. Check your credentials.';
+                errorEl.textContent = MHA_Auth.getFriendlyAuthMessage(err, 'login');
                 errorEl.style.display = 'block';
                 btn.disabled = false;
                 btn.textContent = 'Enter the Gate';
+            }
+        }
+
+        async function handleResendConfirmation() {
+            const email = document.getElementById('email').value.trim();
+            const errorEl = document.getElementById('authError');
+            const successEl = document.getElementById('authSuccess');
+            const btn = document.getElementById('resendBtn');
+
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+
+            if (!email) {
+                errorEl.textContent = 'Enter your email above, then click resend.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            try {
+                await MHA_Auth.resendSignupConfirmation(email);
+                successEl.textContent = 'Confirmation email sent. Check your inbox/spam, then log in after confirming.';
+                successEl.style.display = 'block';
+            } catch (err) {
+                errorEl.textContent = MHA_Auth.getFriendlyAuthMessage(err, 'resend');
+                errorEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Resend confirmation email';
             }
         }
     </script>

@@ -220,7 +220,7 @@
             </form>
 
             <div class="auth-links">
-                <p>Already a Hunter? <a href="login.html">Enter the Gate</a></p>
+                <p>Already a Hunter? <a id="loginLink" href="login.html">Enter the Gate</a></p>
             </div>
         </div>
     </div>
@@ -231,8 +231,21 @@
     <script>
         // If already logged in, redirect to index
         (async () => {
+            const url = new URL(window.location.href);
+            const safeNext = (raw) => {
+                const value = (raw || '').trim();
+                if (!value) return '';
+                if (value.includes('://') || value.startsWith('//')) return '';
+                if (value.toLowerCase().startsWith('javascript:')) return '';
+                return value;
+            };
+            const next = safeNext(url.searchParams.get('next'));
+            const loginLink = document.getElementById('loginLink');
+            if (loginLink && next) {
+                loginLink.href = `login.html?next=${encodeURIComponent(next)}`;
+            }
             const session = await MHA_Auth.getSession();
-            if (session) window.location.href = 'index.html';
+            if (session) window.location.href = next || 'index.html';
         })();
 
         async function handleSignup(e) {
@@ -259,18 +272,22 @@
 
             try {
                 const data = await MHA_Auth.signUp(email, password, displayName);
+                const url = new URL(window.location.href);
+                const rawNext = url.searchParams.get('next');
+                const next = (rawNext && !rawNext.includes('://') && !rawNext.startsWith('//')) ? rawNext : '';
 
                 if (data.session) {
                     // Auto-confirmed, go to index
-                    window.location.href = 'index.html';
+                    window.location.href = next || 'index.html';
                 } else {
                     // Email confirmation required
-                    successEl.textContent = 'Registration complete! Check your email to confirm your Hunter ID, then log in.';
+                    const loginUrl = next ? `login.html?next=${encodeURIComponent(next)}` : 'login.html';
+                    successEl.innerHTML = `Registration complete. Check your email and click the confirmation link. Email can be delayed a few minutes. After confirming, return to <a href="${loginUrl}" style="color: var(--accent-blue);">login</a>.`;
                     successEl.style.display = 'block';
                     document.getElementById('signupForm').style.display = 'none';
                 }
             } catch (err) {
-                errorEl.textContent = err.message || 'Registration failed. Try again.';
+                errorEl.textContent = MHA_Auth.getFriendlyAuthMessage(err, 'signup');
                 errorEl.style.display = 'block';
                 btn.disabled = false;
                 btn.textContent = 'Awaken as a Hunter';

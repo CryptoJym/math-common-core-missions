@@ -16,6 +16,96 @@ function getSupabase() {
   return _supabase;
 }
 
+function getLoginRedirectUrl() {
+  const currentUrl = new URL(window.location.href);
+  const next = currentUrl.searchParams.get('next');
+  const loginUrl = new URL('login.html', currentUrl);
+  loginUrl.searchParams.set('confirmed', '1');
+  if (next) {
+    loginUrl.searchParams.set('next', next);
+  }
+  return loginUrl.toString();
+}
+
+function decodeAuthMessage(value) {
+  if (!value) return '';
+  try {
+    return decodeURIComponent(value.replace(/\+/g, ' '));
+  } catch (_) {
+    return value;
+  }
+}
+
+function getFriendlyAuthMessage(error, context = 'auth') {
+  const code = error?.code || error?.error_code || '';
+  const rawMessage = error?.message || '';
+  const normalized = rawMessage.toLowerCase();
+
+  if (code === 'invalid_credentials') {
+    return 'Email or password is incorrect, or this account is not confirmed yet.';
+  }
+  if (code === 'email_not_confirmed' || normalized.includes('email not confirmed')) {
+    return 'Your email is not confirmed yet. Check your inbox and click the confirmation link.';
+  }
+  if (code === 'over_email_send_rate_limit' || normalized.includes('email rate limit exceeded')) {
+    return 'Too many confirmation emails were requested. Please wait about a minute, then try again.';
+  }
+  if (code === 'otp_expired' || normalized.includes('otp') && normalized.includes('expired')) {
+    return 'This confirmation link expired. Request a new confirmation email and try again.';
+  }
+  if (context === 'resend' && !rawMessage) {
+    return 'Unable to resend confirmation email right now. Please try again shortly.';
+  }
+  return rawMessage || 'Authentication failed. Please try again.';
+}
+
+async function processAuthRedirect() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const code = searchParams.get('code');
+  let confirmed = false;
+  let error = null;
+
+  if (code) {
+    const { error: exchangeError } = await getSupabase().auth.exchangeCodeForSession(code);
+    if (exchangeError) {
+      error = exchangeError;
+    } else {
+      confirmed = true;
+    }
+  }
+
+  if (
+    searchParams.get('confirmed') === '1' ||
+    searchParams.get('type') === 'signup' ||
+    hashParams.get('type') === 'signup'
+  ) {
+    confirmed = true;
+  }
+
+  const redirectError =
+    searchParams.get('error_description') ||
+    hashParams.get('error_description') ||
+    searchParams.get('error') ||
+    hashParams.get('error');
+
+  if (!error && redirectError) {
+    error = { message: decodeAuthMessage(redirectError) };
+  }
+
+  return { confirmed, error };
+}
+
+function clearAuthRedirectParams() {
+  const url = new URL(window.location.href);
+  ['code', 'type', 'confirmed', 'error', 'error_description'].forEach((key) => {
+    url.searchParams.delete(key);
+  });
+  const cleanSearch = url.searchParams.toString();
+  const cleanUrl = `${url.pathname}${cleanSearch ? `?${cleanSearch}` : ''}`;
+  window.history.replaceState({}, document.title, cleanUrl);
+}
+
 /** Get current session, returns null if not logged in */
 async function getSession() {
   const { data: { session } } = await getSupabase().auth.getSession();
@@ -43,6 +133,7 @@ async function signUp(email, password, displayName) {
     email,
     password,
     options: {
+      emailRedirectTo: getLoginRedirectUrl(),
       data: { display_name: displayName }
     }
   });
@@ -60,6 +151,20 @@ async function signUp(email, password, displayName) {
   }
 
   return data;
+}
+
+/** Resend email confirmation for an account */
+async function resendSignupConfirmation(email) {
+  const targetEmail = String(email || '').trim();
+  if (!targetEmail) {
+    throw new Error('Enter your email address first.');
+  }
+  const { error } = await getSupabase().auth.resend({
+    type: 'signup',
+    email: targetEmail,
+    options: { emailRedirectTo: getLoginRedirectUrl() }
+  });
+  if (error) throw error;
 }
 
 /** Sign in with email and password */
@@ -123,4 +228,16 @@ async function initAuthUI(requireLogin = false) {
 }
 
 // Expose functions globally
-window.MHA_Auth = { getSupabase, getSession, getProfile, signUp, signIn, signOut, initAuthUI };
+window.MHA_Auth = {
+  getSupabase,
+  getSession,
+  getProfile,
+  signUp,
+  signIn,
+  signOut,
+  initAuthUI,
+  resendSignupConfirmation,
+  processAuthRedirect,
+  clearAuthRedirectParams,
+  getFriendlyAuthMessage
+};

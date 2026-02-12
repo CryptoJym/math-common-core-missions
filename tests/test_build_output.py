@@ -66,6 +66,24 @@ class TestDistStructure:
     def test_progress_js_exists(self):
         assert os.path.isfile(os.path.join(DIST_DIR, "js", "progress.js"))
 
+    def test_brady_pages_exist(self):
+        brady_dir = os.path.join(DIST_DIR, "brady")
+        assert os.path.isdir(brady_dir), "dist/brady/ directory must exist"
+        for name in ("index.html", "assignments.html", "daily.html", "reading.html", "brady.css"):
+            assert os.path.isfile(os.path.join(brady_dir, name)), f"dist/brady/{name} must exist"
+
+    def test_brady_js_exists(self):
+        js_dir = os.path.join(DIST_DIR, "js")
+        for name in (
+            "brady_access.js",
+            "brady_assignments.js",
+            "brady_assignments_ui.js",
+            "brady_daily.js",
+            "brady_dashboard.js",
+            "brady_reading.js",
+        ):
+            assert os.path.isfile(os.path.join(js_dir, name)), f"dist/js/{name} must exist"
+
 
 # ---------------------------------------------------------------------------
 # Test: static_auth source directory (survives rebuilds)
@@ -85,6 +103,24 @@ class TestStaticAuthSource:
         js_dir = os.path.join(STATIC_AUTH_DIR, "js")
         assert os.path.isdir(js_dir)
         for name in ("config.js", "auth.js", "progress.js"):
+            assert os.path.isfile(os.path.join(js_dir, name)), f"static_auth/js/{name} must exist"
+
+    def test_static_auth_has_brady_pages(self):
+        brady_dir = os.path.join(STATIC_AUTH_DIR, "brady")
+        assert os.path.isdir(brady_dir), "static_auth/brady/ directory must exist"
+        for name in ("index.html", "assignments.html", "daily.html", "reading.html", "brady.css"):
+            assert os.path.isfile(os.path.join(brady_dir, name)), f"static_auth/brady/{name} must exist"
+
+    def test_static_auth_has_brady_js_files(self):
+        js_dir = os.path.join(STATIC_AUTH_DIR, "js")
+        for name in (
+            "brady_access.js",
+            "brady_assignments.js",
+            "brady_assignments_ui.js",
+            "brady_daily.js",
+            "brady_dashboard.js",
+            "brady_reading.js",
+        ):
             assert os.path.isfile(os.path.join(js_dir, name)), f"static_auth/js/{name} must exist"
 
 
@@ -190,6 +226,43 @@ class TestMissionPages:
         assert "index.html" in hrefs, \
             f"mission_{num:02d}.html must link back to index.html"
 
+
+# ---------------------------------------------------------------------------
+# Test: Brady pages include auth + gating integration
+# ---------------------------------------------------------------------------
+
+class TestBradyPages:
+    @pytest.fixture(params=["index.html", "assignments.html", "daily.html", "reading.html"])
+    def page(self, request):
+        name = request.param
+        path = os.path.join(DIST_DIR, "brady", name)
+        content = read_file(path)
+        soup = parse_html(path)
+        return name, content, soup
+
+    def test_includes_supabase_sdk(self, page):
+        name, content, soup = page
+        scripts = [s.get("src", "") for s in soup.find_all("script")]
+        assert any("supabase" in src for src in scripts), \
+            f"brady/{name} must include Supabase SDK"
+
+    def test_includes_config_js(self, page):
+        name, content, soup = page
+        scripts = [s.get("src", "") for s in soup.find_all("script")]
+        assert any("config.js" in src for src in scripts), \
+            f"brady/{name} must include config.js"
+
+    def test_includes_auth_js(self, page):
+        name, content, soup = page
+        scripts = [s.get("src", "") for s in soup.find_all("script")]
+        assert any("auth.js" in src for src in scripts), \
+            f"brady/{name} must include auth.js"
+
+    def test_includes_brady_access_js(self, page):
+        name, content, soup = page
+        scripts = [s.get("src", "") for s in soup.find_all("script")]
+        assert any("brady_access.js" in src for src in scripts), \
+            f"brady/{name} must include brady_access.js"
 
 # ---------------------------------------------------------------------------
 # Test: Login page structure

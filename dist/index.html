@@ -622,6 +622,12 @@ body.has-user-nav {
             <a href="la_index.html" class="nav-btn" style="margin-top: 25px; display: inline-flex; background: linear-gradient(135deg, rgba(0, 212, 170, 0.2), rgba(76, 201, 240, 0.2)); border-color: #00d4aa;">
                 <span style="font-size: 1.2em;">📚</span> Language Arts Hunter Academy
             </a>
+
+            <div id="bradyPortal" style="display:none; margin-top: 14px;">
+                <a href="brady/index.html" class="nav-btn" style="display: inline-flex; background: linear-gradient(135deg, rgba(255, 215, 0, 0.16), rgba(123, 44, 191, 0.16)); border-color: rgba(255, 215, 0, 0.55);">
+                    <span style="font-size: 1.2em;">🧠</span> Brady Training HQ
+                </a>
+            </div>
         </div>
 
         
@@ -767,6 +773,14 @@ body.has-user-nav {
             await MHA_Auth.initAuthUI(false);
             document.body.classList.add('has-user-nav');
             await MHA_Progress.initIndexProgress();
+
+            // Show Brady-only portal link for the Brady account.
+            const session = await MHA_Auth.getSession();
+            const email = String(session?.user?.email || '').trim().toLowerCase();
+            if (email === 'bradyhyro67@gmail.com') {
+                const portal = document.getElementById('bradyPortal');
+                if (portal) portal.style.display = 'block';
+            }
         });
     </script>
 </body>

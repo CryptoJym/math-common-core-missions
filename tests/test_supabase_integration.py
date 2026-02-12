@@ -142,6 +142,50 @@ class TestMissionProgressTable:
 
 @pytest.mark.skipif(not HAS_REQUESTS, reason="requests library not available")
 @pytest.mark.skipif(not SUPABASE_URL, reason="Supabase config not found")
+class TestBradyPersonalizationTables:
+    def test_allowed_students_table_exists(self):
+        resp = supabase_rest_get("allowed_students", {"select": "user_id", "limit": "1"})
+        assert resp.status_code in (200, 401, 403), \
+            f"allowed_students table query returned unexpected status {resp.status_code}"
+
+    def test_allowed_students_rls_blocks_anon_reads(self):
+        resp = supabase_rest_get("allowed_students", {"select": "*"})
+        if resp.status_code == 200:
+            assert resp.json() == [], "RLS should prevent anonymous access to allowed_students"
+
+    def test_brady_assignment_progress_table_exists(self):
+        resp = supabase_rest_get("brady_assignment_progress", {"select": "id", "limit": "1"})
+        assert resp.status_code in (200, 401, 403), \
+            f"brady_assignment_progress table query returned unexpected status {resp.status_code}"
+
+    def test_brady_assignment_progress_rls_blocks_anon_reads(self):
+        resp = supabase_rest_get("brady_assignment_progress", {"select": "*"})
+        if resp.status_code == 200:
+            assert resp.json() == [], "RLS should prevent anonymous access to brady_assignment_progress"
+
+    def test_brady_daily_training_log_table_exists(self):
+        resp = supabase_rest_get("brady_daily_training_log", {"select": "id", "limit": "1"})
+        assert resp.status_code in (200, 401, 403), \
+            f"brady_daily_training_log table query returned unexpected status {resp.status_code}"
+
+    def test_brady_daily_training_log_rls_blocks_anon_reads(self):
+        resp = supabase_rest_get("brady_daily_training_log", {"select": "*"})
+        if resp.status_code == 200:
+            assert resp.json() == [], "RLS should prevent anonymous access to brady_daily_training_log"
+
+    def test_brady_reading_log_table_exists(self):
+        resp = supabase_rest_get("brady_reading_log", {"select": "id", "limit": "1"})
+        assert resp.status_code in (200, 401, 403), \
+            f"brady_reading_log table query returned unexpected status {resp.status_code}"
+
+    def test_brady_reading_log_rls_blocks_anon_reads(self):
+        resp = supabase_rest_get("brady_reading_log", {"select": "*"})
+        if resp.status_code == 200:
+            assert resp.json() == [], "RLS should prevent anonymous access to brady_reading_log"
+
+
+@pytest.mark.skipif(not HAS_REQUESTS, reason="requests library not available")
+@pytest.mark.skipif(not SUPABASE_URL, reason="Supabase config not found")
 class TestSupabaseAuth:
     def test_auth_endpoint_exists(self):
         """The GoTrue auth endpoint should be available."""

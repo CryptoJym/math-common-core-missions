@@ -23,3 +23,12 @@ node_modules/
 
 # OS specific
 .DS_Store
+.vercel
+.env*.local
+
+# Local caches (OCR render, etc.)
+.cache/
+
+# Python caches
+__pycache__/
+.pytest_cache/
