@@ -8,8 +8,14 @@ function loadRunner() {
   const filePath = path.join(__dirname, '..', 'static_auth', 'js', 'brady_assignment_runner.js');
   const code = fs.readFileSync(filePath, 'utf8');
 
+  const state = { reloadCount: 0 };
   const context = vm.createContext({
-    window: { location: { origin: 'https://example.com' } },
+    window: {
+      location: {
+        origin: 'https://example.com',
+        reload: () => { state.reloadCount += 1; },
+      },
+    },
     document: {
       addEventListener: () => {},
       getElementById: () => null,
@@ -26,6 +32,7 @@ function loadRunner() {
     clearInterval,
     Date,
     console,
+    __test: state,
   });
 
   vm.runInContext(code, context, { filename: filePath });
@@ -104,4 +111,28 @@ test('hasRenderableAttemptQuiz requires prompt/type and choices for mc', () => {
     },
   };
   assert.equal(ctx.hasRenderableAttemptQuiz(badAttempt), false);
+});
+
+test('isValidQuizShape rejects malformed mc choices and missing fields', () => {
+  const ctx = loadRunner();
+  const quiz = {
+    passPercent: 80,
+    title: 'Bad',
+    questions: Array.from({ length: 10 }, (_, i) => ({
+      id: `q${i + 1}`,
+      type: 'mc',
+      prompt: `Q${i + 1}`,
+      choices: 'AB', // invalid: must be array
+      answer: 'A',
+      explanation: 'ok',
+      tags: ['tag_one'],
+    })),
+  };
+  assert.equal(ctx.isValidQuizShape(JSON.parse(JSON.stringify(quiz))), false);
+});
+
+test('startLockoutCountdown reloads the page after lockout expires', () => {
+  const ctx = loadRunner();
+  ctx.startLockoutCountdown(80, { score_percent: 70 }, new Date(Date.now() - 1000));
+  assert.equal(ctx.__test.reloadCount, 1);
 });

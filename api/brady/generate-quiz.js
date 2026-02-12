@@ -22,6 +22,10 @@ const ALLOWED_EMAILS = new Set([
   'james@jamesbrady.org',
 ]);
 
+// Server-enforced cooldown after a failed attempt (< passPercent).
+const LOCKOUT_DAYS = 3;
+const LOCKOUT_MS = LOCKOUT_DAYS * 24 * 60 * 60 * 1000;
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -66,6 +70,29 @@ function safeJsonParse(maybeText) {
     }
     return null;
   }
+}
+
+function normalizeTagKey(tag) {
+  const k = String(tag || '').trim().toLowerCase();
+  if (!k) return '';
+  if (!/^[a-z0-9_]{1,32}$/.test(k)) return '';
+  return k;
+}
+
+function computeFocusTagsFromAttemptResults(results) {
+  const out = {};
+  if (!results || typeof results !== 'object') return out;
+  for (const r of Object.values(results)) {
+    if (!r || typeof r !== 'object') continue;
+    if (r.correct !== false) continue;
+    const tags = Array.isArray(r.tags) ? r.tags : [];
+    for (const t of tags) {
+      const k = normalizeTagKey(t);
+      if (!k) continue;
+      out[k] = (out[k] || 0) + 1;
+    }
+  }
+  return out;
 }
 
 function buildQuizPrompt({ assignment, passPercent, focusTags, latestScorePercent }) {
@@ -277,13 +304,16 @@ async function handler(req, res) {
     const body = await readJsonBody(req);
     const assignment = body?.assignment || null;
     const assignmentId = String(body?.assignmentId || assignment?.id || '').trim();
-    const passPercent = Number(body?.passPercent || assignment?.passPercent || 80);
-    const basedOnAttemptedAt = body?.basedOnAttemptedAt ? String(body.basedOnAttemptedAt) : null;
-    const focusTags = body?.focusTags && typeof body.focusTags === 'object' ? body.focusTags : {};
-    const latestScorePercent = Number(body?.latestScorePercent);
+    const passPercent = 80;
+    const basedOnAttemptedAt = body?.basedOnAttemptedAt ? String(body.basedOnAttemptedAt) : '';
 
     if (!assignmentId) {
       sendJson(res, 400, { error: 'assignmentId is required' });
+      return;
+    }
+
+    if (!basedOnAttemptedAt) {
+      sendJson(res, 400, { error: 'basedOnAttemptedAt is required' });
       return;
     }
 
@@ -296,6 +326,59 @@ async function handler(req, res) {
       sendJson(res, 403, { error: 'Not allowed' });
       return;
     }
+
+    // This endpoint is intended to generate an adaptive quiz only after a failed attempt's
+    // cooldown has expired. Enforce that server-side to prevent cost abuse.
+    const latestRows = await supabaseRestGet({
+      supabaseUrl,
+      anonKey,
+      accessToken,
+      table: 'brady_assignment_attempts',
+      params: {
+        select: 'attempted_at,score_percent,results',
+        user_id: `eq.${user.id}`,
+        assignment_id: `eq.${assignmentId}`,
+        order: 'attempted_at.desc',
+        limit: 1,
+      },
+    });
+
+    const latestAttempt = Array.isArray(latestRows) ? latestRows[0] : null;
+    if (!latestAttempt) {
+      sendJson(res, 409, { error: 'No attempts found for this assignment' });
+      return;
+    }
+
+    const latestAttemptedAt = String(latestAttempt.attempted_at || '');
+    const latestMs = Date.parse(latestAttemptedAt);
+    const basedOnMs = Date.parse(basedOnAttemptedAt);
+    const matchesLatest = (
+      latestAttemptedAt === basedOnAttemptedAt
+      || (Number.isFinite(latestMs) && Number.isFinite(basedOnMs) && Math.abs(latestMs - basedOnMs) < 1000)
+    );
+    if (!matchesLatest) {
+      sendJson(res, 409, { error: 'basedOnAttemptedAt must match latest attempt' });
+      return;
+    }
+
+    const score = Number(latestAttempt.score_percent);
+    if (!Number.isFinite(score)) {
+      sendJson(res, 500, { error: 'Latest attempt score is invalid' });
+      return;
+    }
+    if (score >= passPercent) {
+      sendJson(res, 409, { error: 'Latest attempt already passed' });
+      return;
+    }
+
+    const lockedUntilMs = Number.isFinite(latestMs) ? (latestMs + LOCKOUT_MS) : NaN;
+    if (Number.isFinite(lockedUntilMs) && Date.now() < lockedUntilMs) {
+      sendJson(res, 423, { error: 'Locked', lockedUntil: new Date(lockedUntilMs).toISOString() });
+      return;
+    }
+
+    const focusTags = computeFocusTagsFromAttemptResults(latestAttempt.results);
+    const latestScorePercent = score;
 
     // Cache: if we already generated a quiz for this failed attempt, reuse it.
     if (basedOnAttemptedAt) {
@@ -357,6 +440,8 @@ module.exports = handler;
 module.exports._internal = {
   normalizeEmail,
   safeJsonParse,
+  normalizeTagKey,
+  computeFocusTagsFromAttemptResults,
   buildQuizPrompt,
   validateGeneratedQuiz,
 };

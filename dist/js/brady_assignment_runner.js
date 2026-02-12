@@ -546,6 +546,22 @@ function startLockoutCountdown(passPercent, latestAttempt, lockedUntil) {
   if (!Number.isFinite(unlockAt)) return;
 
   const score = Number(latestAttempt?.score_percent);
+  const tryReload = () => {
+    try {
+      if (window?.location && typeof window.location.reload === 'function') {
+        window.location.reload();
+      }
+    } catch (_) {
+      // no-op
+    }
+  };
+
+  // If the lockout already expired (time passed since page load), refresh state.
+  if (Date.now() >= unlockAt) {
+    setAlert('');
+    tryReload();
+    return;
+  }
 
   const tick = () => {
     const now = Date.now();
@@ -556,6 +572,7 @@ function startLockoutCountdown(passPercent, latestAttempt, lockedUntil) {
         clearInterval(lockoutTimerId);
         lockoutTimerId = null;
       }
+      tryReload();
       return;
     }
     const when = lockedUntil.toLocaleString();
@@ -620,12 +637,38 @@ async function loadGeneratedQuiz(session, assignmentId, basedOnAttemptedAt) {
 function isValidQuizShape(quiz) {
   if (!quiz || typeof quiz !== 'object') return false;
   if (!Number.isFinite(Number(quiz.passPercent))) return false;
-  if (typeof quiz.title !== 'string') return false;
+  if (!quiz.title || typeof quiz.title !== 'string') return false;
   if (!Array.isArray(quiz.questions) || quiz.questions.length !== 10) return false;
-  const ids = new Set(quiz.questions.map((q) => q?.id).filter(Boolean));
-  for (let i = 1; i <= 10; i++) {
-    if (!ids.has(`q${i}`)) return false;
+  const allowedTypes = new Set(['mc', 'number', 'fraction', 'set_numbers', 'expanded_sum']);
+  const ids = new Set();
+  for (const q of quiz.questions) {
+    if (!q || typeof q !== 'object') return false;
+    if (!q.id || typeof q.id !== 'string') return false;
+    if (ids.has(q.id)) return false;
+    ids.add(q.id);
+
+    if (!allowedTypes.has(q.type)) return false;
+    if (!q.prompt || typeof q.prompt !== 'string') return false;
+    if (typeof q.explanation !== 'string') return false;
+    if (!Array.isArray(q.tags) || q.tags.length < 1) return false;
+
+    if (q.type === 'mc') {
+      if (!Array.isArray(q.choices) || q.choices.length < 2) return false;
+      if (typeof q.answer !== 'string') return false;
+      if (!q.choices.includes(q.answer)) return false;
+    } else if (q.type === 'number' || q.type === 'expanded_sum') {
+      if (!Number.isFinite(Number(q.answer))) return false;
+    } else if (q.type === 'fraction') {
+      if (!q.answer || typeof q.answer !== 'object') return false;
+      const num = Number(q.answer?.num);
+      const den = Number(q.answer?.den);
+      if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) return false;
+    } else if (q.type === 'set_numbers') {
+      if (!Array.isArray(q.answer)) return false;
+      if (q.answer.some((n) => !Number.isFinite(Number(n)))) return false;
+    }
   }
+  for (let i = 1; i <= 10; i++) if (!ids.has(`q${i}`)) return false;
   return true;
 }
 

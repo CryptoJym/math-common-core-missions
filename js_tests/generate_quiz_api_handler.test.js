@@ -127,6 +127,20 @@ test('handler: missing assignmentId returns 400 (before Supabase calls)', async 
   assert.deepEqual(res._getJson(), { error: 'assignmentId is required' });
 });
 
+test('handler: missing basedOnAttemptedAt returns 400', async () => {
+  const req = makeReq({
+    method: 'POST',
+    headers: { Authorization: 'Bearer test-token' },
+    body: { assignmentId: 'math_equivalent_fractions' },
+  });
+  const res = makeRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res._getJson(), { error: 'basedOnAttemptedAt is required' });
+});
+
 test('handler: disallowed email returns 403', async () => {
   const oldFetch = global.fetch;
   global.fetch = createFetchStub([
@@ -139,7 +153,10 @@ test('handler: disallowed email returns 403', async () => {
   const req = makeReq({
     method: 'POST',
     headers: { Authorization: 'Bearer test-token' },
-    body: { assignmentId: 'math_equivalent_fractions' },
+    body: {
+      assignmentId: 'math_equivalent_fractions',
+      basedOnAttemptedAt: '2026-02-01T00:00:00Z',
+    },
   });
   const res = makeRes();
 
@@ -150,12 +167,101 @@ test('handler: disallowed email returns 403', async () => {
   global.fetch = oldFetch;
 });
 
+test('handler: returns 423 when cooldown not expired (no OpenAI call)', async () => {
+  const oldFetch = global.fetch;
+  const attemptedAt = new Date(Date.now() - (24 * 60 * 60 * 1000)).toISOString(); // 1 day ago
+  const fetchStub = createFetchStub([
+    {
+      match: /\/auth\/v1\/user$/,
+      handle: async () => jsonResponse(200, { id: 'u1', email: 'james@jamesbrady.org' }),
+    },
+    {
+      match: /\/rest\/v1\/brady_assignment_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            attempted_at: attemptedAt,
+            score_percent: 60,
+          },
+        ]),
+    },
+  ]);
+  global.fetch = fetchStub;
+
+  const req = makeReq({
+    method: 'POST',
+    headers: { Authorization: 'Bearer test-token' },
+    body: {
+      assignmentId: 'math_equivalent_fractions',
+      basedOnAttemptedAt: attemptedAt,
+    },
+  });
+  const res = makeRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 423);
+  const out = res._getJson();
+  assert.equal(out.error, 'Locked');
+  assert.ok(out.lockedUntil);
+  assert.equal(fetchStub.calls.some((c) => c.url.includes('api.openai.com')), false);
+
+  global.fetch = oldFetch;
+});
+
+test('handler: basedOnAttemptedAt must match latest attempt', async () => {
+  const oldFetch = global.fetch;
+  global.fetch = createFetchStub([
+    {
+      match: /\/auth\/v1\/user$/,
+      handle: async () => jsonResponse(200, { id: 'u1', email: 'james@jamesbrady.org' }),
+    },
+    {
+      match: /\/rest\/v1\/brady_assignment_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            attempted_at: '2026-02-01T00:00:00Z',
+            score_percent: 60,
+          },
+        ]),
+    },
+  ]);
+
+  const req = makeReq({
+    method: 'POST',
+    headers: { Authorization: 'Bearer test-token' },
+    body: {
+      assignmentId: 'math_equivalent_fractions',
+      basedOnAttemptedAt: '2026-02-01T00:00:10Z', // mismatch
+    },
+  });
+  const res = makeRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 409);
+  assert.deepEqual(res._getJson(), { error: 'basedOnAttemptedAt must match latest attempt' });
+
+  global.fetch = oldFetch;
+});
+
 test('handler: reuses cached quiz when basedOnAttemptedAt matches', async () => {
   const oldFetch = global.fetch;
   const fetchStub = createFetchStub([
     {
       match: /\/auth\/v1\/user$/,
       handle: async () => jsonResponse(200, { id: 'u1', email: 'james@jamesbrady.org' }),
+    },
+    {
+      match: /\/rest\/v1\/brady_assignment_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            attempted_at: '2026-02-01T00:00:00Z',
+            score_percent: 60,
+          },
+        ]),
     },
     {
       match: /\/rest\/v1\/brady_generated_quizzes\?/,
@@ -176,7 +282,7 @@ test('handler: reuses cached quiz when basedOnAttemptedAt matches', async () => 
     headers: { Authorization: 'Bearer test-token' },
     body: {
       assignmentId: 'math_equivalent_fractions',
-      basedOnAttemptedAt: '2026-02-12T00:00:00Z',
+      basedOnAttemptedAt: '2026-02-01T00:00:00Z',
     },
   });
   const res = makeRes();
@@ -220,6 +326,16 @@ test('handler: generates quiz and uses gpt-5.2 by default', async () => {
       handle: async () => jsonResponse(200, { id: 'u1', email: 'james@jamesbrady.org' }),
     },
     {
+      match: /\/rest\/v1\/brady_assignment_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            attempted_at: '2026-02-01T00:00:00Z',
+            score_percent: 60,
+          },
+        ]),
+    },
+    {
       match: /\/rest\/v1\/brady_generated_quizzes\?/,
       handle: async () => jsonResponse(200, []),
     },
@@ -248,7 +364,7 @@ test('handler: generates quiz and uses gpt-5.2 by default', async () => {
       assignmentId: 'math_equivalent_fractions',
       assignment: { id: 'math_equivalent_fractions', title: 'Equivalent Fractions' },
       passPercent: 80,
-      basedOnAttemptedAt: '2026-02-12T00:00:00Z',
+      basedOnAttemptedAt: '2026-02-01T00:00:00Z',
       focusTags: { simplify: 2 },
       latestScorePercent: 60,
     },
@@ -286,6 +402,16 @@ test('handler: invalid quiz shape returns 422', async () => {
       handle: async () => jsonResponse(200, { id: 'u1', email: 'james@jamesbrady.org' }),
     },
     {
+      match: /\/rest\/v1\/brady_assignment_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            attempted_at: '2026-02-01T00:00:00Z',
+            score_percent: 60,
+          },
+        ]),
+    },
+    {
       match: /\/rest\/v1\/brady_generated_quizzes\?/,
       handle: async () => jsonResponse(200, []),
     },
@@ -304,7 +430,7 @@ test('handler: invalid quiz shape returns 422', async () => {
     body: {
       assignmentId: 'math_equivalent_fractions',
       assignment: { id: 'math_equivalent_fractions', title: 'Equivalent Fractions' },
-      basedOnAttemptedAt: '2026-02-12T00:00:00Z',
+      basedOnAttemptedAt: '2026-02-01T00:00:00Z',
     },
   });
   const res = makeRes();
@@ -331,6 +457,16 @@ test('handler: model returns non-JSON -> 500', async () => {
       handle: async () => jsonResponse(200, { id: 'u1', email: 'james@jamesbrady.org' }),
     },
     {
+      match: /\/rest\/v1\/brady_assignment_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            attempted_at: '2026-02-01T00:00:00Z',
+            score_percent: 60,
+          },
+        ]),
+    },
+    {
       match: /\/rest\/v1\/brady_generated_quizzes\?/,
       handle: async () => jsonResponse(200, []),
     },
@@ -349,7 +485,7 @@ test('handler: model returns non-JSON -> 500', async () => {
     body: {
       assignmentId: 'math_equivalent_fractions',
       assignment: { id: 'math_equivalent_fractions', title: 'Equivalent Fractions' },
-      basedOnAttemptedAt: '2026-02-12T00:00:00Z',
+      basedOnAttemptedAt: '2026-02-01T00:00:00Z',
     },
   });
   const res = makeRes();
@@ -388,6 +524,16 @@ test('handler: Supabase insert error -> 500', async () => {
       handle: async () => jsonResponse(200, { id: 'u1', email: 'james@jamesbrady.org' }),
     },
     {
+      match: /\/rest\/v1\/brady_assignment_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            attempted_at: '2026-02-01T00:00:00Z',
+            score_percent: 60,
+          },
+        ]),
+    },
+    {
       match: /\/rest\/v1\/brady_generated_quizzes\?/,
       handle: async () => jsonResponse(200, []),
     },
@@ -410,7 +556,7 @@ test('handler: Supabase insert error -> 500', async () => {
     body: {
       assignmentId: 'math_equivalent_fractions',
       assignment: { id: 'math_equivalent_fractions', title: 'Equivalent Fractions' },
-      basedOnAttemptedAt: '2026-02-12T00:00:00Z',
+      basedOnAttemptedAt: '2026-02-01T00:00:00Z',
     },
   });
   const res = makeRes();
@@ -423,4 +569,3 @@ test('handler: Supabase insert error -> 500', async () => {
   global.fetch = oldFetch;
   process.env.OPENAI_API_KEY = oldApiKey;
 });
-
