@@ -800,6 +800,7 @@ async function main() {
       // After a failed attempt + cooldown, try to load an LLM-generated adaptive quiz.
       // If none exists yet, we attempt to generate one once, then cache it in Supabase.
       let aiQuiz = null;
+      let aiGenErrorMsg = '';
       const failedAttemptedAt = latestAttempt?.attempted_at || '';
       const latestScore = Number(latestAttempt?.score_percent);
       const shouldTryAi = Boolean(latestAttempt && Number.isFinite(latestScore) && latestScore < passPercent && failedAttemptedAt);
@@ -835,8 +836,7 @@ async function main() {
               localStorage.removeItem(throttleKey);
             } catch (e) {
               localStorage.setItem(throttleKey, String(now));
-              // Fall back silently to the built-in quiz bank.
-              void e;
+              aiGenErrorMsg = String(e?.message || 'AI generation failed.');
               aiQuiz = null;
             }
           }
@@ -850,6 +850,10 @@ async function main() {
         const quizOptions = Object.keys(focusTags).length > 0 ? { focusTags } : undefined;
         quiz = BRADY_QUIZ.buildQuiz(a, seed, quizOptions);
         quizSource = quizOptions ? 'bank_adaptive' : 'bank';
+
+        if (aiGenErrorMsg) {
+          setAlert(`AI quiz generation unavailable. Using built-in adaptive quiz.\n\nDetails: ${aiGenErrorMsg}`);
+        }
       }
     }
 
