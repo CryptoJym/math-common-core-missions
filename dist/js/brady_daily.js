@@ -40,6 +40,15 @@ function setAlert(msg) {
   el.style.display = 'block';
 }
 
+function formatLocalTime(iso) {
+  const t = iso ? new Date(iso).getTime() : NaN;
+  if (!Number.isFinite(t)) return '';
+  const d = new Date(t);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
 async function loadAssignmentProgress(session) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
@@ -106,6 +115,80 @@ async function loadDailyPracticeAttempts(session, dayISO) {
   return data || [];
 }
 
+function localDraftKey(dayISO, practiceKind, assignmentId) {
+  return `mha_daily_draft:${dayISO}:${practiceKind}:${assignmentId}`;
+}
+
+function readLocalDraft(dayISO, practiceKind, assignmentId) {
+  try {
+    const raw = localStorage.getItem(localDraftKey(dayISO, practiceKind, assignmentId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeLocalDraft(dayISO, practiceKind, assignmentId, payload) {
+  try {
+    localStorage.setItem(localDraftKey(dayISO, practiceKind, assignmentId), JSON.stringify(payload));
+  } catch (_) {
+    // ignore
+  }
+}
+
+function clearLocalDraft(dayISO, practiceKind, assignmentId) {
+  try {
+    localStorage.removeItem(localDraftKey(dayISO, practiceKind, assignmentId));
+  } catch (_) {
+    // ignore
+  }
+}
+
+async function loadDailyDrafts(session, dayISO) {
+  const sb = MHA_Auth.getSupabase();
+  const { data, error } = await sb
+    .from('brady_practice_drafts')
+    .select('practice_kind,assignment_id,seed,answers,updated_at')
+    .eq('user_id', session.user.id)
+    .eq('day', dayISO)
+    .in('practice_kind', ['daily_warmup', 'daily_target', 'daily_mixed', 'daily_ai'])
+    .order('updated_at', { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data || [];
+}
+
+async function saveDailyDraft(session, dayISO, practiceKind, assignmentId, seed, answers) {
+  const sb = MHA_Auth.getSupabase();
+  const { error } = await sb
+    .from('brady_practice_drafts')
+    .upsert({
+      user_id: session.user.id,
+      day: dayISO,
+      practice_kind: practiceKind,
+      assignment_id: assignmentId,
+      seed,
+      answers: answers || {},
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,day,practice_kind,assignment_id' });
+  if (error) throw error;
+}
+
+async function clearDailyDraft(session, dayISO, practiceKind, assignmentId) {
+  const sb = MHA_Auth.getSupabase();
+  const { error } = await sb
+    .from('brady_practice_drafts')
+    .delete()
+    .eq('user_id', session.user.id)
+    .eq('day', dayISO)
+    .eq('practice_kind', practiceKind)
+    .eq('assignment_id', assignmentId);
+  if (error) throw error;
+}
+
 function findLatestPassingAttempt(attempts, kind, assignmentId, passPercent) {
   const pp = Number(passPercent || 80);
   for (const row of (attempts || [])) {
@@ -116,6 +199,27 @@ function findLatestPassingAttempt(attempts, kind, assignmentId, passPercent) {
     if (Number.isFinite(score) && score >= pp) return row;
   }
   return null;
+}
+
+function findLatestAttempt(attempts, kind, assignmentId) {
+  for (const row of (attempts || [])) {
+    if (!row) continue;
+    if (row.practice_kind !== kind) continue;
+    if (String(row.assignment_id || '') !== String(assignmentId || '')) continue;
+    return row;
+  }
+  return null;
+}
+
+function countAttempts(attempts, kind, assignmentId) {
+  let n = 0;
+  for (const row of (attempts || [])) {
+    if (!row) continue;
+    if (row.practice_kind !== kind) continue;
+    if (String(row.assignment_id || '') !== String(assignmentId || '')) continue;
+    n++;
+  }
+  return n;
 }
 
 function parseFractionInput(raw) {
@@ -249,7 +353,7 @@ function renderQuizSection(sectionKey, title, subtitleHtml, quiz, seed, status) 
 
   const qCount = (quiz.questions || []).length;
   const passPercent = Number(quiz.passPercent || 80);
-  const doneHtml = status?.passed
+  const doneHtml = status?.completed
     ? `<span class="status-badge mastered">Completed</span>`
     : `<span class="status-badge not_started">Not done</span>`;
 
@@ -291,8 +395,22 @@ function renderQuizSection(sectionKey, title, subtitleHtml, quiz, seed, status) 
     `;
   }).join('');
 
-  const statusLine = status?.passed
-    ? `<div class="small" style="margin-top:8px;">Latest passing score: <span class="mono">${escapeHtml(status.scorePercent)}%</span> (${escapeHtml(status.correctQuestions)}/${escapeHtml(status.totalQuestions)})</div>`
+  const statusLines = [];
+  if (Number.isFinite(Number(status?.attemptsCount))) {
+    statusLines.push(`Attempts today: <span class="mono">${escapeHtml(status.attemptsCount)}</span>`);
+  }
+  if (status?.latestAttempt) {
+    statusLines.push(
+      `Latest attempt: <span class="mono">${escapeHtml(status.latestAttempt.scorePercent)}%</span> (${escapeHtml(status.latestAttempt.correctQuestions)}/${escapeHtml(status.latestAttempt.totalQuestions)}) at <span class="mono">${escapeHtml(status.latestAttempt.time)}</span>`
+    );
+  }
+  if (status?.completed && status?.latestPassingAttempt) {
+    statusLines.push(
+      `Passing score: <span class="mono">${escapeHtml(status.latestPassingAttempt.scorePercent)}%</span> (${escapeHtml(status.latestPassingAttempt.correctQuestions)}/${escapeHtml(status.latestPassingAttempt.totalQuestions)})`
+    );
+  }
+  const statusLine = statusLines.length
+    ? `<div class="small" style="margin-top:8px;">${statusLines.join('<br>')}</div>`
     : '';
 
   host.innerHTML = `
@@ -304,6 +422,7 @@ function renderQuizSection(sectionKey, title, subtitleHtml, quiz, seed, status) 
       <span class="pill mono">${escapeHtml(qCount)} problems</span>
       <span class="pill mono">Pass >= ${escapeHtml(passPercent)}%</span>
     </div>
+    <div class="small" id="${escapeHtml(sectionKey)}Autosave" style="margin-top:8px; color: var(--text-secondary);"></div>
     <div class="small" id="${escapeHtml(sectionKey)}Msg" style="margin-top:10px;"></div>
     ${questionHtml}
     <div class="btn-row" style="margin-top:14px;">
@@ -347,6 +466,8 @@ function renderDailyLayout(dayISO, target, mixed, completion, reflection) {
     <div id="mixedSection" class="section"></div>
     <div id="aiSection" class="section"></div>
 
+    <div id="attemptHistorySection" class="section" style="margin-top:18px;"></div>
+
     <div class="section" style="margin-top:18px;">
       <h2>Reflection (2–3 sentences)</h2>
       <div class="small">What was hardest? What clicked? What do you do tomorrow?</div>
@@ -364,6 +485,180 @@ function renderDailyLayout(dayISO, target, mixed, completion, reflection) {
       window.location.href = targetLink;
     });
   }
+}
+
+function renderAttemptHistory(dayISO, attempts, lookup) {
+  const el = document.getElementById('attemptHistorySection');
+  if (!el) return;
+
+  const rows = attempts || [];
+  const safe = (s) => escapeHtml(String(s || ''));
+  const kindLabel = (k) => {
+    if (k === 'daily_warmup') return 'Warm-up';
+    if (k === 'daily_target') return 'Target';
+    if (k === 'daily_mixed') return 'Mixed';
+    if (k === 'daily_ai') return 'AI';
+    return String(k || '');
+  };
+
+  const assignmentTitle = (assignmentId) => {
+    if (!assignmentId) return '';
+    if (assignmentId === 'daily_warmup') return 'Daily Warm-up';
+    if (assignmentId === 'daily_ai') return 'AI Co-Learning';
+    const a = lookup?.byId?.[assignmentId];
+    return a ? a.title : String(assignmentId);
+  };
+
+  const body = rows.map((r) => {
+    const time = formatLocalTime(r.practiced_at);
+    const score = Number(r.score_percent);
+    const correct = Number(r.correct_questions);
+    const total = Number(r.total_questions);
+    const badge = Number.isFinite(score) && score >= 80
+      ? '<span class="status-badge mastered">PASS</span>'
+      : '<span class="status-badge in_progress">TRY</span>';
+
+    return `
+      <tr>
+        <td class="mono">${safe(r.practice_kind)}</td>
+        <td>${safe(kindLabel(r.practice_kind))}</td>
+        <td>${safe(assignmentTitle(r.assignment_id))}</td>
+        <td class="mono">${safe(time)}</td>
+        <td class="mono">${Number.isFinite(score) ? safe(`${score}%`) : ''}</td>
+        <td class="mono">${Number.isFinite(correct) && Number.isFinite(total) ? safe(`${correct}/${total}`) : ''}</td>
+        <td>${badge}</td>
+      </tr>
+    `;
+  }).join('');
+
+  el.innerHTML = `
+    <h2>Attempt History (Today)</h2>
+    <div class="small">This is the proof that work was saved on ${escapeHtml(dayISO)} (including failed attempts).</div>
+    <div class="small" style="margin-top:8px;">Total attempts shown: <span class="mono">${escapeHtml(rows.length)}</span></div>
+    <table class="table" style="margin-top:12px;">
+      <thead>
+        <tr>
+          <th>Kind</th>
+          <th>Section</th>
+          <th>Assignment</th>
+          <th>Time</th>
+          <th>Score</th>
+          <th>Correct</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>${body || ''}</tbody>
+    </table>
+  `;
+}
+
+function restoreDraftInputs(sectionKey, quiz, draftRow, seed) {
+  if (!draftRow || typeof draftRow !== 'object') return { restored: 0 };
+  const draftSeed = Number(draftRow.seed);
+  if (Number.isFinite(draftSeed) && Number.isFinite(Number(seed)) && draftSeed !== Number(seed)) {
+    return { restored: 0 };
+  }
+
+  const answers = (draftRow.answers && typeof draftRow.answers === 'object') ? draftRow.answers : {};
+  let restored = 0;
+  for (const q of (quiz.questions || [])) {
+    const v = answers[q.id];
+    if (v === undefined) continue;
+    const el = document.getElementById(`${sectionKey}_ans_${q.id}`);
+    if (!el) continue;
+    el.value = String(v ?? '');
+    if (String(v ?? '').trim() !== '') restored++;
+  }
+  return { restored };
+}
+
+function bindDraftAutosave(opts) {
+  const {
+    session,
+    dayISO,
+    practiceKind,
+    assignmentId,
+    sectionKey,
+    seed,
+    quiz,
+  } = opts;
+
+  const statusEl = document.getElementById(`${sectionKey}Autosave`);
+  const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg || ''; };
+
+  let timer = null;
+  let lastSavedJson = '';
+  let saving = false;
+
+  const collectAnswers = () => {
+    const out = {};
+    for (const q of (quiz.questions || [])) {
+      const raw = getAnswerFromDom(sectionKey, q);
+      out[q.id] = raw == null ? '' : String(raw);
+    }
+    return out;
+  };
+
+  const saveNow = async () => {
+    if (saving) return;
+    saving = true;
+    try {
+      const answers = collectAnswers();
+      const hasAny = Object.values(answers).some((v) => String(v || '').trim() !== '');
+
+      if (!hasAny) {
+        try {
+          await clearDailyDraft(session, dayISO, practiceKind, assignmentId);
+        } catch (_) {
+          // ignore
+        }
+        clearLocalDraft(dayISO, practiceKind, assignmentId);
+        setStatus('Draft cleared.');
+        lastSavedJson = '';
+        return;
+      }
+
+      const payloadJson = JSON.stringify({ seed, answers });
+      if (payloadJson === lastSavedJson) return;
+
+      setStatus('Saving draft…');
+      await saveDailyDraft(session, dayISO, practiceKind, assignmentId, seed, answers);
+      writeLocalDraft(dayISO, practiceKind, assignmentId, { seed, answers, updatedAt: new Date().toISOString() });
+      lastSavedJson = payloadJson;
+      setStatus(`Draft saved at ${formatLocalTime(new Date().toISOString())}.`);
+    } catch (e) {
+      // Fall back to local-only if Supabase save fails.
+      const answers = collectAnswers();
+      writeLocalDraft(dayISO, practiceKind, assignmentId, { seed, answers, updatedAt: new Date().toISOString(), localOnly: true });
+      setStatus('Draft saved in this browser (cloud save failed).');
+    } finally {
+      saving = false;
+    }
+  };
+
+  const schedule = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => { void saveNow(); }, 650);
+  };
+
+  for (const q of (quiz.questions || [])) {
+    const el = document.getElementById(`${sectionKey}_ans_${q.id}`);
+    if (!el) continue;
+    el.addEventListener('input', schedule);
+    el.addEventListener('change', schedule);
+  }
+
+  // Save drafts when leaving the page.
+  window.addEventListener('beforeunload', () => {
+    try {
+      const answers = collectAnswers();
+      writeLocalDraft(dayISO, practiceKind, assignmentId, { seed, answers, updatedAt: new Date().toISOString(), localOnly: true });
+    } catch (_) {
+      // ignore
+    }
+  });
+
+  return { saveNow, setStatus };
 }
 
 function bindQuizSectionHandlers(opts) {
@@ -449,6 +744,14 @@ function bindQuizSectionHandlers(opts) {
       // Save the attempt so completion is provable (even if it did not pass yet).
       await saveDailyAttempt(session, dayISO, practiceKind, assignmentId, seed, summary, answers, results);
 
+      // Clear draft after a successful submission so a refresh doesn't look "unsaved".
+      try {
+        await clearDailyDraft(session, dayISO, practiceKind, assignmentId);
+      } catch (_) {
+        // no-op
+      }
+      clearLocalDraft(dayISO, practiceKind, assignmentId);
+
       if (passed) {
         setInputsDisabled(sectionKey, quiz, true);
         await onPassed(summary);
@@ -501,6 +804,20 @@ async function main() {
       return;
     }
 
+    let drafts = [];
+    try {
+      drafts = await loadDailyDrafts(gate.session, dayISO);
+    } catch (_) {
+      drafts = [];
+    }
+
+    const draftByKey = {};
+    for (const d of (drafts || [])) {
+      if (!d) continue;
+      const k = `${String(d.practice_kind || '')}:${String(d.assignment_id || '')}`;
+      draftByKey[k] = d;
+    }
+
     const warmupAssignmentId = 'daily_warmup';
     const aiAssignmentId = 'daily_ai';
     const targetAssignmentId = target?.id || '';
@@ -515,6 +832,11 @@ async function main() {
     const targetPassedRow = target ? findLatestPassingAttempt(attempts, 'daily_target', targetAssignmentId, targetQuiz.passPercent) : null;
     const mixedPassedRow = mixed ? findLatestPassingAttempt(attempts, 'daily_mixed', mixedAssignmentId, mixedQuiz.passPercent) : null;
     const aiPassedRow = findLatestPassingAttempt(attempts, 'daily_ai', aiAssignmentId, aiQuiz.passPercent);
+
+    const warmupLatestRow = findLatestAttempt(attempts, 'daily_warmup', warmupAssignmentId);
+    const targetLatestRow = target ? findLatestAttempt(attempts, 'daily_target', targetAssignmentId) : null;
+    const mixedLatestRow = mixed ? findLatestAttempt(attempts, 'daily_mixed', mixedAssignmentId) : null;
+    const aiLatestRow = findLatestAttempt(attempts, 'daily_ai', aiAssignmentId);
 
     const completion = {
       warmup: Boolean(warmupPassedRow),
@@ -551,12 +873,21 @@ async function main() {
       'Quick mixed review. This is graded and saved so it is provable.',
       warmupQuizLive,
       warmupSeed >>> 0,
-      warmupPassedRow ? {
-        passed: true,
-        scorePercent: warmupPassedRow.score_percent,
-        correctQuestions: warmupPassedRow.correct_questions,
-        totalQuestions: warmupPassedRow.total_questions,
-      } : { passed: false }
+      {
+        completed: Boolean(warmupPassedRow),
+        attemptsCount: countAttempts(attempts, 'daily_warmup', warmupAssignmentId),
+        latestAttempt: warmupLatestRow ? {
+          scorePercent: warmupLatestRow.score_percent,
+          correctQuestions: warmupLatestRow.correct_questions,
+          totalQuestions: warmupLatestRow.total_questions,
+          time: formatLocalTime(warmupLatestRow.practiced_at),
+        } : null,
+        latestPassingAttempt: warmupPassedRow ? {
+          scorePercent: warmupPassedRow.score_percent,
+          correctQuestions: warmupPassedRow.correct_questions,
+          totalQuestions: warmupPassedRow.total_questions,
+        } : null,
+      }
     );
 
     renderQuizSection(
@@ -565,12 +896,21 @@ async function main() {
       target ? `Practice for <span class="mono">${escapeHtml(target.title)}</span>.` : 'No target assignment found.',
       targetQuizLive,
       targetSeed >>> 0,
-      targetPassedRow ? {
-        passed: true,
-        scorePercent: targetPassedRow.score_percent,
-        correctQuestions: targetPassedRow.correct_questions,
-        totalQuestions: targetPassedRow.total_questions,
-      } : { passed: false }
+      {
+        completed: Boolean(targetPassedRow),
+        attemptsCount: countAttempts(attempts, 'daily_target', targetAssignmentId),
+        latestAttempt: targetLatestRow ? {
+          scorePercent: targetLatestRow.score_percent,
+          correctQuestions: targetLatestRow.correct_questions,
+          totalQuestions: targetLatestRow.total_questions,
+          time: formatLocalTime(targetLatestRow.practiced_at),
+        } : null,
+        latestPassingAttempt: targetPassedRow ? {
+          scorePercent: targetPassedRow.score_percent,
+          correctQuestions: targetPassedRow.correct_questions,
+          totalQuestions: targetPassedRow.total_questions,
+        } : null,
+      }
     );
 
     renderQuizSection(
@@ -579,12 +919,21 @@ async function main() {
       mixed ? `Review for <span class="mono">${escapeHtml(mixed.title)}</span>.` : 'No mixed review assignment found.',
       mixedQuizLive,
       mixedSeed >>> 0,
-      mixedPassedRow ? {
-        passed: true,
-        scorePercent: mixedPassedRow.score_percent,
-        correctQuestions: mixedPassedRow.correct_questions,
-        totalQuestions: mixedPassedRow.total_questions,
-      } : { passed: false }
+      {
+        completed: Boolean(mixedPassedRow),
+        attemptsCount: countAttempts(attempts, 'daily_mixed', mixedAssignmentId),
+        latestAttempt: mixedLatestRow ? {
+          scorePercent: mixedLatestRow.score_percent,
+          correctQuestions: mixedLatestRow.correct_questions,
+          totalQuestions: mixedLatestRow.total_questions,
+          time: formatLocalTime(mixedLatestRow.practiced_at),
+        } : null,
+        latestPassingAttempt: mixedPassedRow ? {
+          scorePercent: mixedPassedRow.score_percent,
+          correctQuestions: mixedPassedRow.correct_questions,
+          totalQuestions: mixedPassedRow.total_questions,
+        } : null,
+      }
     );
 
     renderQuizSection(
@@ -593,13 +942,83 @@ async function main() {
       'Short quiz on how to use ChatGPT / Codex / Claude effectively (provable completion).',
       aiQuizLive,
       aiSeed >>> 0,
-      aiPassedRow ? {
-        passed: true,
-        scorePercent: aiPassedRow.score_percent,
-        correctQuestions: aiPassedRow.correct_questions,
-        totalQuestions: aiPassedRow.total_questions,
-      } : { passed: false }
+      {
+        completed: Boolean(aiPassedRow),
+        attemptsCount: countAttempts(attempts, 'daily_ai', aiAssignmentId),
+        latestAttempt: aiLatestRow ? {
+          scorePercent: aiLatestRow.score_percent,
+          correctQuestions: aiLatestRow.correct_questions,
+          totalQuestions: aiLatestRow.total_questions,
+          time: formatLocalTime(aiLatestRow.practiced_at),
+        } : null,
+        latestPassingAttempt: aiPassedRow ? {
+          scorePercent: aiPassedRow.score_percent,
+          correctQuestions: aiPassedRow.correct_questions,
+          totalQuestions: aiPassedRow.total_questions,
+        } : null,
+      }
     );
+
+    const lookup = { byId: {} };
+    for (const a of (BRADY_ASSIGNMENTS || [])) {
+      if (a && a.id) lookup.byId[a.id] = a;
+    }
+    renderAttemptHistory(dayISO, attempts, lookup);
+
+    // Restore drafts (Supabase first, then local fallback).
+    const warmupDraft = draftByKey[`daily_warmup:${warmupAssignmentId}`] || readLocalDraft(dayISO, 'daily_warmup', warmupAssignmentId);
+    const targetDraft = draftByKey[`daily_target:${targetAssignmentId}`] || readLocalDraft(dayISO, 'daily_target', targetAssignmentId);
+    const mixedDraft = draftByKey[`daily_mixed:${mixedAssignmentId}`] || readLocalDraft(dayISO, 'daily_mixed', mixedAssignmentId);
+    const aiDraft = draftByKey[`daily_ai:${aiAssignmentId}`] || readLocalDraft(dayISO, 'daily_ai', aiAssignmentId);
+
+    const warmupRestored = restoreDraftInputs('warmup', warmupQuizLive, warmupDraft, warmupSeed >>> 0);
+    const targetRestored = restoreDraftInputs('target', targetQuizLive, targetDraft, targetSeed >>> 0);
+    const mixedRestored = restoreDraftInputs('mixed', mixedQuizLive, mixedDraft, mixedSeed >>> 0);
+    const aiRestored = restoreDraftInputs('ai', aiQuizLive, aiDraft, aiSeed >>> 0);
+
+    const warmupAutosave = bindDraftAutosave({
+      session: gate.session,
+      dayISO,
+      practiceKind: 'daily_warmup',
+      assignmentId: warmupAssignmentId,
+      sectionKey: 'warmup',
+      seed: warmupSeed >>> 0,
+      quiz: warmupQuizLive,
+    });
+    if (warmupRestored.restored > 0) warmupAutosave.setStatus(`Draft restored (${warmupRestored.restored} answered).`);
+
+    const targetAutosave = bindDraftAutosave({
+      session: gate.session,
+      dayISO,
+      practiceKind: 'daily_target',
+      assignmentId: targetAssignmentId,
+      sectionKey: 'target',
+      seed: targetSeed >>> 0,
+      quiz: targetQuizLive,
+    });
+    if (targetRestored.restored > 0) targetAutosave.setStatus(`Draft restored (${targetRestored.restored} answered).`);
+
+    const mixedAutosave = bindDraftAutosave({
+      session: gate.session,
+      dayISO,
+      practiceKind: 'daily_mixed',
+      assignmentId: mixedAssignmentId,
+      sectionKey: 'mixed',
+      seed: mixedSeed >>> 0,
+      quiz: mixedQuizLive,
+    });
+    if (mixedRestored.restored > 0) mixedAutosave.setStatus(`Draft restored (${mixedRestored.restored} answered).`);
+
+    const aiAutosave = bindDraftAutosave({
+      session: gate.session,
+      dayISO,
+      practiceKind: 'daily_ai',
+      assignmentId: aiAssignmentId,
+      sectionKey: 'ai',
+      seed: aiSeed >>> 0,
+      quiz: aiQuizLive,
+    });
+    if (aiRestored.restored > 0) aiAutosave.setStatus(`Draft restored (${aiRestored.restored} answered).`);
 
     bindQuizSectionHandlers({
       session: gate.session,
@@ -678,4 +1097,3 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', main);
-
