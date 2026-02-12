@@ -17,6 +17,17 @@ function todayLocalISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function seedFromString(s) {
+  // FNV-1a 32-bit hash (stable across sessions)
+  let h = 2166136261;
+  const str = String(s || '');
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
 function setAlert(msg) {
   const el = document.getElementById('alert');
   if (!el) return;
@@ -373,6 +384,140 @@ function renderQuiz(quiz) {
       <span class="small" id="submitMsg"></span>
     </div>
   `;
+}
+
+function getPracticeAnswerFromDom(q) {
+  const id = `prac_ans_${q.id}`;
+  const el = document.getElementById(id);
+  if (!el) return null;
+  return el.value;
+}
+
+function renderPractice(assignment, seed, focusTags) {
+  const el = document.getElementById('practiceContainer');
+  if (!el) return;
+
+  const quizOptions = focusTags && Object.keys(focusTags).length > 0 ? { focusTags } : undefined;
+  const practiceQuiz = BRADY_QUIZ.buildPracticeQuiz(assignment, seed, quizOptions);
+  const qCount = (practiceQuiz.questions || []).length;
+
+  el.style.display = 'block';
+
+  if (!practiceQuiz.questions || qCount === 0) {
+    el.innerHTML = `
+      <h2>Practice</h2>
+      <div class="small">No practice set is available yet for this assignment.</div>
+    `;
+    return;
+  }
+
+  const focusHtml = Object.entries(focusTags || {})
+    .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+    .slice(0, 8)
+    .map(([k, v]) => `<span class="pill mono">${escapeHtml(k)}:${escapeHtml(v)}</span>`)
+    .join('');
+
+  const questionHtml = practiceQuiz.questions.map((q, idx) => {
+    const number = idx + 1;
+    const inputId = `prac_ans_${q.id}`;
+
+    let inputHtml = '';
+    if (q.type === 'mc') {
+      inputHtml = `
+        <label for="${inputId}">Answer</label>
+        <select id="${inputId}">
+          <option value="" selected disabled>Select…</option>
+          ${(q.choices || []).map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
+        </select>
+      `;
+    } else {
+      const placeholder =
+        q.type === 'fraction' ? 'Example: 3/4' :
+        q.type === 'set_numbers' ? 'Example: 1,2,3,6' :
+        q.type === 'expanded_sum' ? 'Example: 500000 + 7000 + 400 + 30 + 2' :
+        'Type your answer';
+      inputHtml = `
+        <label for="${inputId}">Answer</label>
+        <input id="${inputId}" type="text" placeholder="${escapeHtml(placeholder)}">
+      `;
+    }
+
+    return `
+      <div class="section" style="margin-top:14px;" data-practice-question="${escapeHtml(q.id)}">
+        <h2>Practice ${number}</h2>
+        <div class="small" style="white-space:pre-wrap;">${escapeHtml(q.prompt)}</div>
+        <div class="field-row" style="margin-top:12px;">
+          <div>${inputHtml}</div>
+        </div>
+        <div class="small" id="prac_feedback_${escapeHtml(q.id)}"></div>
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = `
+    <h2>Practice Problems (Auto-checked)</h2>
+    <div class="small">Do these before the test. Practice does not count as a test attempt.</div>
+    <div class="pill-row" style="margin-top:10px;">
+      <span class="pill mono">Seed ${escapeHtml(seed)}</span>
+      <span class="pill mono">${escapeHtml(qCount)} problems</span>
+      ${focusHtml || '<span class="pill">Balanced practice</span>'}
+    </div>
+    <div class="small" id="practiceMsg" style="margin-top:10px;"></div>
+    ${questionHtml}
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn secondary" type="button" id="checkPractice">Check Practice</button>
+      <button class="btn secondary" type="button" id="newPractice">New Practice Set</button>
+    </div>
+  `;
+
+  const practiceMsg = document.getElementById('practiceMsg');
+  const checkBtn = document.getElementById('checkPractice');
+  const newBtn = document.getElementById('newPractice');
+
+  const grade = () => {
+    let correct = 0;
+    const missing = [];
+
+    for (let idx = 0; idx < practiceQuiz.questions.length; idx++) {
+      const q = practiceQuiz.questions[idx];
+      const raw = getPracticeAnswerFromDom(q);
+      const isMissing = raw == null || String(raw).trim() === '';
+      if (isMissing) {
+        missing.push(idx + 1);
+        continue;
+      }
+
+      const r = gradeQuestion(q, raw);
+      if (r.correct) correct++;
+
+      const feedbackEl = document.getElementById(`prac_feedback_${q.id}`);
+      if (feedbackEl) {
+        if (r.correct) {
+          feedbackEl.innerHTML = `<span style="color: var(--accent-green);">Correct.</span>`;
+        } else {
+          feedbackEl.innerHTML = `<span style=\"color: var(--accent-red);\">Incorrect.</span> Expected: <span class=\"mono\">${escapeHtml(r.expected)}</span>${r.explanation ? `<div class=\"small\" style=\"margin-top:6px;\">${escapeHtml(r.explanation)}</div>` : ''}`;
+        }
+      }
+    }
+
+    const total = practiceQuiz.questions.length;
+    const scorePercent = Math.round((correct / total) * 100);
+
+    if (missing.length > 0) {
+      if (practiceMsg) practiceMsg.textContent = `Answer every practice problem before checking. Missing: ${missing.map((n) => `#${n}`).join(', ')}`;
+      return;
+    }
+
+    if (practiceMsg) practiceMsg.textContent = `Practice score: ${scorePercent}% (${correct}/${total} correct). Fix misses, then check again.`;
+  };
+
+  if (checkBtn) checkBtn.addEventListener('click', grade);
+  if (newBtn) {
+    newBtn.addEventListener('click', () => {
+      const nextSeed = (Date.now() & 0xffffffff) >>> 0;
+      renderPractice(assignment, nextSeed, focusTags);
+    });
+  }
 }
 
 function renderResults(summary) {
@@ -818,6 +963,11 @@ async function main() {
     if (latestAttempt && Number(latestAttempt.score_percent) < passPercent) {
       focusTags = computeFocusTagsFromAttempt(latestAttempt, a);
     }
+
+    // Always provide practice problems (even during lockout).
+    // Default: stable "daily" practice seed, but user can randomize with the UI button.
+    const practiceSeed = seedFromString(`${a.id}:${todayLocalISO()}`);
+    renderPractice(a, practiceSeed, focusTags);
 
     // Seed: allow specifying in URL for repeatability.
     const seedRaw = url.searchParams.get('seed');

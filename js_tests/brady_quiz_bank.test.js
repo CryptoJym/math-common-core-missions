@@ -53,3 +53,16 @@ test('proportions + slope adapts toward unit_rate when unit_rate is missed more'
   assert.ok(unitRateCount > evalYCount, `expected unitRateCount > evalYCount, got ${unitRateCount} vs ${evalYCount}`);
 });
 
+test('buildPracticeQuiz returns a practice quiz for an assignment', () => {
+  const quizBank = loadQuizBank();
+  assert.equal(typeof quizBank.buildPracticeQuiz, 'function');
+  const assignment = {
+    quizId: 'math_equivalent_fractions',
+    passPercent: 80,
+    title: 'Equivalent Fractions',
+  };
+  const quiz = quizBank.buildPracticeQuiz(assignment, 123);
+  assert.equal(quiz.passPercent, 80);
+  assert.equal(quiz.questions.length, 10);
+  assert.ok(String(quiz.title).toLowerCase().includes('practice'));
+});

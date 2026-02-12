@@ -1085,7 +1085,33 @@ function buildQuiz(assignment, seed, options) {
   return quiz;
 }
 
+function buildPracticeQuiz(assignment, seed, options) {
+  const desiredCount = 10;
+  const combined = [];
+
+  let title = '';
+  let passPercent = Number(assignment?.passPercent || 80);
+
+  // Reuse existing quiz builder(s) to produce a consistent-sized practice set.
+  // Some reading/language quizzes are shorter than 10 questions, so we combine
+  // multiple runs with different seeds until we hit the target.
+  for (let i = 0; i < 5 && combined.length < desiredCount; i++) {
+    const quiz = buildQuiz(assignment, (Number(seed) + i) >>> 0, options);
+    if (!title) title = String(quiz?.title || '');
+    if (!Number.isFinite(passPercent)) passPercent = Number(quiz?.passPercent || 80);
+
+    const qs = Array.isArray(quiz?.questions) ? quiz.questions : [];
+    for (const q of qs) combined.push(q);
+  }
+
+  const baseTitle = title || assignment?.title || 'Assignment';
+  const questions = combined.slice(0, desiredCount).map((q, idx) => ({ ...q, id: `q${idx + 1}` }));
+
+  return { passPercent, title: `Practice: ${baseTitle}`, questions };
+}
+
 window.BRADY_QUIZ = {
   buildQuiz,
+  buildPracticeQuiz,
   mulberry32,
 };
