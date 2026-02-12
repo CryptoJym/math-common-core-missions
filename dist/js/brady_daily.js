@@ -78,7 +78,7 @@ function renderPlan(dayISO, target, state) {
   const completed = !!state.completed;
 
   const targetLink = target
-    ? `assignments.html?assignment=${encodeURIComponent(target.id)}`
+    ? `assignment.html?id=${encodeURIComponent(target.id)}`
     : 'assignments.html';
 
   el.innerHTML = `
@@ -216,4 +216,3 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', main);
-

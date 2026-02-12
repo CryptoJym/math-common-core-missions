@@ -117,7 +117,7 @@ function renderNextUp(target, progressRow) {
 
   const status = progressRow?.status || 'not_started';
   const last = progressRow?.last_attempt_at ? new Date(progressRow.last_attempt_at).toLocaleString() : '';
-  const link = `assignments.html?assignment=${encodeURIComponent(target.id)}`;
+  const link = `assignment.html?id=${encodeURIComponent(target.id)}`;
 
   el.innerHTML = `
     <div class="pill-row">
@@ -155,4 +155,3 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', main);
-

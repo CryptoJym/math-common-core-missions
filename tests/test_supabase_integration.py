@@ -183,6 +183,16 @@ class TestBradyPersonalizationTables:
         if resp.status_code == 200:
             assert resp.json() == [], "RLS should prevent anonymous access to brady_reading_log"
 
+    def test_brady_assignment_attempts_table_exists(self):
+        resp = supabase_rest_get("brady_assignment_attempts", {"select": "id", "limit": "1"})
+        assert resp.status_code in (200, 401, 403), \
+            f"brady_assignment_attempts table query returned unexpected status {resp.status_code}"
+
+    def test_brady_assignment_attempts_rls_blocks_anon_reads(self):
+        resp = supabase_rest_get("brady_assignment_attempts", {"select": "*"})
+        if resp.status_code == 200:
+            assert resp.json() == [], "RLS should prevent anonymous access to brady_assignment_attempts"
+
 
 @pytest.mark.skipif(not HAS_REQUESTS, reason="requests library not available")
 @pytest.mark.skipif(not SUPABASE_URL, reason="Supabase config not found")

@@ -42,6 +42,7 @@ async function loadProgressMap(session) {
 function renderAssignmentCard(a, progress) {
   const status = progress?.status || 'not_started';
   const lastAttempt = progress?.last_attempt_at ? new Date(progress.last_attempt_at).toLocaleString() : '';
+  const score = (progress?.score !== null && progress?.score !== undefined) ? Number(progress.score) : null;
   const notes = progress?.notes || '';
 
   const statusOptions = ['not_started', 'in_progress', 'mastered']
@@ -70,10 +71,12 @@ function renderAssignmentCard(a, progress) {
           <h2 style="margin-top:12px;">${safeText(a.title)}</h2>
           <div style="margin-top:6px;">
             <span class="status-badge ${status}">${titleCase(status)}</span>
+            ${score !== null ? `<span class="pill mono" style="margin-left:10px;">Best ${safeText(score)}%</span>` : ''}
             ${lastAttempt ? `<span class="small" style="margin-left:10px;">Last updated: ${safeText(lastAttempt)}</span>` : ''}
           </div>
         </div>
         <div class="btn-row">
+          <a class="btn secondary" href="assignment.html?id=${encodeURIComponent(a.id)}" style="text-decoration:none; display:inline-flex; align-items:center;">Start Test</a>
           <button class="btn secondary" type="button" data-toggle-ai="${a.id}">AI Prompts</button>
           <a class="btn secondary" href="daily.html" style="text-decoration:none; display:inline-flex; align-items:center;">Daily</a>
         </div>
@@ -286,4 +289,3 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', main);
-
