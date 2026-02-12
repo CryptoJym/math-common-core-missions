@@ -250,7 +250,48 @@ function base64ToBlob(base64, mimeType) {
   return new Blob([bytes], { type: mimeType || 'application/octet-stream' });
 }
 
-function renderArtifactsList(sectionKey, artifacts) {
+async function loadArtifactReviews(session, artifactIds) {
+  const ids = Array.isArray(artifactIds)
+    ? artifactIds.map((x) => String(x || '').trim()).filter(Boolean)
+    : [];
+  if (ids.length === 0) return {};
+  const sb = MHA_Auth.getSupabase();
+  const { data, error } = await sb
+    .from('brady_ai_reviews')
+    .select('id,artifact_id,score_percent,feedback,next_steps,provider,model,created_at')
+    .eq('user_id', session.user.id)
+    .in('artifact_id', ids)
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) throw error;
+
+  const map = {};
+  for (const row of (data || [])) {
+    if (!row) continue;
+    const key = String(row.artifact_id || '');
+    if (!key || map[key]) continue;
+    map[key] = row;
+  }
+  return map;
+}
+
+function renderReviewSummary(review) {
+  if (!review) return '<span style="color: var(--text-secondary);">AI check not run yet.</span>';
+  const score = Number(review.score_percent);
+  const pass = Number.isFinite(score) && score >= 80;
+  const nextSteps = Array.isArray(review.next_steps) ? review.next_steps : [];
+  return `
+    <div style="margin-top:6px;">
+      <span class="status-badge ${pass ? 'mastered' : 'in_progress'}">${pass ? 'PASS' : 'REVIEW'}</span>
+      <span class="mono" style="margin-left:8px;">${escapeHtml(Number.isFinite(score) ? `${score}%` : '')}</span>
+      <span style="margin-left:8px; color: var(--text-secondary);">${escapeHtml(review.provider || '')}${review.model ? ` · ${escapeHtml(review.model)}` : ''}</span>
+      <div class="small" style="margin-top:6px; white-space:pre-wrap;">${escapeHtml(review.feedback || '')}</div>
+      ${nextSteps.length ? `<div class="small" style="margin-top:6px;">Next: ${escapeHtml(nextSteps.slice(0, 3).join(' | '))}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderArtifactsList(sectionKey, artifacts, reviewsByArtifactId) {
   const el = document.getElementById(`${sectionKey}UploadList`);
   if (!el) return;
 
@@ -276,15 +317,43 @@ function renderArtifactsList(sectionKey, artifacts) {
             <span class="mono">${escapeHtml(formatLocalTime(r.created_at))}</span>
             <span style="margin-left:8px;">${escapeHtml(r.filename)}</span>
             <span style="margin-left:8px; color: var(--text-secondary);" class="mono">${escapeHtml(fmtSize(r.size_bytes))}</span>
+            ${renderReviewSummary(reviewsByArtifactId ? reviewsByArtifactId[String(r.id || '')] : null)}
           </div>
           <div class="btn-row" style="margin:0;">
             <button class="btn secondary" type="button" data-open-artifact="${escapeHtml(r.id)}">Open</button>
+            <button class="btn secondary" type="button" data-review-artifact="${escapeHtml(r.id)}">AI Check</button>
             <button class="btn danger" type="button" data-delete-artifact="${escapeHtml(r.id)}">Delete</button>
           </div>
         </div>
       `).join('')}
     </div>
   `;
+}
+
+async function getAccessToken() {
+  const sb = MHA_Auth.getSupabase();
+  const { data, error } = await sb.auth.getSession();
+  if (error) throw error;
+  const token = data?.session?.access_token || '';
+  if (!token) throw new Error('Session expired. Please log in again.');
+  return token;
+}
+
+async function reviewArtifactById(artifactId) {
+  const token = await getAccessToken();
+  const resp = await fetch('/api/brady/review-artifact', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ artifactId }),
+  });
+  const body = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    throw new Error(body?.error || `AI review failed (${resp.status})`);
+  }
+  return body || {};
 }
 
 function bindArtifactsListHandlers(sectionKey, session, refresh) {
@@ -318,6 +387,25 @@ function bindArtifactsListHandlers(sectionKey, session, refresh) {
         await refresh();
       } catch (e) {
         setAlert(e?.message || 'Delete failed.');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
+
+  Array.from(el.querySelectorAll('button[data-review-artifact]')).forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-review-artifact');
+      if (!id) return;
+      try {
+        btn.disabled = true;
+        setAlert('');
+        const out = await reviewArtifactById(id);
+        const reused = Boolean(out?.reused);
+        setAlert(reused ? 'AI check already existed and was loaded.' : 'AI check complete and saved.');
+        await refresh();
+      } catch (e) {
+        setAlert(e?.message || 'AI check failed.');
       } finally {
         btn.disabled = false;
       }
@@ -831,10 +919,12 @@ function bindUploadHandlers(opts) {
   const refresh = async () => {
     try {
       const rows = await loadSectionArtifacts(session, dayISO, practiceKind, assignmentId);
-      renderArtifactsList(sectionKey, rows);
+      const ids = rows.map((r) => r.id);
+      const reviewsByArtifactId = await loadArtifactReviews(session, ids).catch(() => ({}));
+      renderArtifactsList(sectionKey, rows, reviewsByArtifactId);
       bindArtifactsListHandlers(sectionKey, session, refresh);
     } catch (e) {
-      renderArtifactsList(sectionKey, []);
+      renderArtifactsList(sectionKey, [], {});
       setMsg(e?.message || 'Unable to load uploads.');
     }
   };
