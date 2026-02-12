@@ -209,6 +209,87 @@ test('handler: returns 423 when cooldown not expired (no OpenAI call)', async ()
   global.fetch = oldFetch;
 });
 
+test('handler: returns 428 when required practice is not completed', async () => {
+  const oldFetch = global.fetch;
+  const oldApiKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = 'test-key';
+
+  const attemptedAt = new Date(Date.now() - (4 * 24 * 60 * 60 * 1000)).toISOString(); // 4 days ago
+  const generatedQuiz = {
+    passPercent: 80,
+    title: 'AI Quiz',
+    questions: Array.from({ length: 10 }, (_, i) => ({
+      id: `q${i + 1}`,
+      type: 'mc',
+      prompt: `Q${i + 1}`,
+      choices: ['A', 'B'],
+      answer: 'A',
+      explanation: 'ok',
+      tags: ['tag_one'],
+    })),
+  };
+
+  const fetchStub = createFetchStub([
+    {
+      match: /\/auth\/v1\/user$/,
+      handle: async () => jsonResponse(200, { id: 'u1', email: 'james@jamesbrady.org' }),
+    },
+    {
+      match: /\/rest\/v1\/brady_assignment_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            attempted_at: attemptedAt,
+            score_percent: 60,
+          },
+        ]),
+    },
+    // No passing practice attempt exists.
+    {
+      match: /\/rest\/v1\/brady_practice_attempts\?/,
+      handle: async () => jsonResponse(200, []),
+    },
+    // If the handler is missing the practice check, it will hit these:
+    {
+      match: /\/rest\/v1\/brady_generated_quizzes\?/,
+      handle: async () => jsonResponse(200, []),
+    },
+    {
+      match: (href) => href === 'https://api.openai.com/v1/chat/completions',
+      handle: async () =>
+        jsonResponse(200, {
+          choices: [{ message: { content: JSON.stringify(generatedQuiz) } }],
+        }),
+    },
+    {
+      match: /\/rest\/v1\/brady_generated_quizzes$/,
+      handle: async () => jsonResponse(201, [{ id: 'row2' }]),
+    },
+  ]);
+  global.fetch = fetchStub;
+
+  const req = makeReq({
+    method: 'POST',
+    headers: { Authorization: 'Bearer test-token' },
+    body: {
+      assignmentId: 'math_equivalent_fractions',
+      assignment: { id: 'math_equivalent_fractions', title: 'Equivalent Fractions' },
+      basedOnAttemptedAt: attemptedAt,
+    },
+  });
+  const res = makeRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 428);
+  const out = res._getJson();
+  assert.equal(out.error, 'Practice required');
+  assert.equal(fetchStub.calls.some((c) => c.url.includes('api.openai.com')), false);
+
+  global.fetch = oldFetch;
+  process.env.OPENAI_API_KEY = oldApiKey;
+});
+
 test('handler: basedOnAttemptedAt must match latest attempt', async () => {
   const oldFetch = global.fetch;
   global.fetch = createFetchStub([
@@ -260,6 +341,16 @@ test('handler: reuses cached quiz when basedOnAttemptedAt matches', async () => 
           {
             attempted_at: '2026-02-01T00:00:00Z',
             score_percent: 60,
+          },
+        ]),
+    },
+    {
+      match: /\/rest\/v1\/brady_practice_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            practiced_at: '2026-02-12T00:00:00Z',
+            score_percent: 80,
           },
         ]),
     },
@@ -332,6 +423,16 @@ test('handler: generates quiz and uses gpt-5.2 by default', async () => {
           {
             attempted_at: '2026-02-01T00:00:00Z',
             score_percent: 60,
+          },
+        ]),
+    },
+    {
+      match: /\/rest\/v1\/brady_practice_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            practiced_at: '2026-02-12T00:00:00Z',
+            score_percent: 80,
           },
         ]),
     },
@@ -412,6 +513,16 @@ test('handler: invalid quiz shape returns 422', async () => {
         ]),
     },
     {
+      match: /\/rest\/v1\/brady_practice_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            practiced_at: '2026-02-12T00:00:00Z',
+            score_percent: 80,
+          },
+        ]),
+    },
+    {
       match: /\/rest\/v1\/brady_generated_quizzes\?/,
       handle: async () => jsonResponse(200, []),
     },
@@ -463,6 +574,16 @@ test('handler: model returns non-JSON -> 500', async () => {
           {
             attempted_at: '2026-02-01T00:00:00Z',
             score_percent: 60,
+          },
+        ]),
+    },
+    {
+      match: /\/rest\/v1\/brady_practice_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            practiced_at: '2026-02-12T00:00:00Z',
+            score_percent: 80,
           },
         ]),
     },
@@ -530,6 +651,16 @@ test('handler: Supabase insert error -> 500', async () => {
           {
             attempted_at: '2026-02-01T00:00:00Z',
             score_percent: 60,
+          },
+        ]),
+    },
+    {
+      match: /\/rest\/v1\/brady_practice_attempts\?/,
+      handle: async () =>
+        jsonResponse(200, [
+          {
+            practiced_at: '2026-02-12T00:00:00Z',
+            score_percent: 80,
           },
         ]),
     },

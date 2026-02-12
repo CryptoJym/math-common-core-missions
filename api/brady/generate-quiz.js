@@ -377,6 +377,32 @@ async function handler(req, res) {
       return;
     }
 
+    // Practice requirement (defense-in-depth):
+    // After a failed attempt + cooldown expiry, the student must complete a passing
+    // auto-graded practice set before the adaptive retake quiz is available.
+    const practiceRows = await supabaseRestGet({
+      supabaseUrl,
+      anonKey,
+      accessToken,
+      table: 'brady_practice_attempts',
+      params: {
+        select: 'practiced_at,score_percent',
+        user_id: `eq.${user.id}`,
+        practice_kind: 'eq.assignment_retake',
+        assignment_id: `eq.${assignmentId}`,
+        based_on_attempted_at: `eq.${basedOnAttemptedAt}`,
+        score_percent: `gte.${passPercent}`,
+        order: 'practiced_at.desc',
+        limit: 1,
+      },
+    });
+
+    const passingPractice = Array.isArray(practiceRows) ? practiceRows[0] : null;
+    if (!passingPractice) {
+      sendJson(res, 428, { error: 'Practice required', passPercent });
+      return;
+    }
+
     const focusTags = computeFocusTagsFromAttemptResults(latestAttempt.results);
     const latestScorePercent = score;
 

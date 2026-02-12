@@ -393,7 +393,59 @@ function getPracticeAnswerFromDom(q) {
   return el.value;
 }
 
-function renderPractice(assignment, seed, focusTags) {
+async function loadPassingPracticeAttempt(session, assignmentId, basedOnAttemptedAt, passPercent) {
+  const sb = MHA_Auth.getSupabase();
+  let q = sb
+    .from('brady_practice_attempts')
+    .select('practiced_at,score_percent,correct_questions,total_questions,based_on_attempted_at')
+    .eq('user_id', session.user.id)
+    .eq('practice_kind', 'assignment_retake')
+    .eq('assignment_id', assignmentId)
+    .order('practiced_at', { ascending: false })
+    .limit(1);
+
+  if (basedOnAttemptedAt) {
+    q = q.eq('based_on_attempted_at', basedOnAttemptedAt);
+  } else {
+    q = q.is('based_on_attempted_at', null);
+  }
+
+  q = q.gte('score_percent', Number(passPercent || 80));
+
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data && data[0]) ? data[0] : null;
+}
+
+async function savePracticeAttempt(session, assignmentId, basedOnAttemptedAt, seed, summary, answers, results) {
+  const sb = MHA_Auth.getSupabase();
+  const { error } = await sb.from('brady_practice_attempts').insert({
+    user_id: session.user.id,
+    practice_kind: 'assignment_retake',
+    assignment_id: assignmentId,
+    based_on_attempted_at: basedOnAttemptedAt || null,
+    seed,
+    score_percent: summary.scorePercent,
+    total_questions: summary.totalQuestions,
+    correct_questions: summary.correctQuestions,
+    answers,
+    results,
+  });
+  if (error) throw error;
+}
+
+function renderTestLocked(passPercent) {
+  const quizEl = document.getElementById('quizContainer');
+  if (!quizEl) return;
+  quizEl.innerHTML = `
+    <h2>Test Locked</h2>
+    <div class="small">
+      You must complete the required practice set (score >= <span class="mono">${escapeHtml(passPercent)}</span>%) to unlock the next test attempt.
+    </div>
+  `;
+}
+
+function renderPractice(session, assignment, seed, focusTags, gate) {
   const el = document.getElementById('practiceContainer');
   if (!el) return;
 
@@ -456,7 +508,11 @@ function renderPractice(assignment, seed, focusTags) {
 
   el.innerHTML = `
     <h2>Practice Problems (Auto-checked)</h2>
-    <div class="small">Do these before the test. Practice does not count as a test attempt.</div>
+    <div class="small">
+      Do these before the test. Practice does not count as a test attempt.
+      ${gate?.required ? ` <span class="mono">REQUIRED after failing</span> (unlock target >= ${escapeHtml(gate.passPercent)}%).` : ''}
+      ${gate?.required && gate?.passed ? ' Practice is complete for this retake.' : ''}
+    </div>
     <div class="pill-row" style="margin-top:10px;">
       <span class="pill mono">Seed ${escapeHtml(seed)}</span>
       <span class="pill mono">${escapeHtml(qCount)} problems</span>
@@ -474,13 +530,16 @@ function renderPractice(assignment, seed, focusTags) {
   const checkBtn = document.getElementById('checkPractice');
   const newBtn = document.getElementById('newPractice');
 
-  const grade = () => {
+  const grade = async () => {
     let correct = 0;
     const missing = [];
+    const answers = {};
+    const results = {};
 
     for (let idx = 0; idx < practiceQuiz.questions.length; idx++) {
       const q = practiceQuiz.questions[idx];
       const raw = getPracticeAnswerFromDom(q);
+      answers[q.id] = raw;
       const isMissing = raw == null || String(raw).trim() === '';
       if (isMissing) {
         missing.push(idx + 1);
@@ -488,6 +547,13 @@ function renderPractice(assignment, seed, focusTags) {
       }
 
       const r = gradeQuestion(q, raw);
+      results[q.id] = {
+        ...r,
+        prompt: q.prompt || '',
+        type: q.type || '',
+        choices: q.type === 'mc' ? (q.choices || []) : [],
+        tags: q.tags || [],
+      };
       if (r.correct) correct++;
 
       const feedbackEl = document.getElementById(`prac_feedback_${q.id}`);
@@ -508,14 +574,60 @@ function renderPractice(assignment, seed, focusTags) {
       return;
     }
 
-    if (practiceMsg) practiceMsg.textContent = `Practice score: ${scorePercent}% (${correct}/${total} correct). Fix misses, then check again.`;
+    const summary = {
+      assignmentId: assignment?.id || '',
+      seed,
+      passPercent: Number(gate?.passPercent || assignment?.passPercent || 80),
+      totalQuestions: total,
+      correctQuestions: correct,
+      scorePercent,
+      passed: scorePercent >= Number(gate?.passPercent || assignment?.passPercent || 80),
+    };
+
+    if (practiceMsg) {
+      practiceMsg.textContent = `Practice score: ${scorePercent}% (${correct}/${total} correct).`;
+    }
+
+    if (summary.passed && session && gate?.required) {
+      if (practiceMsg) practiceMsg.textContent = `${practiceMsg.textContent} Practice passed. Saving…`;
+      try {
+        await savePracticeAttempt(
+          session,
+          assignment.id,
+          gate?.basedOnAttemptedAt || null,
+          seed,
+          summary,
+          answers,
+          results
+        );
+        if (practiceMsg) practiceMsg.textContent = `${practiceMsg.textContent} Saved. Reloading to unlock test…`;
+        try { window.location.reload(); } catch (_) { /* no-op */ }
+      } catch (e) {
+        if (practiceMsg) practiceMsg.textContent = `Practice passed, but save failed: ${String(e?.message || e)}`;
+      }
+      return;
+    }
+
+    if (practiceMsg && summary.passed && !gate?.required) {
+      practiceMsg.textContent = `${practiceMsg.textContent} Nice. You are ready for the test.`;
+      return;
+    }
+
+    if (practiceMsg && gate?.required && !summary.passed) {
+      practiceMsg.textContent = `${practiceMsg.textContent} You must reach ${escapeHtml(summary.passPercent)}% to unlock the test.`;
+      return;
+    }
+
+    if (practiceMsg && !summary.passed) {
+      practiceMsg.textContent = `${practiceMsg.textContent} Fix misses, then check again.`;
+    }
   };
 
-  if (checkBtn) checkBtn.addEventListener('click', grade);
+  if (checkBtn) checkBtn.addEventListener('click', () => { void grade(); });
   if (newBtn) {
     newBtn.addEventListener('click', () => {
       const nextSeed = (Date.now() & 0xffffffff) >>> 0;
-      renderPractice(assignment, nextSeed, focusTags);
+      renderPractice(session, assignment, nextSeed, focusTags, gate);
     });
   }
 }
@@ -967,7 +1079,25 @@ async function main() {
     // Always provide practice problems (even during lockout).
     // Default: stable "daily" practice seed, but user can randomize with the UI button.
     const practiceSeed = seedFromString(`${a.id}:${todayLocalISO()}`);
-    renderPractice(a, practiceSeed, focusTags);
+    const lastFailedAttemptedAt = (latestAttempt && Number(latestAttempt.score_percent) < passPercent)
+      ? String(latestAttempt.attempted_at || '')
+      : '';
+    const practiceRequired = Boolean(lastFailedAttemptedAt);
+    let practicePassed = false;
+    if (practiceRequired) {
+      try {
+        const row = await loadPassingPracticeAttempt(gate.session, a.id, lastFailedAttemptedAt, passPercent);
+        practicePassed = Boolean(row);
+      } catch (_) {
+        practicePassed = false;
+      }
+    }
+    renderPractice(gate.session, a, practiceSeed, focusTags, {
+      required: practiceRequired,
+      passed: practicePassed,
+      passPercent,
+      basedOnAttemptedAt: lastFailedAttemptedAt,
+    });
 
     // Seed: allow specifying in URL for repeatability.
     const seedRaw = url.searchParams.get('seed');
@@ -978,6 +1108,29 @@ async function main() {
     }
     if (!Number.isFinite(seed)) {
       seed = (Date.now() & 0xffffffff) >>> 0;
+    }
+
+    // If they already failed once and cooldown expired, they must pass practice before retaking the test.
+    const practiceBlocksTest = (!isLocked && practiceRequired && !practicePassed);
+    if (practiceBlocksTest) {
+      document.title = `${a.title} | Math Hunter Academy`;
+      const titleEl = document.getElementById('assignmentTitle');
+      const subtitleEl = document.getElementById('assignmentSubtitle');
+      if (titleEl) titleEl.textContent = a.title;
+      if (subtitleEl) subtitleEl.textContent = `Practice Required | Pass >= ${passPercent}% to master`;
+
+      renderAssignmentMeta(a, { passPercent }, seed);
+      renderTestLocked(passPercent);
+
+      // Load history (still useful context)
+      try {
+        const history = await loadAttemptHistory(gate.session, a.id);
+        renderAttemptHistory(history);
+      } catch (_) {
+        // no-op
+      }
+
+      return;
     }
 
     let quiz = null;
@@ -996,7 +1149,7 @@ async function main() {
       let aiGenErrorMsg = '';
       const failedAttemptedAt = latestAttempt?.attempted_at || '';
       const latestScore = Number(latestAttempt?.score_percent);
-      const shouldTryAi = Boolean(latestAttempt && Number.isFinite(latestScore) && latestScore < passPercent && failedAttemptedAt);
+      const shouldTryAi = Boolean(latestAttempt && Number.isFinite(latestScore) && latestScore < passPercent && failedAttemptedAt && practicePassed);
 
       if (shouldTryAi) {
         try {

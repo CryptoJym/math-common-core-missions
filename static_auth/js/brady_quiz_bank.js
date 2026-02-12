@@ -1110,8 +1110,161 @@ function buildPracticeQuiz(assignment, seed, options) {
   return { passPercent, title: `Practice: ${baseTitle}`, questions };
 }
 
+function buildDailyWarmupQuiz(seed) {
+  const desiredCount = 8;
+  const rng = mulberry32(seed);
+
+  // Mix a few core math skills so the warmup stays broad.
+  const candidateQuizIds = [
+    'math_fractions_number_line',
+    'math_equivalent_fractions',
+    'math_place_value_expanded_form',
+    'math_factors_primes_multiples',
+    'math_order_of_operations_exponents',
+    'math_translate_and_parts_of_expression',
+    'math_evaluate_expressions_and_combine_like_terms',
+    'math_one_step_two_step_equations',
+  ];
+
+  const picks = shuffle(rng, candidateQuizIds).slice(0, 4);
+  const combined = [];
+
+  for (let i = 0; i < picks.length && combined.length < desiredCount; i++) {
+    const quizId = picks[i];
+    const builder = QUIZ_BUILDERS[quizId];
+    if (!builder) continue;
+    const quiz = builder((Number(seed) + i) >>> 0, {});
+    const qs = Array.isArray(quiz?.questions) ? quiz.questions : [];
+    for (let j = 0; j < qs.length && combined.length < desiredCount; j++) {
+      combined.push(qs[j]);
+    }
+  }
+
+  const questions = combined.slice(0, desiredCount).map((q, idx) => ({ ...q, id: `q${idx + 1}` }));
+  return { passPercent: 80, title: 'Daily Warm-up', questions };
+}
+
+function buildDailyAiQuiz(seed) {
+  const desiredCount = 6;
+  const rng = mulberry32(seed);
+
+  const pool = [
+    {
+      prompt: 'Which prompt is MOST likely to get a high-quality answer?',
+      choices: [
+        'Help me with math.',
+        'Explain fractions.',
+        'I am in 6th grade. Teach me equivalent fractions with 2 examples, then give me 3 practice problems with answers.',
+        'Fractions are confusing.',
+      ],
+      answer: 'I am in 6th grade. Teach me equivalent fractions with 2 examples, then give me 3 practice problems with answers.',
+      explanation: 'Good prompts include context, what you want, and a clear output request.',
+      tags: ['prompt_specificity'],
+    },
+    {
+      prompt: 'What is the BEST way to make an AI answer easier to check?',
+      choices: [
+        'Ask it to be creative.',
+        'Ask it to answer in a specific format (like JSON or a numbered list).',
+        'Ask it to use long explanations.',
+        'Ask it to guess if unsure.',
+      ],
+      answer: 'Ask it to answer in a specific format (like JSON or a numbered list).',
+      explanation: 'A fixed format reduces ambiguity and makes checking easier.',
+      tags: ['output_format'],
+    },
+    {
+      prompt: 'If the AI gives an incorrect math step, what should you do first?',
+      choices: [
+        'Assume it is right and move on.',
+        'Ask it to show each step and explain why each step is valid.',
+        'Ask it to use bigger numbers.',
+        'Try a different font.',
+      ],
+      answer: 'Ask it to show each step and explain why each step is valid.',
+      explanation: 'Step-by-step reasoning helps you find where the mistake happened.',
+      tags: ['debugging_steps'],
+    },
+    {
+      prompt: 'Which request reduces “hallucinations” the most?',
+      choices: [
+        'Give me anything you think is correct.',
+        'If you are not sure, say “I do not know” and ask me a question.',
+        'Answer quickly.',
+        'Do not use math.',
+      ],
+      answer: 'If you are not sure, say “I do not know” and ask me a question.',
+      explanation: 'Encouraging uncertainty and questions reduces guessing.',
+      tags: ['uncertainty'],
+    },
+    {
+      prompt: 'What is a “test case” when using AI to help with coding/math?',
+      choices: [
+        'A random guess.',
+        'A specific example input with an expected output to verify correctness.',
+        'A longer prompt.',
+        'A way to make the answer sound smarter.',
+      ],
+      answer: 'A specific example input with an expected output to verify correctness.',
+      explanation: 'Test cases let you verify the result matches what should happen.',
+      tags: ['testing'],
+    },
+    {
+      prompt: 'Best practice when asking for help fixing a bug is to include:',
+      choices: [
+        'Only the final error message.',
+        'A clear description, steps to reproduce, and the smallest code example.',
+        'No details so the AI can explore freely.',
+        'A screenshot only.',
+      ],
+      answer: 'A clear description, steps to reproduce, and the smallest code example.',
+      explanation: 'Repro steps and minimal code make debugging accurate and fast.',
+      tags: ['bug_reports'],
+    },
+    {
+      prompt: 'If you want the AI to generate practice problems at your level, you should say:',
+      choices: [
+        'Make it hard.',
+        'Make it easy.',
+        'I am in grade 6. Give me 10 problems on equivalent fractions with answers. Start easy and get harder.',
+        'Fractions.',
+      ],
+      answer: 'I am in grade 6. Give me 10 problems on equivalent fractions with answers. Start easy and get harder.',
+      explanation: 'Level + quantity + topic + difficulty ramp makes the result match your need.',
+      tags: ['difficulty'],
+    },
+    {
+      prompt: 'Which tool is BEST for quickly checking if your website login flow works end-to-end?',
+      choices: [
+        'A browser automation test (Playwright).',
+        'A random number generator.',
+        'A spreadsheet.',
+        'A screenshot.',
+      ],
+      answer: 'A browser automation test (Playwright).',
+      explanation: 'Automation can click and verify real UI behavior repeatedly.',
+      tags: ['tools'],
+    },
+  ];
+
+  const picks = shuffle(rng, pool).slice(0, desiredCount);
+  const questions = picks.map((q, idx) => makeMc(
+    `q${idx + 1}`,
+    q.prompt,
+    q.choices,
+    q.answer,
+    q.explanation,
+    q.tags,
+    {}
+  ));
+
+  return { passPercent: 80, title: 'AI Co-Learning Quiz', questions };
+}
+
 window.BRADY_QUIZ = {
   buildQuiz,
   buildPracticeQuiz,
+  buildDailyWarmupQuiz,
+  buildDailyAiQuiz,
   mulberry32,
 };
