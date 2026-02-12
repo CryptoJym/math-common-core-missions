@@ -432,6 +432,52 @@ function applyStoredFeedback(quiz, storedResults) {
   }
 }
 
+function quizFromAttemptResults(assignment, attempt, passPercent) {
+  const results = attempt?.results && typeof attempt.results === 'object' ? attempt.results : {};
+
+  const ids = Object.keys(results)
+    .filter((k) => /^q(10|[1-9])$/.test(k))
+    .sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)));
+
+  const questions = ids.map((id) => {
+    const r = results[id] && typeof results[id] === 'object' ? results[id] : {};
+    const type = String(r.type || '').trim() || 'number';
+    const prompt = String(r.prompt || '').trim();
+    const choices = Array.isArray(r.choices) ? r.choices.map((c) => String(c)) : [];
+    const tags = Array.isArray(r.tags) ? r.tags.map((t) => String(t)) : [];
+
+    return {
+      id,
+      type,
+      prompt,
+      choices,
+      tags,
+      explanation: String(r.explanation || ''),
+    };
+  });
+
+  return {
+    passPercent: Number(passPercent || assignment?.passPercent || 80),
+    title: assignment?.title || assignment?.id || 'Assignment',
+    questions,
+  };
+}
+
+function hasRenderableAttemptQuiz(attempt) {
+  const results = attempt?.results && typeof attempt.results === 'object' ? attempt.results : null;
+  if (!results) return false;
+  for (let i = 1; i <= 10; i++) {
+    const r = results[`q${i}`];
+    if (!r || typeof r !== 'object') return false;
+    if (typeof r.prompt !== 'string' || !r.prompt.trim()) return false;
+    if (typeof r.type !== 'string' || !r.type.trim()) return false;
+    if (String(r.type) === 'mc') {
+      if (!Array.isArray(r.choices) || r.choices.length < 2) return false;
+    }
+  }
+  return true;
+}
+
 function renderLockoutPanel(assignment, passPercent, latestAttempt, lockedUntil, focusTags) {
   const el = document.getElementById('resultsContainer');
   if (!el) return;
@@ -549,6 +595,59 @@ async function loadLatestAttempt(session, assignmentId) {
     .limit(1);
   if (error) throw error;
   return (data && data[0]) ? data[0] : null;
+}
+
+async function loadGeneratedQuiz(session, assignmentId, basedOnAttemptedAt) {
+  const sb = MHA_Auth.getSupabase();
+  let q = sb
+    .from('brady_generated_quizzes')
+    .select('created_at,quiz,based_on_attempted_at')
+    .eq('user_id', session.user.id)
+    .eq('assignment_id', assignmentId)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (basedOnAttemptedAt) {
+    q = q.eq('based_on_attempted_at', basedOnAttemptedAt);
+  }
+
+  const { data, error } = await q;
+  if (error) throw error;
+  const row = (data && data[0]) ? data[0] : null;
+  return row?.quiz || null;
+}
+
+function isValidQuizShape(quiz) {
+  if (!quiz || typeof quiz !== 'object') return false;
+  if (!Number.isFinite(Number(quiz.passPercent))) return false;
+  if (typeof quiz.title !== 'string') return false;
+  if (!Array.isArray(quiz.questions) || quiz.questions.length !== 10) return false;
+  const ids = new Set(quiz.questions.map((q) => q?.id).filter(Boolean));
+  for (let i = 1; i <= 10; i++) {
+    if (!ids.has(`q${i}`)) return false;
+  }
+  return true;
+}
+
+async function generateQuizViaApi(session, payload) {
+  const url = new URL('/api/brady/generate-quiz', window.location.origin);
+  const resp = await fetch(url.toString(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify(payload || {}),
+  });
+  const text = await resp.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch (_) { data = null; }
+  if (!resp.ok) {
+    const msg = data?.error || `AI generation failed (${resp.status}).`;
+    throw new Error(msg);
+  }
+  if (!data || !data.quiz) throw new Error('AI generation returned no quiz.');
+  return data.quiz;
 }
 
 function renderAttemptHistory(rows) {
@@ -688,18 +787,83 @@ async function main() {
       seed = (Date.now() & 0xffffffff) >>> 0;
     }
 
-    const quizOptions = (!isLocked && Object.keys(focusTags).length > 0)
-      ? { focusTags }
-      : undefined;
-    const quiz = isLocked
-      ? BRADY_QUIZ.buildQuiz(a, seed)
-      : BRADY_QUIZ.buildQuiz(a, seed, quizOptions);
+    let quiz = null;
+    let quizSource = 'bank';
+
+    if (isLocked && latestAttempt && hasRenderableAttemptQuiz(latestAttempt)) {
+      quiz = quizFromAttemptResults(a, latestAttempt, passPercent);
+      quizSource = 'attempt';
+    } else if (isLocked) {
+      quiz = BRADY_QUIZ.buildQuiz(a, seed);
+      quizSource = 'bank';
+    } else {
+      // After a failed attempt + cooldown, try to load an LLM-generated adaptive quiz.
+      // If none exists yet, we attempt to generate one once, then cache it in Supabase.
+      let aiQuiz = null;
+      const failedAttemptedAt = latestAttempt?.attempted_at || '';
+      const latestScore = Number(latestAttempt?.score_percent);
+      const shouldTryAi = Boolean(latestAttempt && Number.isFinite(latestScore) && latestScore < passPercent && failedAttemptedAt);
+
+      if (shouldTryAi) {
+        try {
+          aiQuiz = await loadGeneratedQuiz(gate.session, a.id, failedAttemptedAt);
+        } catch (_) {
+          aiQuiz = null;
+        }
+
+        if (!aiQuiz) {
+          // Simple throttle so we don't spam the AI endpoint if it's misconfigured.
+          const throttleKey = `mha_ai_gen_fail_${a.id}`;
+          const lastFail = Number(localStorage.getItem(throttleKey) || 0);
+          const now = Date.now();
+          if (!Number.isFinite(lastFail) || (now - lastFail) > (30 * 60 * 1000)) {
+            try {
+              aiQuiz = await generateQuizViaApi(gate.session, {
+                assignmentId: a.id,
+                passPercent,
+                latestScorePercent: latestScore,
+                basedOnAttemptedAt: failedAttemptedAt,
+                focusTags,
+                assignment: {
+                  id: a.id,
+                  title: a.title,
+                  standards: a.standards || [],
+                  learningTargets: a.learningTargets || [],
+                  passPercent,
+                },
+              });
+              localStorage.removeItem(throttleKey);
+            } catch (e) {
+              localStorage.setItem(throttleKey, String(now));
+              // Fall back silently to the built-in quiz bank.
+              void e;
+              aiQuiz = null;
+            }
+          }
+        }
+      }
+
+      if (aiQuiz && isValidQuizShape(aiQuiz)) {
+        quiz = aiQuiz;
+        quizSource = 'ai';
+      } else {
+        const quizOptions = Object.keys(focusTags).length > 0 ? { focusTags } : undefined;
+        quiz = BRADY_QUIZ.buildQuiz(a, seed, quizOptions);
+        quizSource = quizOptions ? 'bank_adaptive' : 'bank';
+      }
+    }
 
     document.title = `${a.title} | Math Hunter Academy`;
     const titleEl = document.getElementById('assignmentTitle');
     const subtitleEl = document.getElementById('assignmentSubtitle');
     if (titleEl) titleEl.textContent = a.title;
-    if (subtitleEl) subtitleEl.textContent = `Pass >= ${quiz.passPercent}% to master`;
+    if (subtitleEl) {
+      const base = `Pass >= ${quiz.passPercent}% to master`;
+      const prefix = quizSource === 'ai'
+        ? 'AI Adaptive Version'
+        : (quizSource === 'bank_adaptive' ? 'Adaptive Version' : (quizSource === 'attempt' ? 'Review Mode' : ''));
+      subtitleEl.textContent = prefix ? `${prefix} | ${base}` : base;
+    }
 
     renderAssignmentMeta(a, quiz, seed);
     renderQuiz(quiz);
@@ -772,7 +936,15 @@ async function main() {
               }
 
               const r = gradeQuestion(q, raw);
-              results[q.id] = { ...r, tags: q.tags || [] };
+              results[q.id] = {
+                ...r,
+                // Store enough question data to re-render the exact quiz later (review mode),
+                // even if the quiz came from an AI generator (not seed-based).
+                prompt: q.prompt || '',
+                type: q.type || '',
+                choices: q.type === 'mc' ? (q.choices || []) : [],
+                tags: q.tags || [],
+              };
               if (r.correct) correct++;
 
               const feedbackEl = document.getElementById(`feedback_${q.id}`);
