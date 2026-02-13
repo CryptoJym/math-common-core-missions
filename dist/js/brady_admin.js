@@ -462,6 +462,8 @@ async function main() {
   _gateContext = gate.context;
   const { session } = gate;
   renderAccountSummary(session);
+  // Bind the export UI immediately so it is clickable even before learner rows finish loading.
+  renderExportUI([], session);
 
   const addForm = document.getElementById('addSubAccountForm');
   if (addForm) {

@@ -35,13 +35,15 @@ function bookTitle(bookId) {
   return match ? match.title : String(bookId || '');
 }
 
-function readingDraftKey(userId, dayISO, bookId) {
-  return `mha_reading_draft:${String(userId || '')}:${String(dayISO || '')}:${String(bookId || '')}`;
+function readingDraftKey(dayISO, bookId) {
+  // Local-only key on purpose: supports autosave even before auth/gate resolves.
+  // Remote drafts are stored separately in Supabase (brady_reading_drafts).
+  return `mha_reading_draft:${String(dayISO || '')}:${String(bookId || '')}`;
 }
 
-function readLocalDraft(userId, dayISO, bookId) {
+function readLocalDraft(dayISO, bookId) {
   try {
-    const raw = localStorage.getItem(readingDraftKey(userId, dayISO, bookId));
+    const raw = localStorage.getItem(readingDraftKey(dayISO, bookId));
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object') return null;
@@ -51,17 +53,17 @@ function readLocalDraft(userId, dayISO, bookId) {
   }
 }
 
-function writeLocalDraft(userId, dayISO, bookId, payload) {
+function writeLocalDraft(dayISO, bookId, payload) {
   try {
-    localStorage.setItem(readingDraftKey(userId, dayISO, bookId), JSON.stringify(payload));
+    localStorage.setItem(readingDraftKey(dayISO, bookId), JSON.stringify(payload));
   } catch (_) {
     // ignore
   }
 }
 
-function clearLocalDraft(userId, dayISO, bookId) {
+function clearLocalDraft(dayISO, bookId) {
   try {
-    localStorage.removeItem(readingDraftKey(userId, dayISO, bookId));
+    localStorage.removeItem(readingDraftKey(dayISO, bookId));
   } catch (_) {
     // ignore
   }
@@ -258,24 +260,20 @@ async function main() {
     // while async Supabase loads are still in-flight.
     bindPromptControls();
 
-    const gate = await MHA_Brady.requireBrady({ nextPath: 'brady/reading.html' });
-    if (!gate) return;
-    const { userId: queryUserId } = MHA_Brady.getBradyQueryUser(gate.session, gate.context);
-
-    await MHA_Auth.initAuthUI(false);
-    document.body.classList.add('has-user-nav');
-
+    // Set up defaults early so autosave works immediately.
     const dayEl = document.getElementById('day');
-    if (dayEl) dayEl.value = todayLocalISO();
+    if (dayEl && !dayEl.value) dayEl.value = todayLocalISO();
 
     const bookEl = document.getElementById('book');
-    if (bookEl) {
+    if (bookEl && bookEl.options.length === 0) {
       bookEl.innerHTML = BRADY_BOOKS.map((b) => `<option value="${b.id}">${b.title}</option>`).join('');
     }
 
+    // Drafts: local autosave always works; remote autosave begins once auth + learner context resolves.
+    let gateSession = null;
+    let queryUserId = null;
     let draftSaveTimer = null;
     let draftFlushTimer = null;
-    let lastDraftKey = '';
 
     const getCurrentKey = () => {
       const day = document.getElementById('day')?.value || todayLocalISO();
@@ -297,35 +295,6 @@ async function main() {
       if (journalEl) journalEl.value = '';
     };
 
-    const restoreDraftForCurrentSelection = async (reason) => {
-      void reason;
-      const { day, bookId } = getCurrentKey();
-      const key = readingDraftKey(queryUserId, day, bookId);
-      lastDraftKey = key;
-
-      const local = readLocalDraft(queryUserId, day, bookId);
-      let remote = null;
-      try {
-        remote = await loadReadingDraftRow(gate.session, queryUserId, day, bookId);
-      } catch (_) {
-        remote = null;
-      }
-
-      const localAt = local?.updated_at ? new Date(local.updated_at).getTime() : NaN;
-      const remoteAt = remote?.updated_at ? new Date(remote.updated_at).getTime() : NaN;
-      const useRemote = Number.isFinite(remoteAt) && (!Number.isFinite(localAt) || remoteAt >= localAt);
-      const draft = useRemote ? remote : local;
-
-      if (draft) {
-        applyDraftToForm(draft);
-        setDraftMsg('Draft restored.');
-      } else {
-        clearFormFields();
-        setDraftMsg('');
-      }
-      setAiPrompts();
-    };
-
     const captureDraftPayload = () => {
       const { day, bookId } = getCurrentKey();
       const minutesRaw = document.getElementById('minutes')?.value;
@@ -343,55 +312,94 @@ async function main() {
 
     const writeLocalNow = () => {
       const payload = captureDraftPayload();
-      writeLocalDraft(queryUserId, payload.day, payload.book_id, payload);
+      writeLocalDraft(payload.day, payload.book_id, payload);
       return payload;
     };
 
-    const scheduleDraftSave = () => {
+    const scheduleRemoteSave = () => {
+      if (!gateSession || !queryUserId) return;
       if (draftSaveTimer) window.clearTimeout(draftSaveTimer);
       draftSaveTimer = window.setTimeout(async () => {
         const payload = captureDraftPayload();
         try {
-          await saveReadingDraftRow(gate.session, queryUserId, payload.day, payload.book_id, payload.minutes, payload.journal || null);
+          await saveReadingDraftRow(gateSession, queryUserId, payload.day, payload.book_id, payload.minutes, payload.journal || null);
           setDraftMsg('Draft saved.');
         } catch (_) {
-          // Still saved locally.
           setDraftMsg('Draft saved locally (offline).');
         }
       }, 650);
     };
 
-    const bindDraftAutosave = () => {
-      const onInput = () => {
-        setDraftMsg('Saving…');
-        writeLocalNow();
-        scheduleDraftSave();
-        if (draftFlushTimer) window.clearTimeout(draftFlushTimer);
-        draftFlushTimer = window.setTimeout(() => setAiPrompts(), 250);
-      };
-      ['minutes', 'journal'].forEach((id) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.addEventListener('input', onInput);
-        el.addEventListener('change', onInput);
-      });
+    const restoreDraftForCurrentSelection = async (reason) => {
+      void reason;
+      const { day, bookId } = getCurrentKey();
+
+      const local = readLocalDraft(day, bookId);
+      let remote = null;
+      if (gateSession && queryUserId) {
+        try {
+          remote = await loadReadingDraftRow(gateSession, queryUserId, day, bookId);
+        } catch (_) {
+          remote = null;
+        }
+      }
+
+      const localAt = local?.updated_at ? new Date(local.updated_at).getTime() : NaN;
+      const remoteAt = remote?.updated_at ? new Date(remote.updated_at).getTime() : NaN;
+      const useRemote = Number.isFinite(remoteAt) && (!Number.isFinite(localAt) || remoteAt >= localAt);
+      const draft = useRemote ? remote : local;
+
+      if (draft) {
+        applyDraftToForm(draft);
+        setDraftMsg('Draft restored.');
+      } else {
+        clearFormFields();
+        setDraftMsg('');
+      }
+      setAiPrompts();
     };
 
-    // Load any existing draft for today's default selection.
-    await restoreDraftForCurrentSelection('init');
-    bindDraftAutosave();
+    const onInput = () => {
+      setDraftMsg('Saving…');
+      writeLocalNow();
+      scheduleRemoteSave();
+      if (draftFlushTimer) window.clearTimeout(draftFlushTimer);
+      draftFlushTimer = window.setTimeout(() => setAiPrompts(), 250);
+    };
 
-    // If day/book changes, load the corresponding draft (or clear).
+    // Bind drafts immediately (so refresh/page changes don't lose work even if auth is still loading).
+    ['minutes', 'journal'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', onInput);
+      el.addEventListener('change', onInput);
+    });
+
     ['day', 'book'].forEach((id) => {
       const el = document.getElementById(id);
       if (!el) return;
-      el.addEventListener('change', async () => {
+      el.addEventListener('change', () => {
         setAlert('');
-        await restoreDraftForCurrentSelection('selection_change');
+        void restoreDraftForCurrentSelection('selection_change');
       });
     });
 
-    const rows = await loadReadingLogs(gate.session, queryUserId);
+    // Restore local draft as early as possible.
+    await restoreDraftForCurrentSelection('init');
+
+    // Gate access + learn which learner we're saving for (supports admin delegation).
+    const gate = await MHA_Brady.requireBrady({ nextPath: 'brady/reading.html' });
+    if (!gate) return;
+    gateSession = gate.session;
+    queryUserId = MHA_Brady.getBradyQueryUser(gate.session, gate.context).userId;
+
+    await MHA_Auth.initAuthUI(false);
+    document.body.classList.add('has-user-nav');
+
+    // Now that auth resolved, prefer remote drafts if they are newer than local.
+    await restoreDraftForCurrentSelection('post_auth');
+
+    const rows = await loadReadingLogs(gateSession, queryUserId);
     renderReadingLogs(rows);
 
     const saveBtn = document.getElementById('saveReading');
@@ -401,14 +409,14 @@ async function main() {
         saveBtn.disabled = true;
         saveBtn.textContent = 'Saving…';
         try {
-          await saveReading(gate.session, queryUserId);
+          await saveReading(gateSession, queryUserId);
           // Clear the draft for this entry after the real save succeeds.
           const { day, bookId } = getCurrentKey();
-          clearLocalDraft(queryUserId, day, bookId);
-          try { await clearReadingDraftRow(gate.session, queryUserId, day, bookId); } catch (_) { /* ignore */ }
+          clearLocalDraft(day, bookId);
+          try { await clearReadingDraftRow(gateSession, queryUserId, day, bookId); } catch (_) { /* ignore */ }
           setDraftMsg('');
 
-          const nextRows = await loadReadingLogs(gate.session, queryUserId);
+          const nextRows = await loadReadingLogs(gateSession, queryUserId);
           renderReadingLogs(nextRows);
           setAiPrompts();
           setAlert('Saved.');
