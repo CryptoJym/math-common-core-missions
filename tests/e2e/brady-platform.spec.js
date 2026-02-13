@@ -767,19 +767,58 @@ test.describe('Admin portal', () => {
     // Use the default date range prefilled by the UI (today + last 7 days).
     const exportResp = page.waitForResponse((resp) => {
       const req = resp.request();
-      return req.url().includes('/api/brady/export') && req.method() === 'POST';
+      // Fetch follows redirects (308/307), which can produce multiple responses for the same request.
+      // We want the final 200 JSON payload, not an intermediate redirect with an empty body.
+      return req.url().includes('/api/brady/export') && req.method() === 'POST' && resp.status() === 200;
     }, { timeout: 25_000 });
 
     await page.click('#downloadExportBtn');
-    const resp = await exportResp;
-    expect(resp.status(), 'export endpoint should respond successfully').toBeLessThan(400);
+	    const resp = await exportResp;
+	    expect(resp.status(), 'export endpoint should respond successfully').toBe(200);
 
-    const out = await resp.json().catch(() => null);
-    expect(Boolean(out && out.export_version), 'export should return JSON payload').toBeTruthy();
-    expect(out.data && typeof out.data === 'object', 'export should include data object').toBeTruthy();
+	    const contentType = resp.headers()['content-type'] || '';
+	    expect(contentType.toLowerCase(), 'export response should be JSON').toContain('application/json');
+	    expect(resp.headers()['content-disposition'] || '', 'export response should be served as a download').toContain('attachment');
 
-    await assertNoRuntimeErrors(page, runtime);
-  });
+	    // The browser UI consumes the response as a Blob for download, which can make
+	    // the Playwright Response body unavailable. Validate the endpoint payload via
+	    // a direct API request using the current access token.
+	    const accessToken = await page.evaluate(async () => {
+	      try {
+	        const session = await window.MHA_Auth.getSession();
+	        return session?.access_token || '';
+	      } catch (_) {
+	        return '';
+	      }
+	    });
+	    expect(accessToken, 'expected a Supabase access token after login').toBeTruthy();
+
+	    const queryUserId = await page.locator('#exportLearner').inputValue();
+	    const startDay = await page.locator('#exportStart').inputValue();
+	    const endDay = await page.locator('#exportEnd').inputValue();
+	    expect(queryUserId, 'expected a selected learner id').toBeTruthy();
+	    expect(startDay, 'expected start day').toBeTruthy();
+	    expect(endDay, 'expected end day').toBeTruthy();
+
+	    const apiResp = await page.request.post(toAbs('api/brady/export'), {
+	      headers: {
+	        'Content-Type': 'application/json',
+	        Authorization: `Bearer ${accessToken}`,
+	      },
+	      data: {
+	        queryUserId,
+	        startDay,
+	        endDay,
+	        includeArtifactContent: false,
+	      },
+	    });
+	    expect(apiResp.status(), 'direct export call should return 200').toBe(200);
+	    const out = await apiResp.json();
+	    expect(Boolean(out && out.export_version), 'export should return JSON payload').toBeTruthy();
+	    expect(out.data && typeof out.data === 'object', 'export should include data object').toBeTruthy();
+
+	    await assertNoRuntimeErrors(page, runtime);
+	  });
 
   test('Admin can create then delete a pending learner link when mutate mode is enabled', async ({ page }) => {
     test.skip(!SHOULD_MUTATE_ADMIN, 'Set BRADY_E2E_MUTATE=1 to run write tests.');

@@ -361,11 +361,12 @@ function renderExportUI(rows, session) {
       setAlert('', false);
 
       try {
+        const token = await MHA_Auth.getAccessToken();
         const resp = await fetch('/api/brady/export', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             queryUserId,
@@ -378,7 +379,12 @@ function renderExportUI(rows, session) {
         if (!resp.ok) {
           const body = await resp.json().catch(() => ({}));
           const code = String(body?.error_code || body?.errorCode || '');
-          if (resp.status === 401 || code === 'session_not_found') {
+          const msg = String(body?.error || '').toLowerCase();
+          const looksLikeMissingSession = resp.status === 401
+            || code === 'session_not_found'
+            || msg.includes('session_not_found')
+            || msg.includes('session_id claim');
+          if (looksLikeMissingSession) {
             try { await MHA_Auth.getSupabase().auth.signOut({ scope: 'local' }); } catch (_) { /* ignore */ }
             window.location.href = MHA_Brady.bradyLoginUrl('brady/admin.html');
             return;

@@ -162,6 +162,18 @@ async function getSession() {
   return session;
 }
 
+/**
+ * Convenience helper: returns a usable access token or throws a friendly error.
+ * Use this instead of sb.auth.getSession() directly so we reuse our stale-session
+ * validation and avoid "session_not_found" surprises in downstream API calls.
+ */
+async function getAccessToken() {
+  const session = await getSession();
+  const token = String(session?.access_token || '').trim();
+  if (!token) throw new Error('Session expired. Please log in again.');
+  return token;
+}
+
 /** Get current user profile from profiles table */
 async function getProfile() {
   const session = await getSession();
@@ -281,6 +293,7 @@ async function initAuthUI(requireLogin = false) {
 window.MHA_Auth = {
   getSupabase,
   getSession,
+  getAccessToken,
   getProfile,
   signUp,
   signIn,

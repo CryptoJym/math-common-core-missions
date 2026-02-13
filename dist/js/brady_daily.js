@@ -331,12 +331,7 @@ function renderArtifactsList(sectionKey, artifacts, reviewsByArtifactId) {
 }
 
 async function getAccessToken() {
-  const sb = MHA_Auth.getSupabase();
-  const { data, error } = await sb.auth.getSession();
-  if (error) throw error;
-  const token = data?.session?.access_token || '';
-  if (!token) throw new Error('Session expired. Please log in again.');
-  return token;
+  return await MHA_Auth.getAccessToken();
 }
 
 async function reviewArtifactById(artifactId, queryUserId) {

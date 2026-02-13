@@ -190,12 +190,13 @@ async function upsertManual(queryUserId, manualPatch) {
   return data || null;
 }
 
-async function fetchCoachPlan(session, queryUserId, force = false) {
+async function fetchCoachPlan(queryUserId, force = false) {
+  const token = await MHA_Auth.getAccessToken();
   const resp = await fetch('/api/brady/coach', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       queryUserId,
@@ -284,13 +285,18 @@ async function main() {
       if (refreshBtn) refreshBtn.disabled = true;
       if (forceBtn) forceBtn.disabled = true;
       try {
-        const out = await fetchCoachPlan(gate.session, queryUserId, force);
+        const out = await fetchCoachPlan(queryUserId, force);
         renderPlan(out.daily_plan, { reused: out.reused, provider: out.provider, model: out.model });
         renderProfile(out.profile);
       } catch (e) {
         const status = Number(e?.statusCode || e?.status || 0);
         const code = String(e?.errorCode || e?.error_code || '');
-        if (status === 401 || code === 'session_not_found') {
+        const msg = String(e?.message || '').toLowerCase();
+        const looksLikeMissingSession = status === 401
+          || code === 'session_not_found'
+          || msg.includes('session_not_found')
+          || msg.includes('session_id claim');
+        if (looksLikeMissingSession) {
           await signOutLocalAndRedirectToLogin('brady/coach.html');
           return;
         }

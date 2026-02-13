@@ -1120,13 +1120,14 @@ function isValidQuizShape(quiz) {
   return true;
 }
 
-async function generateQuizViaApi(session, payload) {
+async function generateQuizViaApi(payload) {
+  const token = await MHA_Auth.getAccessToken();
   const url = new URL('/api/brady/generate-quiz', window.location.origin);
   const resp = await fetch(url.toString(), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload || {}),
   });
@@ -1362,7 +1363,7 @@ async function main() {
           const now = Date.now();
           if (!Number.isFinite(lastFail) || (now - lastFail) > (30 * 60 * 1000)) {
             try {
-              aiQuiz = await generateQuizViaApi(gate.session, {
+              aiQuiz = await generateQuizViaApi({
                 queryUserId,
                 assignmentId: a.id,
                 passPercent,
@@ -1381,7 +1382,12 @@ async function main() {
             } catch (e) {
               const status = Number(e?.statusCode || e?.status || 0);
               const code = String(e?.errorCode || e?.error_code || '');
-              if (status === 401 || code === 'session_not_found') {
+              const msg = String(e?.message || '').toLowerCase();
+              const looksLikeMissingSession = status === 401
+                || code === 'session_not_found'
+                || msg.includes('session_not_found')
+                || msg.includes('session_id claim');
+              if (looksLikeMissingSession) {
                 try {
                   await MHA_Auth.getSupabase().auth.signOut({ scope: 'local' });
                 } catch (_) {
