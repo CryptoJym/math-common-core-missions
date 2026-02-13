@@ -336,6 +336,8 @@ function renderExportUI(rows, session) {
   const btn = document.getElementById('downloadExportBtn');
   if (btn && btn.dataset.bound !== '1') {
     btn.dataset.bound = '1';
+    // The button starts disabled in markup to avoid "click does nothing" during initial async loads.
+    btn.disabled = false;
     btn.addEventListener('click', async () => {
       const msgEl = document.getElementById('exportMsg');
       const includeFilesEl = document.getElementById('exportIncludeFiles');

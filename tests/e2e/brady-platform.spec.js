@@ -762,6 +762,7 @@ test.describe('Admin portal', () => {
     await expect(page.locator('#downloadExportBtn')).toBeVisible();
     await expect(page.locator('#exportStart')).toBeVisible();
     await expect(page.locator('#exportEnd')).toBeVisible();
+    await expect(page.locator('#downloadExportBtn')).toBeEnabled();
 
     // Use the default date range prefilled by the UI (today + last 7 days).
     const exportResp = page.waitForResponse((resp) => {
