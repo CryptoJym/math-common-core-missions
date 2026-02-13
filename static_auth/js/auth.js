@@ -120,24 +120,38 @@ async function getSession() {
   _didValidateSessionThisPage = true;
 
   try {
-    const { error } = await sb.auth.getUser();
-    if (error) {
-      const status = Number(error?.status || error?.statusCode || 0);
-      const code = String(error?.code || error?.error_code || '');
-      const msg = String(error?.message || '').toLowerCase();
-      const looksLikeMissingSession =
-        (status === 403 && code === 'session_not_found') ||
-        msg.includes('session_not_found') ||
-        msg.includes('session from session_id claim');
+    // We validate via a direct fetch so network flakiness doesn't produce noisy
+    // console errors inside supabase-js (Playwright treats console errors as regressions).
+    const token = String(session?.access_token || '');
+    if (token && SUPABASE_URL && SUPABASE_ANON_KEY) {
+      const resp = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: 'GET',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      if (looksLikeMissingSession) {
-        try {
-          // Local-only so we don't fail if the remote session is already gone.
-          await sb.auth.signOut({ scope: 'local' });
-        } catch (_) {
-          // ignore
+      if (!resp.ok) {
+        const text = await resp.text();
+        let parsed = null;
+        try { parsed = JSON.parse(text); } catch (_) { parsed = null; }
+        const code = String(parsed?.error_code || parsed?.code || '');
+        const msg = String(parsed?.msg || parsed?.message || text || '').toLowerCase();
+        const looksLikeMissingSession =
+          (resp.status === 403 && code === 'session_not_found') ||
+          msg.includes('session_not_found') ||
+          msg.includes('session from session_id claim');
+
+        if (looksLikeMissingSession) {
+          try {
+            // Local-only so we don't fail if the remote session is already gone.
+            await sb.auth.signOut({ scope: 'local' });
+          } catch (_) {
+            // ignore
+          }
+          return null;
         }
-        return null;
       }
     }
   } catch (_) {
