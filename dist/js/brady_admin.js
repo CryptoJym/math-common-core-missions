@@ -97,6 +97,41 @@ function setActiveLearner(session, learnerId) {
   return MHA_Brady.setBradyLearner(session, learnerId);
 }
 
+function bindClearContextButton() {
+  const btn = document.getElementById('clearContextBtn');
+  if (!btn) return;
+  if (btn.dataset.bound === '1') return;
+  btn.dataset.bound = '1';
+
+  btn.addEventListener('click', async () => {
+    try {
+      const session = await MHA_Auth.getSession();
+      if (!session) {
+        setAlert('Please sign in again to clear context.');
+        return;
+      }
+
+      const email = MHA_Brady.normalizeEmail(session?.user?.email);
+      if (!MHA_Brady.isAllowedEmail(email)) {
+        setAlert('Only Brady admin accounts can manage learners.');
+        return;
+      }
+
+      // Clearing context is local-only (stored in browser storage). Do it
+      // immediately without a database call so UX stays fast and tests remain stable.
+      MHA_Brady.clearBradyLearner(session);
+      setAlert('Context set to your own account.', false);
+
+      // Refresh in the background; do not block the "context set" feedback.
+      void refresh(session).catch((e) => {
+        setAlert(`Could not refresh learners: ${String(e?.message || e)}`);
+      });
+    } catch (e) {
+      setAlert(`Could not switch context: ${String(e?.message || e)}`);
+    }
+  });
+}
+
 function renderSubAccountRows(rows, session) {
   const summary = document.getElementById('subAccountSummary');
   const holder = document.getElementById('subAccountList');
@@ -300,19 +335,6 @@ async function main() {
   const { session } = gate;
   renderAccountSummary(session);
 
-  const clearContextBtn = document.getElementById('clearContextBtn');
-  if (clearContextBtn) {
-    clearContextBtn.addEventListener('click', async () => {
-      try {
-        await setActiveLearner(session, session.user.id);
-        setAlert('Context set to your own account.', false);
-        await refresh(session);
-      } catch (e) {
-        setAlert(`Could not switch context: ${String(e?.message || e)}`);
-      }
-    });
-  }
-
   const addForm = document.getElementById('addSubAccountForm');
   if (addForm) {
     addForm.addEventListener('submit', async (e) => {
@@ -333,5 +355,6 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  bindClearContextButton();
   void main();
 });

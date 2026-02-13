@@ -289,12 +289,17 @@ async function getBradyContext(session, opts = {}) {
 
 async function setBradyLearner(session, learnerId) {
   const requested = normalizeLearnerId(learnerId);
-  const subAccounts = await loadSubAccounts(session);
+  const actorId = normalizeLearnerId(session?.user?.id);
 
-  if (!requested || requested === normalizeLearnerId(session.user.id)) {
+  // Clearing context back to self should not require a database roundtrip.
+  // This keeps the UX snappy and avoids flakiness when the admin portal is
+  // interacted with before background loads settle.
+  if (!requested || requested === actorId) {
     setActiveLearnerInStorage(session.user.id, null);
-    return normalizeLearnerId(session.user.id);
+    return actorId;
   }
+
+  const subAccounts = await loadSubAccounts(session);
 
   const match = (subAccounts || []).find((row) => normalizeLearnerId(row.learner_id) === requested);
   if (!match) {

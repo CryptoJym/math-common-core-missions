@@ -72,6 +72,44 @@ function setAiPrompts() {
   setVal('claudePrompt', claude);
 }
 
+function bindPromptControls() {
+  const marker = document.body?.dataset?.mhaReadingBound;
+  if (marker === '1') return;
+  if (document.body && document.body.dataset) document.body.dataset.mhaReadingBound = '1';
+
+  const fillPromptBtn = document.getElementById('fillPrompt');
+  const aiBox = document.getElementById('aiBox');
+  if (fillPromptBtn && aiBox) {
+    fillPromptBtn.addEventListener('click', () => {
+      setAiPrompts();
+      aiBox.style.display = (aiBox.style.display === 'none') ? 'block' : 'none';
+    });
+  }
+
+  const maybeUpdatePrompts = () => {
+    if (aiBox && aiBox.style.display !== 'none') setAiPrompts();
+  };
+  ['day', 'book', 'minutes', 'journal'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', maybeUpdatePrompts);
+    el.addEventListener('change', maybeUpdatePrompts);
+  });
+
+  Array.from(document.querySelectorAll('button[data-copy]')).forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-copy');
+      try {
+        await MHA_Brady.copyTextFromEl(id);
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 900);
+      } catch (_) {
+        setAlert('Copy failed. Your browser may block clipboard access here.');
+      }
+    });
+  });
+}
+
 async function loadReadingLogs(session, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
@@ -136,6 +174,10 @@ async function saveReading(session, queryUserId) {
 
 async function main() {
   try {
+    // Bind prompt controls immediately so early clicks (and E2E tests) work even
+    // while async Supabase loads are still in-flight.
+    bindPromptControls();
+
     const gate = await MHA_Brady.requireBrady({ nextPath: 'brady/reading.html' });
     if (!gate) return;
     const { userId: queryUserId } = MHA_Brady.getBradyQueryUser(gate.session, gate.context);
@@ -175,38 +217,6 @@ async function main() {
         }
       });
     }
-
-    const fillPromptBtn = document.getElementById('fillPrompt');
-    const aiBox = document.getElementById('aiBox');
-    if (fillPromptBtn && aiBox) {
-      fillPromptBtn.addEventListener('click', () => {
-        setAiPrompts();
-        aiBox.style.display = (aiBox.style.display === 'none') ? 'block' : 'none';
-      });
-    }
-
-    const maybeUpdatePrompts = () => {
-      if (aiBox && aiBox.style.display !== 'none') setAiPrompts();
-    };
-    ['day', 'book', 'minutes', 'journal'].forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener('input', maybeUpdatePrompts);
-      el.addEventListener('change', maybeUpdatePrompts);
-    });
-
-    Array.from(document.querySelectorAll('button[data-copy]')).forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-copy');
-        try {
-          await MHA_Brady.copyTextFromEl(id);
-          btn.textContent = 'Copied';
-          setTimeout(() => { btn.textContent = 'Copy'; }, 900);
-        } catch (_) {
-          setAlert('Copy failed. Your browser may block clipboard access here.');
-        }
-      });
-    });
 
   } catch (e) {
     setAlert(e?.message || 'Unable to load reading page.');
