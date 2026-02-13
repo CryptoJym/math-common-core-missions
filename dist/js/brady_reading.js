@@ -668,11 +668,29 @@ async function main() {
     gateSession = gate.session;
     queryUserId = MHA_Brady.getBradyQueryUser(gate.session, gate.context).userId;
 
+    if (window.MHA_BradyNav && typeof window.MHA_BradyNav.setContext === 'function') {
+      window.MHA_BradyNav.setContext(gate.context);
+    }
+
     await MHA_Auth.initAuthUI(false);
     document.body.classList.add('has-user-nav');
 
     // Now that auth resolved, prefer remote drafts if they are newer than local.
     await restoreDraftForCurrentSelection('post_auth');
+
+    const flushDraft = async () => {
+      try {
+        const payload = writeLocalNow();
+        if (!gateSession || !queryUserId) return;
+        await saveReadingDraftRow(gateSession, queryUserId, payload.day, payload.book_id, payload.minutes, payload.journal || null);
+      } catch (_) {
+        // best effort
+      }
+    };
+    window.addEventListener('pagehide', () => { void flushDraft(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') void flushDraft();
+    });
 
     const rows = await loadReadingLogs(gateSession, queryUserId);
     renderReadingLogs(rows);

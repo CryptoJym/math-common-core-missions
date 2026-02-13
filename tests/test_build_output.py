@@ -78,6 +78,7 @@ class TestDistStructure:
         js_dir = os.path.join(DIST_DIR, "js")
         for name in (
             "brady_access.js",
+            "brady_nav.js",
             "brady_assignments.js",
             "brady_assignments_ui.js",
             "brady_daily.js",
@@ -123,6 +124,7 @@ class TestStaticAuthSource:
         js_dir = os.path.join(STATIC_AUTH_DIR, "js")
         for name in (
             "brady_access.js",
+            "brady_nav.js",
             "brady_assignments.js",
             "brady_assignments_ui.js",
             "brady_daily.js",
@@ -275,6 +277,12 @@ class TestBradyPages:
         scripts = [s.get("src", "") for s in soup.find_all("script")]
         assert any("brady_access.js" in src for src in scripts), \
             f"brady/{name} must include brady_access.js"
+
+    def test_includes_brady_nav_js(self, page):
+        name, content, soup = page
+        scripts = [s.get("src", "") for s in soup.find_all("script")]
+        assert any("brady_nav.js" in src for src in scripts), \
+            f"brady/{name} must include brady_nav.js"
 
 # ---------------------------------------------------------------------------
 # Test: Login page structure

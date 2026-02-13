@@ -115,13 +115,13 @@ async function loadDailyPracticeAttempts(session, dayISO, queryUserId) {
   return data || [];
 }
 
-function localDraftKey(dayISO, practiceKind, assignmentId) {
-  return `mha_daily_draft:${dayISO}:${practiceKind}:${assignmentId}`;
+function localDraftKey(userId, dayISO, practiceKind, assignmentId) {
+  return `mha_daily_draft:${String(userId || '')}:${dayISO}:${practiceKind}:${assignmentId}`;
 }
 
-function readLocalDraft(dayISO, practiceKind, assignmentId) {
+function readLocalDraft(userId, dayISO, practiceKind, assignmentId) {
   try {
-    const raw = localStorage.getItem(localDraftKey(dayISO, practiceKind, assignmentId));
+    const raw = localStorage.getItem(localDraftKey(userId, dayISO, practiceKind, assignmentId));
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object') return null;
@@ -131,17 +131,17 @@ function readLocalDraft(dayISO, practiceKind, assignmentId) {
   }
 }
 
-function writeLocalDraft(dayISO, practiceKind, assignmentId, payload) {
+function writeLocalDraft(userId, dayISO, practiceKind, assignmentId, payload) {
   try {
-    localStorage.setItem(localDraftKey(dayISO, practiceKind, assignmentId), JSON.stringify(payload));
+    localStorage.setItem(localDraftKey(userId, dayISO, practiceKind, assignmentId), JSON.stringify(payload));
   } catch (_) {
     // ignore
   }
 }
 
-function clearLocalDraft(dayISO, practiceKind, assignmentId) {
+function clearLocalDraft(userId, dayISO, practiceKind, assignmentId) {
   try {
-    localStorage.removeItem(localDraftKey(dayISO, practiceKind, assignmentId));
+    localStorage.removeItem(localDraftKey(userId, dayISO, practiceKind, assignmentId));
   } catch (_) {
     // ignore
   }
@@ -582,9 +582,14 @@ function renderQuizSection(sectionKey, title, subtitleHtml, quiz, seed, status) 
 
   const qCount = (quiz.questions || []).length;
   const passPercent = Number(quiz.passPercent || 80);
-  const doneHtml = status?.completed
-    ? `<span class="status-badge mastered">Completed</span>`
-    : `<span class="status-badge not_started">Not done</span>`;
+  let doneHtml = `<span class="status-badge not_started">Not started</span>`;
+  if (status?.completed) {
+    doneHtml = `<span class="status-badge mastered">Passed</span>`;
+  } else if (status?.latestAttempt) {
+    const rawScore = Number(status.latestAttempt.scorePercent);
+    const scoreText = Number.isFinite(rawScore) ? ` <span class="mono">(${escapeHtml(rawScore)}%)</span>` : '';
+    doneHtml = `<span class="status-badge in_progress">Attempted${scoreText}</span>`;
+  }
 
   const questionHtml = (quiz.questions || []).map((q, idx) => {
     const number = idx + 1;
@@ -684,10 +689,18 @@ function renderDailyLayout(dayISO, target, mixed, completion, reflection) {
   const targetLink = target ? `assignment.html?id=${encodeURIComponent(target.id)}` : 'assignments.html';
   const mixedText = mixed ? escapeHtml(mixed.title) : 'None found';
 
-  const pill = (label, passed) => {
-    const cls = passed ? 'pill pill-math' : 'pill';
-    const suffix = passed ? 'Done' : 'Not done';
-    return `<span class="${cls}">${escapeHtml(label)}: <span class="mono">${escapeHtml(suffix)}</span></span>`;
+  const pill = (label, state) => {
+    const normalized = String(state || 'not_started');
+    if (normalized === 'passed') {
+      return `<span class="pill pill-math">${escapeHtml(label)}: <span class="mono">Passed</span></span>`;
+    }
+    if (normalized === 'attempted') {
+      return `<span class="pill pill-attempted">${escapeHtml(label)}: <span class="mono">Attempted</span></span>`;
+    }
+    if (normalized === 'not_available') {
+      return `<span class="pill">${escapeHtml(label)}: <span class="mono">N/A</span></span>`;
+    }
+    return `<span class="pill">${escapeHtml(label)}: <span class="mono">Not started</span></span>`;
   };
 
   el.innerHTML = `
@@ -703,15 +716,19 @@ function renderDailyLayout(dayISO, target, mixed, completion, reflection) {
       ${pill('Target', completion.target)}
       ${pill('Mixed', completion.mixed)}
       ${pill('AI', completion.ai)}
-      <span class="pill ${completion.completed ? 'pill-math' : ''}">Completed: <span class="mono">${completion.completed ? 'Yes' : 'No'}</span></span>
+      <span class="pill ${completion.completed ? 'pill-math' : ''}">Mastery: <span class="mono">${completion.completed ? 'Yes' : 'No'}</span></span>
     </div>
+
+    <div class="small" style="margin-top:10px; color: var(--text-secondary);">
+      Note: attempts are saved as proof-of-work. “Mastery” means passing every section (usually 80%+).
+    </div>
+
+    <div id="attemptHistorySection" class="section" style="margin-top:18px;"></div>
 
     <div id="warmupSection" class="section" style="margin-top:18px;"></div>
     <div id="targetSection" class="section"></div>
     <div id="mixedSection" class="section"></div>
     <div id="aiSection" class="section"></div>
-
-    <div id="attemptHistorySection" class="section" style="margin-top:18px;"></div>
 
     <div class="section" style="margin-top:18px;">
       <h2>Reflection (2–3 sentences)</h2>
@@ -719,7 +736,7 @@ function renderDailyLayout(dayISO, target, mixed, completion, reflection) {
       <textarea id="reflection" placeholder="Example: I kept mixing up..., but then I realized... Tomorrow I will...">${escapeHtml(reflection || '')}</textarea>
       <div class="btn-row">
         <button class="btn secondary" type="button" id="openTarget">Open Target Assignment</button>
-        <span class="small" id="saveMsg">${completion.completed ? 'Completed today.' : ''}</span>
+        <span class="small" id="saveMsg">${completion.completed ? 'Mastery completed today.' : ''}</span>
       </div>
     </div>
   `;
@@ -858,7 +875,7 @@ function bindDraftAutosave(opts) {
         } catch (_) {
           // ignore
         }
-        clearLocalDraft(dayISO, practiceKind, assignmentId);
+        clearLocalDraft(queryUserId, dayISO, practiceKind, assignmentId);
         setStatus('Draft cleared.');
         lastSavedJson = '';
         return;
@@ -869,13 +886,13 @@ function bindDraftAutosave(opts) {
 
       setStatus('Saving draft…');
       await saveDailyDraft(session, dayISO, practiceKind, assignmentId, seed, answers, queryUserId);
-      writeLocalDraft(dayISO, practiceKind, assignmentId, { seed, answers, updatedAt: new Date().toISOString() });
+      writeLocalDraft(queryUserId, dayISO, practiceKind, assignmentId, { seed, answers, updatedAt: new Date().toISOString() });
       lastSavedJson = payloadJson;
       setStatus(`Draft saved at ${formatLocalTime(new Date().toISOString())}.`);
     } catch (e) {
       // Fall back to local-only if Supabase save fails.
       const answers = collectAnswers();
-      writeLocalDraft(dayISO, practiceKind, assignmentId, { seed, answers, updatedAt: new Date().toISOString(), localOnly: true });
+      writeLocalDraft(queryUserId, dayISO, practiceKind, assignmentId, { seed, answers, updatedAt: new Date().toISOString(), localOnly: true });
       setStatus('Draft saved in this browser (cloud save failed).');
     } finally {
       saving = false;
@@ -884,6 +901,19 @@ function bindDraftAutosave(opts) {
 
   const schedule = () => {
     if (timer) clearTimeout(timer);
+    try {
+      // Write local immediately so fast navigation/refresh never loses work.
+      const answers = collectAnswers();
+      writeLocalDraft(queryUserId, dayISO, practiceKind, assignmentId, {
+        seed,
+        answers,
+        updatedAt: new Date().toISOString(),
+        localOnly: true,
+      });
+      setStatus('Saving…');
+    } catch (_) {
+      // ignore
+    }
     timer = setTimeout(() => { void saveNow(); }, 650);
   };
 
@@ -894,11 +924,17 @@ function bindDraftAutosave(opts) {
     el.addEventListener('change', schedule);
   }
 
-  // Save drafts when leaving the page.
+  const flush = () => { void saveNow(); };
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flush();
+  });
+
+  // Local fallback on unload (synchronous only).
   window.addEventListener('beforeunload', () => {
     try {
       const answers = collectAnswers();
-      writeLocalDraft(dayISO, practiceKind, assignmentId, { seed, answers, updatedAt: new Date().toISOString(), localOnly: true });
+      writeLocalDraft(queryUserId, dayISO, practiceKind, assignmentId, { seed, answers, updatedAt: new Date().toISOString(), localOnly: true });
     } catch (_) {
       // ignore
     }
@@ -1079,7 +1115,7 @@ function bindQuizSectionHandlers(opts) {
       } catch (_) {
         // no-op
       }
-      clearLocalDraft(dayISO, practiceKind, assignmentId);
+      clearLocalDraft(queryUserId, dayISO, practiceKind, assignmentId);
 
       if (passed) {
         setInputsDisabled(sectionKey, quiz, true);
@@ -1109,6 +1145,10 @@ async function main() {
     const gate = await MHA_Brady.requireBrady({ nextPath: 'brady/daily.html' });
     if (!gate) return;
     const { userId: queryUserId } = MHA_Brady.getBradyQueryUser(gate.session, gate.context);
+
+    if (window.MHA_BradyNav && typeof window.MHA_BradyNav.setContext === 'function') {
+      window.MHA_BradyNav.setContext(gate.context);
+    }
 
     await MHA_Auth.initAuthUI(false);
     document.body.classList.add('has-user-nav');
@@ -1168,20 +1208,25 @@ async function main() {
     const mixedLatestRow = mixed ? findLatestAttempt(attempts, 'daily_mixed', mixedAssignmentId) : null;
     const aiLatestRow = findLatestAttempt(attempts, 'daily_ai', aiAssignmentId);
 
+    const warmupState = warmupPassedRow ? 'passed' : (warmupLatestRow ? 'attempted' : 'not_started');
+    const targetState = target ? (targetPassedRow ? 'passed' : (targetLatestRow ? 'attempted' : 'not_started')) : 'not_available';
+    const mixedState = mixed ? (mixedPassedRow ? 'passed' : (mixedLatestRow ? 'attempted' : 'not_started')) : 'not_available';
+    const aiState = aiPassedRow ? 'passed' : (aiLatestRow ? 'attempted' : 'not_started');
+
     const completion = {
-      warmup: Boolean(warmupPassedRow),
-      target: Boolean(targetPassedRow),
-      mixed: Boolean(mixedPassedRow),
-      ai: Boolean(aiPassedRow),
+      warmup: warmupState,
+      target: targetState,
+      mixed: mixedState,
+      ai: aiState,
       completed: Boolean(warmupPassedRow && (target ? targetPassedRow : true) && (mixed ? mixedPassedRow : true) && aiPassedRow),
     };
 
     // Keep the legacy daily log booleans in sync (derived from the graded quizzes).
     await upsertDailyLog(gate.session, dayISO, queryUserId, {
-      warmup_done: completion.warmup,
-      target_done: completion.target,
-      mixed_review_done: completion.mixed,
-      ai_task_done: completion.ai,
+      warmup_done: completion.warmup === 'passed',
+      target_done: completion.target === 'passed',
+      mixed_review_done: completion.mixed === 'passed',
+      ai_task_done: completion.ai === 'passed',
       completed: completion.completed,
     });
 
@@ -1296,10 +1341,10 @@ async function main() {
     renderAttemptHistory(dayISO, attempts, lookup);
 
     // Restore drafts (Supabase first, then local fallback).
-    const warmupDraft = draftByKey[`daily_warmup:${warmupAssignmentId}`] || readLocalDraft(dayISO, 'daily_warmup', warmupAssignmentId);
-    const targetDraft = draftByKey[`daily_target:${targetAssignmentId}`] || readLocalDraft(dayISO, 'daily_target', targetAssignmentId);
-    const mixedDraft = draftByKey[`daily_mixed:${mixedAssignmentId}`] || readLocalDraft(dayISO, 'daily_mixed', mixedAssignmentId);
-    const aiDraft = draftByKey[`daily_ai:${aiAssignmentId}`] || readLocalDraft(dayISO, 'daily_ai', aiAssignmentId);
+    const warmupDraft = draftByKey[`daily_warmup:${warmupAssignmentId}`] || readLocalDraft(queryUserId, dayISO, 'daily_warmup', warmupAssignmentId);
+    const targetDraft = draftByKey[`daily_target:${targetAssignmentId}`] || readLocalDraft(queryUserId, dayISO, 'daily_target', targetAssignmentId);
+    const mixedDraft = draftByKey[`daily_mixed:${mixedAssignmentId}`] || readLocalDraft(queryUserId, dayISO, 'daily_mixed', mixedAssignmentId);
+    const aiDraft = draftByKey[`daily_ai:${aiAssignmentId}`] || readLocalDraft(queryUserId, dayISO, 'daily_ai', aiAssignmentId);
 
     const warmupRestored = restoreDraftInputs('warmup', warmupQuizLive, warmupDraft, warmupSeed >>> 0);
     const targetRestored = restoreDraftInputs('target', targetQuizLive, targetDraft, targetSeed >>> 0);

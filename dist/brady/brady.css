@@ -46,6 +46,76 @@ body.has-user-nav { padding-top: 58px; }
   padding: 24px;
 }
 
+.brady-topnav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.20);
+  border: 1px solid rgba(76, 201, 240, 0.18);
+  box-shadow: 0 0 18px rgba(76, 201, 240, 0.06);
+  margin-bottom: 18px;
+}
+
+.brady-topnav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.brady-topnav-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(123, 44, 191, 0.25);
+  color: var(--text-primary);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.78em;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  background: rgba(123, 44, 191, 0.08);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.brady-topnav-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(76, 201, 240, 0.45);
+  box-shadow: 0 0 16px rgba(123, 44, 191, 0.16);
+}
+
+.brady-topnav-link.active {
+  border-color: rgba(0, 255, 136, 0.35);
+  background: rgba(0, 255, 136, 0.10);
+  color: var(--accent-green);
+}
+
+.brady-topnav-back {
+  appearance: none;
+  border: 1px solid rgba(76, 201, 240, 0.45);
+  background: rgba(76, 201, 240, 0.08);
+  color: var(--accent-blue);
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.78em;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.brady-topnav-back:hover { box-shadow: var(--glow-blue); }
+
+.brady-topnav-context {
+  margin-left: auto;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 .page-header {
   padding: 26px 22px;
   border-radius: 18px;
@@ -164,6 +234,7 @@ body.has-user-nav { padding-top: 58px; }
 }
 
 .pill.pill-math { border-color: rgba(0, 255, 136, 0.28); background: rgba(0, 255, 136, 0.08); color: var(--accent-green); }
+.pill.pill-attempted { border-color: rgba(255, 215, 0, 0.25); background: rgba(255, 215, 0, 0.08); color: var(--accent-gold); }
 .pill.pill-reading { border-color: rgba(255, 215, 0, 0.25); background: rgba(255, 215, 0, 0.08); color: var(--accent-gold); }
 .pill.pill-language { border-color: rgba(123, 44, 191, 0.35); background: rgba(123, 44, 191, 0.10); color: #d7b6ff; }
 
@@ -370,4 +441,3 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: rgba(76
   .user-nav { padding: 8px 12px; gap: 10px; }
   .user-nav-xp { display: none; }
 }
-

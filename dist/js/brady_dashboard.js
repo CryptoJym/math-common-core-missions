@@ -138,6 +138,10 @@ async function main() {
     const gate = await MHA_Brady.requireBrady({ nextPath: 'brady/index.html' });
     if (!gate) return;
 
+    if (window.MHA_BradyNav && typeof window.MHA_BradyNav.setContext === 'function') {
+      window.MHA_BradyNav.setContext(gate.context);
+    }
+
     await MHA_Auth.initAuthUI(false);
     document.body.classList.add('has-user-nav');
     const { userId: queryUserId } = MHA_Brady.getBradyQueryUser(gate.session, gate.context);
