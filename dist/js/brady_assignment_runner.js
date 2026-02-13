@@ -393,12 +393,12 @@ function getPracticeAnswerFromDom(q) {
   return el.value;
 }
 
-async function loadPassingPracticeAttempt(session, assignmentId, basedOnAttemptedAt, passPercent) {
+async function loadPassingPracticeAttempt(session, queryUserId, assignmentId, basedOnAttemptedAt, passPercent) {
   const sb = MHA_Auth.getSupabase();
   let q = sb
     .from('brady_practice_attempts')
     .select('practiced_at,score_percent,correct_questions,total_questions,based_on_attempted_at')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('practice_kind', 'assignment_retake')
     .eq('assignment_id', assignmentId)
     .order('practiced_at', { ascending: false })
@@ -417,10 +417,10 @@ async function loadPassingPracticeAttempt(session, assignmentId, basedOnAttempte
   return (data && data[0]) ? data[0] : null;
 }
 
-async function savePracticeAttempt(session, assignmentId, basedOnAttemptedAt, seed, summary, answers, results) {
+async function savePracticeAttempt(session, queryUserId, assignmentId, basedOnAttemptedAt, seed, summary, answers, results) {
   const sb = MHA_Auth.getSupabase();
   const { error } = await sb.from('brady_practice_attempts').insert({
-    user_id: session.user.id,
+    user_id: queryUserId,
     practice_kind: 'assignment_retake',
     assignment_id: assignmentId,
     based_on_attempted_at: basedOnAttemptedAt || null,
@@ -845,12 +845,12 @@ function startLockoutCountdown(passPercent, latestAttempt, lockedUntil) {
   lockoutTimerId = setInterval(tick, 1000);
 }
 
-async function loadAttemptHistory(session, assignmentId) {
+async function loadAttemptHistory(session, queryUserId, assignmentId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_assignment_attempts')
     .select('attempted_at,score_percent,correct_questions,total_questions,seed')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('assignment_id', assignmentId)
     .order('attempted_at', { ascending: false })
     .limit(10);
@@ -858,12 +858,12 @@ async function loadAttemptHistory(session, assignmentId) {
   return data || [];
 }
 
-async function loadLatestAttempt(session, assignmentId) {
+async function loadLatestAttempt(session, queryUserId, assignmentId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_assignment_attempts')
     .select('attempted_at,score_percent,correct_questions,total_questions,seed,answers,results')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('assignment_id', assignmentId)
     .order('attempted_at', { ascending: false })
     .limit(1);
@@ -871,12 +871,12 @@ async function loadLatestAttempt(session, assignmentId) {
   return (data && data[0]) ? data[0] : null;
 }
 
-async function loadGeneratedQuiz(session, assignmentId, basedOnAttemptedAt) {
+async function loadGeneratedQuiz(session, queryUserId, assignmentId, basedOnAttemptedAt) {
   const sb = MHA_Auth.getSupabase();
   let q = sb
     .from('brady_generated_quizzes')
     .select('created_at,quiz,based_on_attempted_at')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('assignment_id', assignmentId)
     .order('created_at', { ascending: false })
     .limit(1);
@@ -992,27 +992,27 @@ function renderAttemptHistory(rows) {
   `;
 }
 
-async function loadProgressRow(session, assignmentId) {
+async function loadProgressRow(session, queryUserId, assignmentId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_assignment_progress')
     .select('status,score')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('assignment_id', assignmentId)
     .limit(1);
   if (error) throw error;
   return (data && data[0]) ? data[0] : null;
 }
 
-async function upsertProgressFromScore(session, assignmentId, scorePercent, passPercent) {
-  const existing = await loadProgressRow(session, assignmentId);
+async function upsertProgressFromScore(session, queryUserId, assignmentId, scorePercent, passPercent) {
+  const existing = await loadProgressRow(session, queryUserId, assignmentId);
   const alreadyMastered = existing?.status === 'mastered';
   const status = alreadyMastered ? 'mastered' : (scorePercent >= passPercent ? 'mastered' : 'in_progress');
   const bestScore = Math.max(Number(existing?.score || 0), Number(scorePercent || 0));
 
   const sb = MHA_Auth.getSupabase();
   const { error } = await sb.from('brady_assignment_progress').upsert({
-    user_id: session.user.id,
+    user_id: queryUserId,
     assignment_id: assignmentId,
     status,
     score: bestScore,
@@ -1021,10 +1021,10 @@ async function upsertProgressFromScore(session, assignmentId, scorePercent, pass
   if (error) throw error;
 }
 
-async function saveAttempt(session, assignmentId, seed, summary, answers, results) {
+async function saveAttempt(session, queryUserId, assignmentId, seed, summary, answers, results) {
   const sb = MHA_Auth.getSupabase();
   const { error } = await sb.from('brady_assignment_attempts').insert({
-    user_id: session.user.id,
+    user_id: queryUserId,
     assignment_id: assignmentId,
     seed,
     score_percent: summary.scorePercent,
@@ -1045,6 +1045,8 @@ async function main() {
     const gate = await MHA_Brady.requireBrady({ nextPath });
     if (!gate) return;
 
+    const { userId: queryUserId } = MHA_Brady.getBradyQueryUser(gate.session, gate.context);
+
     await MHA_Auth.initAuthUI(false);
     document.body.classList.add('has-user-nav');
 
@@ -1062,7 +1064,7 @@ async function main() {
 
     let latestAttempt = null;
     try {
-      latestAttempt = await loadLatestAttempt(gate.session, a.id);
+      latestAttempt = await loadLatestAttempt(gate.session, queryUserId, a.id);
     } catch (_) {
       // It's OK if the attempts table doesn't exist yet.
       latestAttempt = null;
@@ -1086,7 +1088,7 @@ async function main() {
     let practicePassed = false;
     if (practiceRequired) {
       try {
-        const row = await loadPassingPracticeAttempt(gate.session, a.id, lastFailedAttemptedAt, passPercent);
+        const row = await loadPassingPracticeAttempt(gate.session, queryUserId, a.id, lastFailedAttemptedAt, passPercent);
         practicePassed = Boolean(row);
       } catch (_) {
         practicePassed = false;
@@ -1124,7 +1126,7 @@ async function main() {
 
       // Load history (still useful context)
       try {
-        const history = await loadAttemptHistory(gate.session, a.id);
+        const history = await loadAttemptHistory(gate.session, queryUserId, a.id);
         renderAttemptHistory(history);
       } catch (_) {
         // no-op
@@ -1153,7 +1155,7 @@ async function main() {
 
       if (shouldTryAi) {
         try {
-          aiQuiz = await loadGeneratedQuiz(gate.session, a.id, failedAttemptedAt);
+          aiQuiz = await loadGeneratedQuiz(gate.session, queryUserId, a.id, failedAttemptedAt);
         } catch (_) {
           aiQuiz = null;
         }
@@ -1166,6 +1168,7 @@ async function main() {
           if (!Number.isFinite(lastFail) || (now - lastFail) > (30 * 60 * 1000)) {
             try {
               aiQuiz = await generateQuizViaApi(gate.session, {
+                queryUserId,
                 assignmentId: a.id,
                 passPercent,
                 latestScorePercent: latestScore,
@@ -1218,9 +1221,9 @@ async function main() {
     renderAssignmentMeta(a, quiz, seed);
     renderQuiz(quiz);
 
-    // Load history
+      // Load history
     try {
-      const history = await loadAttemptHistory(gate.session, a.id);
+      const history = await loadAttemptHistory(gate.session, queryUserId, a.id);
       renderAttemptHistory(history);
     } catch (_) {
       // It's OK if table isn't available yet; show nothing.
@@ -1330,11 +1333,11 @@ async function main() {
             renderResults(summary);
 
             // Save attempt + update mastery.
-            await saveAttempt(gate.session, a.id, seed, summary, answers, results);
-            await upsertProgressFromScore(gate.session, a.id, scorePercent, quiz.passPercent);
+            await saveAttempt(gate.session, queryUserId, a.id, seed, summary, answers, results);
+            await upsertProgressFromScore(gate.session, queryUserId, a.id, scorePercent, quiz.passPercent);
 
             // Refresh history UI.
-            const history = await loadAttemptHistory(gate.session, a.id);
+            const history = await loadAttemptHistory(gate.session, queryUserId, a.id);
             renderAttemptHistory(history);
 
             if (passed) {
@@ -1345,7 +1348,7 @@ async function main() {
             // If not passed, lock out and show the lockout panel based on the actual saved row.
             let latest = null;
             try {
-              latest = await loadLatestAttempt(gate.session, a.id);
+              latest = await loadLatestAttempt(gate.session, queryUserId, a.id);
             } catch (_) {
               latest = null;
             }

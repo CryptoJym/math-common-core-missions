@@ -301,3 +301,139 @@ test('review handler: Supabase insert error -> 500', async () => {
   global.fetch = oldFetch;
   process.env.OPENAI_API_KEY = oldApiKey;
 });
+
+test('review handler: supports delegated queryUserId when mapping is allowed', async () => {
+  const oldFetch = global.fetch;
+  const oldApiKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = 'test-key';
+  const delegatedUserId = '33333333-3333-4333-8333-333333333333';
+
+  let reviewBody = null;
+  const fetchStub = createFetchStub([
+    {
+      match: /\/auth\/v1\/user$/,
+      handle: async () => jsonResponse(200, {
+        id: '00000000-0000-4000-8000-000000000000',
+        email: 'james@jamesbrady.org',
+      }),
+    },
+    {
+      match: /\/rest\/v1\/brady_sub_accounts\?/,
+      handle: async () => jsonResponse(200, [{ id: 'link2', learner_id: delegatedUserId }]),
+    },
+    {
+      match: /\/rest\/v1\/brady_artifacts\?/,
+      handle: async (href) => {
+        assert.ok(href.includes(`user_id=eq.${delegatedUserId}`));
+        return jsonResponse(200, [{
+          id: 'a1',
+          user_id: delegatedUserId,
+          day: '2026-02-12',
+          practice_kind: 'daily_ai',
+          assignment_id: 'daily_ai',
+          filename: 'notes.txt',
+          mime_type: 'text/plain',
+          size_bytes: 20,
+          content_base64: Buffer.from('hello', 'utf8').toString('base64'),
+        }]);
+      },
+    },
+    {
+      match: /\/rest\/v1\/brady_ai_reviews\?/,
+      handle: async () => jsonResponse(200, []),
+    },
+    {
+      match: (href) => href === 'https://api.openai.com/v1/chat/completions',
+      handle: async () => jsonResponse(200, {
+        choices: [{ message: { content: JSON.stringify({ scorePercent: 85, feedback: 'Looks good', nextSteps: ['x', 'y', 'z'] }) } }],
+      }),
+    },
+    {
+      match: /\/rest\/v1\/brady_ai_reviews$/,
+      handle: async (_href, opts) => {
+        reviewBody = JSON.parse(opts.body || '{}');
+        return jsonResponse(201, [{ id: 'r2' }]);
+      },
+    },
+  ]);
+  global.fetch = fetchStub;
+
+  const req = makeReq({
+    method: 'POST',
+    headers: { Authorization: 'Bearer test-token' },
+    body: {
+      artifactId: 'a1',
+      queryUserId: delegatedUserId,
+    },
+  });
+  const res = makeRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res._getJson().reused, false);
+  assert.equal(reviewBody?.user_id, delegatedUserId);
+  assert.equal(
+    reviewBody?.score_percent,
+    85,
+    'expected delegated review to be inserted for delegated learner',
+  );
+
+  global.fetch = oldFetch;
+  process.env.OPENAI_API_KEY = oldApiKey;
+});
+
+test('review handler: delegated queryUserId without permission returns 403', async () => {
+  const oldFetch = global.fetch;
+  const req = makeReq({
+    method: 'POST',
+    headers: { Authorization: 'Bearer test-token' },
+    body: {
+      artifactId: 'a1',
+      queryUserId: '44444444-4444-4444-8444-444444444444',
+    },
+  });
+  const res = makeRes();
+
+  global.fetch = createFetchStub([
+    {
+      match: /\/auth\/v1\/user$/,
+      handle: async () => jsonResponse(200, { id: '00000000-0000-4000-8000-000000000000', email: 'james@jamesbrady.org' }),
+    },
+    {
+      match: /\/rest\/v1\/brady_sub_accounts\?/,
+      handle: async () => jsonResponse(200, []),
+    },
+    {
+      match: /\/rest\/v1\/brady_artifacts\?/,
+      handle: async () => {
+        throw new Error('should not query artifacts');
+      },
+    },
+    {
+      match: /\/rest\/v1\/brady_ai_reviews\?/,
+      handle: async () => {
+        throw new Error('should not query reviews');
+      },
+    },
+    {
+      match: /api.openai.com\/v1\/chat\/completions/,
+      handle: async () => {
+        throw new Error('should not call openai');
+      },
+    },
+    {
+      match: /\/rest\/v1\/brady_ai_reviews$/,
+      handle: async () => {
+        throw new Error('should not insert review');
+      },
+    },
+  ]);
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 403);
+  assert.equal(res._getJson().error, 'Not allowed for this learner');
+
+  global.fetch = oldFetch;
+});

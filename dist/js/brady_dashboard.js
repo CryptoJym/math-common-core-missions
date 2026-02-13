@@ -20,12 +20,12 @@ function setAlert(msg) {
   el.style.display = 'block';
 }
 
-async function loadAssignmentProgress(session) {
+async function loadAssignmentProgress(session, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_assignment_progress')
     .select('assignment_id,status,last_attempt_at')
-    .eq('user_id', session.user.id);
+    .eq('user_id', queryUserId);
   if (error) throw error;
   const map = {};
   (data || []).forEach((r) => { map[r.assignment_id] = r; });
@@ -38,25 +38,25 @@ function pickTargetAssignment(progressMap) {
   return firstNotMastered || list[0] || null;
 }
 
-async function loadDailyLog(session, dayISO) {
+async function loadDailyLog(session, dayISO, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_daily_training_log')
     .select('*')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('day', dayISO)
     .limit(1);
   if (error) throw error;
   return (data && data[0]) ? data[0] : null;
 }
 
-async function loadReadingMinutesThisWeek(session) {
+async function loadReadingMinutesThisWeek(session, queryUserId) {
   // We avoid date math in SQL to keep it simple; just fetch last ~10 rows and sum client-side.
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_reading_log')
     .select('day,minutes')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .order('day', { ascending: false })
     .limit(20);
   if (error) throw error;
@@ -140,12 +140,13 @@ async function main() {
 
     await MHA_Auth.initAuthUI(false);
     document.body.classList.add('has-user-nav');
+    const { userId: queryUserId } = MHA_Brady.getBradyQueryUser(gate.session, gate.context);
 
     const dayISO = todayLocalISO();
-    const progressMap = await loadAssignmentProgress(gate.session);
+    const progressMap = await loadAssignmentProgress(gate.session, queryUserId);
     const target = pickTargetAssignment(progressMap);
-    const daily = await loadDailyLog(gate.session, dayISO);
-    const readingMinutesWeek = await loadReadingMinutesThisWeek(gate.session);
+    const daily = await loadDailyLog(gate.session, dayISO, queryUserId);
+    const readingMinutesWeek = await loadReadingMinutesThisWeek(gate.session, queryUserId);
 
     renderTodaySummary(dayISO, daily, readingMinutesWeek);
     renderNextUp(target, progressMap[target?.id]);

@@ -30,6 +30,12 @@ function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
+function normalizeUuid(value) {
+  const v = String(value || '').trim().toLowerCase();
+  if (!v) return '';
+  return /^[0-9a-f-]{36}$/.test(v) ? v : '';
+}
+
 function sendJson(res, status, payload) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -239,6 +245,38 @@ async function supabaseRestInsert({ supabaseUrl, anonKey, accessToken, table, ro
   return Array.isArray(data) ? data[0] : data;
 }
 
+async function assertCanManageUserData({
+  supabaseUrl,
+  anonKey,
+  accessToken,
+  actorId,
+  targetUserId,
+}) {
+  if (!actorId || !targetUserId || actorId === targetUserId) {
+    return;
+  }
+
+  const rows = await supabaseRestGet({
+    supabaseUrl,
+    anonKey,
+    accessToken,
+    table: 'brady_sub_accounts',
+    params: {
+      select: 'id',
+      admin_user_id: `eq.${actorId}`,
+      learner_id: `eq.${targetUserId}`,
+      is_active: 'eq.true',
+      limit: '1',
+    },
+  });
+
+  if (!Array.isArray(rows) || rows.length === 0) {
+    const err = new Error('Not allowed for this learner');
+    err.statusCode = 403;
+    throw err;
+  }
+}
+
 async function callOpenAIForQuiz({ model, prompt }) {
   const apiKey = process.env.OPENAI_API_KEY || '';
   if (!apiKey) {
@@ -306,6 +344,8 @@ async function handler(req, res) {
     const assignmentId = String(body?.assignmentId || assignment?.id || '').trim();
     const passPercent = 80;
     const basedOnAttemptedAt = body?.basedOnAttemptedAt ? String(body.basedOnAttemptedAt) : '';
+    const requestedQueryUserId = normalizeUuid(body?.queryUserId);
+    let queryUserId = '';
 
     if (!assignmentId) {
       sendJson(res, 400, { error: 'assignmentId is required' });
@@ -327,6 +367,20 @@ async function handler(req, res) {
       return;
     }
 
+    queryUserId = requestedQueryUserId || normalizeUuid(user?.id);
+    if (requestedQueryUserId && !queryUserId) {
+      sendJson(res, 400, { error: 'queryUserId must be a valid UUID' });
+      return;
+    }
+
+    await assertCanManageUserData({
+      supabaseUrl,
+      anonKey,
+      accessToken,
+      actorId: user?.id,
+      targetUserId: queryUserId,
+    });
+
     // This endpoint is intended to generate an adaptive quiz only after a failed attempt's
     // cooldown has expired. Enforce that server-side to prevent cost abuse.
     const latestRows = await supabaseRestGet({
@@ -336,7 +390,7 @@ async function handler(req, res) {
       table: 'brady_assignment_attempts',
       params: {
         select: 'attempted_at,score_percent,results',
-        user_id: `eq.${user.id}`,
+        user_id: `eq.${queryUserId}`,
         assignment_id: `eq.${assignmentId}`,
         order: 'attempted_at.desc',
         limit: 1,
@@ -387,7 +441,7 @@ async function handler(req, res) {
       table: 'brady_practice_attempts',
       params: {
         select: 'practiced_at,score_percent',
-        user_id: `eq.${user.id}`,
+        user_id: `eq.${queryUserId}`,
         practice_kind: 'eq.assignment_retake',
         assignment_id: `eq.${assignmentId}`,
         based_on_attempted_at: `eq.${basedOnAttemptedAt}`,
@@ -415,6 +469,7 @@ async function handler(req, res) {
         table: 'brady_generated_quizzes',
         params: {
           select: 'id,quiz,created_at',
+          user_id: `eq.${queryUserId}`,
           assignment_id: `eq.${assignmentId}`,
           based_on_attempted_at: `eq.${basedOnAttemptedAt}`,
           order: 'created_at.desc',
@@ -448,7 +503,7 @@ async function handler(req, res) {
       accessToken,
       table: 'brady_generated_quizzes',
       row: {
-        user_id: user.id,
+        user_id: queryUserId,
         assignment_id: assignmentId,
         based_on_attempted_at: basedOnAttemptedAt,
         focus_tags: focusTags,
@@ -458,7 +513,8 @@ async function handler(req, res) {
 
     sendJson(res, 200, { reused: false, quiz });
   } catch (e) {
-    sendJson(res, 500, { error: e?.message || 'Unknown error' });
+    const status = Number.isFinite(Number(e?.statusCode)) ? Number(e.statusCode) : 500;
+    sendJson(res, status, { error: e?.message || 'Unknown error' });
   }
 }
 

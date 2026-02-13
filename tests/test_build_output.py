@@ -71,6 +71,8 @@ class TestDistStructure:
         assert os.path.isdir(brady_dir), "dist/brady/ directory must exist"
         for name in ("index.html", "assignments.html", "daily.html", "reading.html", "assignment.html", "brady.css"):
             assert os.path.isfile(os.path.join(brady_dir, name)), f"dist/brady/{name} must exist"
+        assert os.path.isfile(os.path.join(brady_dir, "admin.html")), "dist/brady/admin.html must exist"
+        assert os.path.isfile(os.path.join(brady_dir, "avatar.html")), "dist/brady/avatar.html must exist"
 
     def test_brady_js_exists(self):
         js_dir = os.path.join(DIST_DIR, "js")
@@ -83,6 +85,8 @@ class TestDistStructure:
             "brady_reading.js",
             "brady_quiz_bank.js",
             "brady_assignment_runner.js",
+            "brady_admin.js",
+            "brady_avatar.js",
         ):
             assert os.path.isfile(os.path.join(js_dir, name)), f"dist/js/{name} must exist"
 
@@ -112,6 +116,8 @@ class TestStaticAuthSource:
         assert os.path.isdir(brady_dir), "static_auth/brady/ directory must exist"
         for name in ("index.html", "assignments.html", "daily.html", "reading.html", "assignment.html", "brady.css"):
             assert os.path.isfile(os.path.join(brady_dir, name)), f"static_auth/brady/{name} must exist"
+        assert os.path.isfile(os.path.join(brady_dir, "admin.html")), "static_auth/brady/admin.html must exist"
+        assert os.path.isfile(os.path.join(brady_dir, "avatar.html")), "static_auth/brady/avatar.html must exist"
 
     def test_static_auth_has_brady_js_files(self):
         js_dir = os.path.join(STATIC_AUTH_DIR, "js")
@@ -124,6 +130,8 @@ class TestStaticAuthSource:
             "brady_reading.js",
             "brady_quiz_bank.js",
             "brady_assignment_runner.js",
+            "brady_admin.js",
+            "brady_avatar.js",
         ):
             assert os.path.isfile(os.path.join(js_dir, name)), f"static_auth/js/{name} must exist"
 
@@ -236,7 +244,7 @@ class TestMissionPages:
 # ---------------------------------------------------------------------------
 
 class TestBradyPages:
-    @pytest.fixture(params=["index.html", "assignments.html", "daily.html", "reading.html", "assignment.html"])
+    @pytest.fixture(params=["index.html", "assignments.html", "daily.html", "reading.html", "assignment.html", "admin.html", "avatar.html"])
     def page(self, request):
         name = request.param
         path = os.path.join(DIST_DIR, "brady", name)

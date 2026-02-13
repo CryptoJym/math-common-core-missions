@@ -72,12 +72,12 @@ function setAiPrompts() {
   setVal('claudePrompt', claude);
 }
 
-async function loadReadingLogs(session) {
+async function loadReadingLogs(session, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_reading_log')
     .select('day,book_id,minutes,journal,created_at')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .order('day', { ascending: false })
     .limit(60);
   if (error) throw error;
@@ -111,7 +111,7 @@ function renderReadingLogs(rows) {
   }
 }
 
-async function saveReading(session) {
+async function saveReading(session, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const day = document.getElementById('day')?.value || todayLocalISO();
   const bookId = document.getElementById('book')?.value;
@@ -125,7 +125,7 @@ async function saveReading(session) {
   }
 
   const { error } = await sb.from('brady_reading_log').upsert({
-    user_id: session.user.id,
+    user_id: queryUserId,
     day,
     book_id: bookId,
     minutes,
@@ -138,6 +138,7 @@ async function main() {
   try {
     const gate = await MHA_Brady.requireBrady({ nextPath: 'brady/reading.html' });
     if (!gate) return;
+    const { userId: queryUserId } = MHA_Brady.getBradyQueryUser(gate.session, gate.context);
 
     await MHA_Auth.initAuthUI(false);
     document.body.classList.add('has-user-nav');
@@ -150,7 +151,7 @@ async function main() {
       bookEl.innerHTML = BRADY_BOOKS.map((b) => `<option value="${b.id}">${b.title}</option>`).join('');
     }
 
-    const rows = await loadReadingLogs(gate.session);
+    const rows = await loadReadingLogs(gate.session, queryUserId);
     renderReadingLogs(rows);
 
     const saveBtn = document.getElementById('saveReading');
@@ -160,8 +161,8 @@ async function main() {
         saveBtn.disabled = true;
         saveBtn.textContent = 'Saving…';
         try {
-          await saveReading(gate.session);
-          const nextRows = await loadReadingLogs(gate.session);
+          await saveReading(gate.session, queryUserId);
+          const nextRows = await loadReadingLogs(gate.session, queryUserId);
           renderReadingLogs(nextRows);
           setAiPrompts();
           setAlert('Saved.');
@@ -213,4 +214,3 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', main);
-

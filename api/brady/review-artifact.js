@@ -23,6 +23,12 @@ function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
+function normalizeUuid(value) {
+  const v = String(value || '').trim().toLowerCase();
+  if (!v) return '';
+  return /^[0-9a-f-]{36}$/.test(v) ? v : '';
+}
+
 function sendJson(res, status, payload) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -232,6 +238,38 @@ async function supabaseRestInsert({ supabaseUrl, anonKey, accessToken, table, ro
   return Array.isArray(data) ? data[0] : data;
 }
 
+async function assertCanManageUserData({
+  supabaseUrl,
+  anonKey,
+  accessToken,
+  actorId,
+  targetUserId,
+}) {
+  if (!actorId || !targetUserId || actorId === targetUserId) {
+    return;
+  }
+
+  const rows = await supabaseRestGet({
+    supabaseUrl,
+    anonKey,
+    accessToken,
+    table: 'brady_sub_accounts',
+    params: {
+      select: 'id',
+      admin_user_id: `eq.${actorId}`,
+      learner_id: `eq.${targetUserId}`,
+      is_active: 'eq.true',
+      limit: '1',
+    },
+  });
+
+  if (!Array.isArray(rows) || rows.length === 0) {
+    const err = new Error('Not allowed for this learner');
+    err.statusCode = 403;
+    throw err;
+  }
+}
+
 async function callOpenAIReview({ model, prompt }) {
   const apiKey = process.env.OPENAI_API_KEY || '';
   if (!apiKey) throw new Error('OPENAI_API_KEY is not configured on the server.');
@@ -347,6 +385,8 @@ async function handler(req, res) {
 
     const body = await readJsonBody(req);
     const artifactId = String(body?.artifactId || '').trim();
+    const requestedQueryUserId = normalizeUuid(body?.queryUserId);
+    let queryUserId = '';
     if (!artifactId) {
       sendJson(res, 400, { error: 'artifactId is required' });
       return;
@@ -361,6 +401,20 @@ async function handler(req, res) {
       return;
     }
 
+    queryUserId = requestedQueryUserId || normalizeUuid(user?.id);
+    if (requestedQueryUserId && !queryUserId) {
+      sendJson(res, 400, { error: 'queryUserId must be a valid UUID' });
+      return;
+    }
+
+    await assertCanManageUserData({
+      supabaseUrl,
+      anonKey,
+      accessToken,
+      actorId: user?.id,
+      targetUserId: queryUserId,
+    });
+
     const artifactRows = await supabaseRestGet({
       supabaseUrl,
       anonKey,
@@ -368,7 +422,7 @@ async function handler(req, res) {
       table: 'brady_artifacts',
       params: {
         select: 'id,user_id,day,practice_kind,assignment_id,filename,mime_type,size_bytes,content_base64',
-        user_id: `eq.${user.id}`,
+        user_id: `eq.${queryUserId}`,
         id: `eq.${artifactId}`,
         order: 'created_at.desc',
         limit: 1,
@@ -387,7 +441,7 @@ async function handler(req, res) {
       table: 'brady_ai_reviews',
       params: {
         select: 'id,artifact_id,score_percent,feedback,next_steps,provider,model,created_at',
-        user_id: `eq.${user.id}`,
+        user_id: `eq.${queryUserId}`,
         artifact_id: `eq.${artifactId}`,
         order: 'created_at.desc',
         limit: 1,
@@ -448,7 +502,7 @@ async function handler(req, res) {
       accessToken,
       table: 'brady_ai_reviews',
       row: {
-        user_id: user.id,
+        user_id: queryUserId,
         artifact_id: artifact.id,
         provider: ai.provider,
         model: ai.model,
@@ -473,7 +527,8 @@ async function handler(req, res) {
       review,
     });
   } catch (e) {
-    sendJson(res, 500, { error: e?.message || 'Unknown error' });
+    const status = Number.isFinite(Number(e?.statusCode)) ? Number(e.statusCode) : 500;
+    sendJson(res, status, { error: e?.message || 'Unknown error' });
   }
 }
 

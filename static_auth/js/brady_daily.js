@@ -49,12 +49,12 @@ function formatLocalTime(iso) {
   return `${hh}:${mm}`;
 }
 
-async function loadAssignmentProgress(session) {
+async function loadAssignmentProgress(session, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_assignment_progress')
     .select('assignment_id,status')
-    .eq('user_id', session.user.id);
+    .eq('user_id', queryUserId);
   if (error) throw error;
 
   const map = {};
@@ -77,36 +77,36 @@ function pickMixedAssignment(progressById, target, dayISO) {
   return pool[idx];
 }
 
-async function loadDailyLog(session, dayISO) {
+async function loadDailyLog(session, dayISO, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_daily_training_log')
     .select('*')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('day', dayISO)
     .limit(1);
   if (error) throw error;
   return (data && data[0]) ? data[0] : null;
 }
 
-async function upsertDailyLog(session, dayISO, patch) {
+async function upsertDailyLog(session, dayISO, queryUserId, patch) {
   const sb = MHA_Auth.getSupabase();
   const { error } = await sb
     .from('brady_daily_training_log')
     .upsert({
-      user_id: session.user.id,
+      user_id: queryUserId,
       day: dayISO,
       ...patch,
     }, { onConflict: 'user_id,day' });
   if (error) throw error;
 }
 
-async function loadDailyPracticeAttempts(session, dayISO) {
+async function loadDailyPracticeAttempts(session, dayISO, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_practice_attempts')
     .select('practice_kind,day,assignment_id,seed,practiced_at,score_percent,total_questions,correct_questions')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('day', dayISO)
     .in('practice_kind', ['daily_warmup', 'daily_target', 'daily_mixed', 'daily_ai'])
     .order('practiced_at', { ascending: false })
@@ -147,12 +147,12 @@ function clearLocalDraft(dayISO, practiceKind, assignmentId) {
   }
 }
 
-async function loadDailyDrafts(session, dayISO) {
+async function loadDailyDrafts(session, dayISO, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_practice_drafts')
     .select('practice_kind,assignment_id,seed,answers,updated_at')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('day', dayISO)
     .in('practice_kind', ['daily_warmup', 'daily_target', 'daily_mixed', 'daily_ai'])
     .order('updated_at', { ascending: false })
@@ -161,12 +161,12 @@ async function loadDailyDrafts(session, dayISO) {
   return data || [];
 }
 
-async function saveDailyDraft(session, dayISO, practiceKind, assignmentId, seed, answers) {
+async function saveDailyDraft(session, dayISO, practiceKind, assignmentId, seed, answers, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { error } = await sb
     .from('brady_practice_drafts')
     .upsert({
-      user_id: session.user.id,
+      user_id: queryUserId,
       day: dayISO,
       practice_kind: practiceKind,
       assignment_id: assignmentId,
@@ -177,12 +177,12 @@ async function saveDailyDraft(session, dayISO, practiceKind, assignmentId, seed,
   if (error) throw error;
 }
 
-async function clearDailyDraft(session, dayISO, practiceKind, assignmentId) {
+async function clearDailyDraft(session, dayISO, practiceKind, assignmentId, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { error } = await sb
     .from('brady_practice_drafts')
     .delete()
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('day', dayISO)
     .eq('practice_kind', practiceKind)
     .eq('assignment_id', assignmentId);
@@ -206,12 +206,12 @@ function readFileAsBase64(file) {
   });
 }
 
-async function loadSectionArtifacts(session, dayISO, practiceKind, assignmentId) {
+async function loadSectionArtifacts(session, dayISO, practiceKind, assignmentId, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_artifacts')
     .select('id,practice_kind,assignment_id,filename,mime_type,size_bytes,created_at')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('day', dayISO)
     .eq('practice_kind', practiceKind)
     .eq('assignment_id', assignmentId)
@@ -221,24 +221,24 @@ async function loadSectionArtifacts(session, dayISO, practiceKind, assignmentId)
   return data || [];
 }
 
-async function loadArtifactContent(session, artifactId) {
+async function loadArtifactContent(session, artifactId, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_artifacts')
     .select('id,filename,mime_type,content_base64')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('id', artifactId)
     .limit(1);
   if (error) throw error;
   return (data && data[0]) ? data[0] : null;
 }
 
-async function deleteArtifact(session, artifactId) {
+async function deleteArtifact(session, artifactId, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { error } = await sb
     .from('brady_artifacts')
     .delete()
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .eq('id', artifactId);
   if (error) throw error;
 }
@@ -250,7 +250,7 @@ function base64ToBlob(base64, mimeType) {
   return new Blob([bytes], { type: mimeType || 'application/octet-stream' });
 }
 
-async function loadArtifactReviews(session, artifactIds) {
+async function loadArtifactReviews(session, artifactIds, queryUserId) {
   const ids = Array.isArray(artifactIds)
     ? artifactIds.map((x) => String(x || '').trim()).filter(Boolean)
     : [];
@@ -259,7 +259,7 @@ async function loadArtifactReviews(session, artifactIds) {
   const { data, error } = await sb
     .from('brady_ai_reviews')
     .select('id,artifact_id,score_percent,feedback,next_steps,provider,model,created_at')
-    .eq('user_id', session.user.id)
+    .eq('user_id', queryUserId)
     .in('artifact_id', ids)
     .order('created_at', { ascending: false })
     .limit(100);
@@ -339,7 +339,7 @@ async function getAccessToken() {
   return token;
 }
 
-async function reviewArtifactById(artifactId) {
+async function reviewArtifactById(artifactId, queryUserId) {
   const token = await getAccessToken();
   const resp = await fetch('/api/brady/review-artifact', {
     method: 'POST',
@@ -347,7 +347,7 @@ async function reviewArtifactById(artifactId) {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ artifactId }),
+    body: JSON.stringify({ artifactId, queryUserId }),
   });
   const body = await resp.json().catch(() => ({}));
   if (!resp.ok) {
@@ -356,7 +356,7 @@ async function reviewArtifactById(artifactId) {
   return body || {};
 }
 
-function bindArtifactsListHandlers(sectionKey, session, refresh) {
+function bindArtifactsListHandlers(sectionKey, session, queryUserId, refresh) {
   const el = document.getElementById(`${sectionKey}UploadList`);
   if (!el) return;
 
@@ -365,7 +365,7 @@ function bindArtifactsListHandlers(sectionKey, session, refresh) {
       const id = btn.getAttribute('data-open-artifact');
       if (!id) return;
       try {
-        const row = await loadArtifactContent(session, id);
+        const row = await loadArtifactContent(session, id, queryUserId);
         if (!row) throw new Error('File not found.');
         const blob = base64ToBlob(row.content_base64, row.mime_type);
         const url = URL.createObjectURL(blob);
@@ -383,7 +383,7 @@ function bindArtifactsListHandlers(sectionKey, session, refresh) {
       if (!id) return;
       try {
         btn.disabled = true;
-        await deleteArtifact(session, id);
+        await deleteArtifact(session, id, queryUserId);
         await refresh();
       } catch (e) {
         setAlert(e?.message || 'Delete failed.');
@@ -400,7 +400,7 @@ function bindArtifactsListHandlers(sectionKey, session, refresh) {
       try {
         btn.disabled = true;
         setAlert('');
-        const out = await reviewArtifactById(id);
+        const out = await reviewArtifactById(id, queryUserId);
         const reused = Boolean(out?.reused);
         setAlert(reused ? 'AI check already existed and was loaded.' : 'AI check complete and saved.');
         await refresh();
@@ -553,10 +553,10 @@ function setInputsDisabled(sectionKey, quiz, disabled) {
   }
 }
 
-async function saveDailyAttempt(session, dayISO, practiceKind, assignmentId, seed, summary, answers, results) {
+async function saveDailyAttempt(session, dayISO, practiceKind, assignmentId, seed, summary, answers, results, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { error } = await sb.from('brady_practice_attempts').insert({
-    user_id: session.user.id,
+    user_id: queryUserId,
     practice_kind: practiceKind,
     day: dayISO,
     assignment_id: assignmentId,
@@ -821,6 +821,7 @@ function bindDraftAutosave(opts) {
     sectionKey,
     seed,
     quiz,
+    queryUserId,
   } = opts;
 
   const statusEl = document.getElementById(`${sectionKey}Autosave`);
@@ -848,7 +849,7 @@ function bindDraftAutosave(opts) {
 
       if (!hasAny) {
         try {
-          await clearDailyDraft(session, dayISO, practiceKind, assignmentId);
+          await clearDailyDraft(session, dayISO, practiceKind, assignmentId, queryUserId);
         } catch (_) {
           // ignore
         }
@@ -862,7 +863,7 @@ function bindDraftAutosave(opts) {
       if (payloadJson === lastSavedJson) return;
 
       setStatus('Saving draft…');
-      await saveDailyDraft(session, dayISO, practiceKind, assignmentId, seed, answers);
+      await saveDailyDraft(session, dayISO, practiceKind, assignmentId, seed, answers, queryUserId);
       writeLocalDraft(dayISO, practiceKind, assignmentId, { seed, answers, updatedAt: new Date().toISOString() });
       lastSavedJson = payloadJson;
       setStatus(`Draft saved at ${formatLocalTime(new Date().toISOString())}.`);
@@ -908,6 +909,7 @@ function bindUploadHandlers(opts) {
     practiceKind,
     assignmentId,
     sectionKey,
+    queryUserId,
   } = opts;
 
   const fileEl = document.getElementById(`${sectionKey}UploadFile`);
@@ -918,11 +920,11 @@ function bindUploadHandlers(opts) {
 
   const refresh = async () => {
     try {
-      const rows = await loadSectionArtifacts(session, dayISO, practiceKind, assignmentId);
+      const rows = await loadSectionArtifacts(session, dayISO, practiceKind, assignmentId, queryUserId);
       const ids = rows.map((r) => r.id);
-      const reviewsByArtifactId = await loadArtifactReviews(session, ids).catch(() => ({}));
+      const reviewsByArtifactId = await loadArtifactReviews(session, ids, queryUserId).catch(() => ({}));
       renderArtifactsList(sectionKey, rows, reviewsByArtifactId);
-      bindArtifactsListHandlers(sectionKey, session, refresh);
+        bindArtifactsListHandlers(sectionKey, session, queryUserId, refresh);
     } catch (e) {
       renderArtifactsList(sectionKey, [], {});
       setMsg(e?.message || 'Unable to load uploads.');
@@ -959,7 +961,7 @@ function bindUploadHandlers(opts) {
         const base64 = await readFileAsBase64(file);
         const sb = MHA_Auth.getSupabase();
         const { error } = await sb.from('brady_artifacts').insert({
-          user_id: session.user.id,
+          user_id: queryUserId,
           day: dayISO,
           practice_kind: practiceKind,
           assignment_id: assignmentId,
@@ -992,6 +994,7 @@ function bindQuizSectionHandlers(opts) {
     getSeed,
     getQuiz,
     onPassed,
+    queryUserId,
   } = opts;
 
   const submitBtn = document.getElementById(`${sectionKey}Submit`);
@@ -1063,11 +1066,11 @@ function bindQuizSectionHandlers(opts) {
       if (msgEl) msgEl.textContent = `Score: ${scorePercent}% (${correct}/${total}). ${passed ? 'Passed.' : `Need >= ${summary.passPercent}%.`}`;
 
       // Save the attempt so completion is provable (even if it did not pass yet).
-      await saveDailyAttempt(session, dayISO, practiceKind, assignmentId, seed, summary, answers, results);
+      await saveDailyAttempt(session, dayISO, practiceKind, assignmentId, seed, summary, answers, results, queryUserId);
 
       // Clear draft after a successful submission so a refresh doesn't look "unsaved".
       try {
-        await clearDailyDraft(session, dayISO, practiceKind, assignmentId);
+        await clearDailyDraft(session, dayISO, practiceKind, assignmentId, queryUserId);
       } catch (_) {
         // no-op
       }
@@ -1100,6 +1103,7 @@ async function main() {
   try {
     const gate = await MHA_Brady.requireBrady({ nextPath: 'brady/daily.html' });
     if (!gate) return;
+    const { userId: queryUserId } = MHA_Brady.getBradyQueryUser(gate.session, gate.context);
 
     await MHA_Auth.initAuthUI(false);
     document.body.classList.add('has-user-nav');
@@ -1107,19 +1111,19 @@ async function main() {
     const url = new URL(window.location.href);
     const dayISO = todayLocalISO();
 
-    const progressById = await loadAssignmentProgress(gate.session);
+    const progressById = await loadAssignmentProgress(gate.session, queryUserId);
     const target = pickTargetAssignment(progressById);
     const mixed = pickMixedAssignment(progressById, target, dayISO);
 
     // Ensure target assignment is stored for today (useful for history/consistency).
-    await upsertDailyLog(gate.session, dayISO, { target_assignment_id: target?.id || null });
+    await upsertDailyLog(gate.session, dayISO, queryUserId, { target_assignment_id: target?.id || null });
 
-    const existingLog = await loadDailyLog(gate.session, dayISO);
+    const existingLog = await loadDailyLog(gate.session, dayISO, queryUserId);
     const reflection = existingLog?.reflection || '';
 
     let attempts = [];
     try {
-      attempts = await loadDailyPracticeAttempts(gate.session, dayISO);
+      attempts = await loadDailyPracticeAttempts(gate.session, dayISO, queryUserId);
     } catch (e) {
       setAlert(e?.message || 'Daily quizzes are not available yet (database table missing).');
       return;
@@ -1127,7 +1131,7 @@ async function main() {
 
     let drafts = [];
     try {
-      drafts = await loadDailyDrafts(gate.session, dayISO);
+      drafts = await loadDailyDrafts(gate.session, dayISO, queryUserId);
     } catch (_) {
       drafts = [];
     }
@@ -1168,7 +1172,7 @@ async function main() {
     };
 
     // Keep the legacy daily log booleans in sync (derived from the graded quizzes).
-    await upsertDailyLog(gate.session, dayISO, {
+    await upsertDailyLog(gate.session, dayISO, queryUserId, {
       warmup_done: completion.warmup,
       target_done: completion.target,
       mixed_review_done: completion.mixed,
@@ -1305,6 +1309,7 @@ async function main() {
       sectionKey: 'warmup',
       seed: warmupSeed >>> 0,
       quiz: warmupQuizLive,
+      queryUserId,
     });
     if (warmupRestored.restored > 0) warmupAutosave.setStatus(`Draft restored (${warmupRestored.restored} answered).`);
 
@@ -1316,6 +1321,7 @@ async function main() {
       sectionKey: 'target',
       seed: targetSeed >>> 0,
       quiz: targetQuizLive,
+      queryUserId,
     });
     if (targetRestored.restored > 0) targetAutosave.setStatus(`Draft restored (${targetRestored.restored} answered).`);
 
@@ -1327,6 +1333,7 @@ async function main() {
       sectionKey: 'mixed',
       seed: mixedSeed >>> 0,
       quiz: mixedQuizLive,
+      queryUserId,
     });
     if (mixedRestored.restored > 0) mixedAutosave.setStatus(`Draft restored (${mixedRestored.restored} answered).`);
 
@@ -1338,6 +1345,7 @@ async function main() {
       sectionKey: 'ai',
       seed: aiSeed >>> 0,
       quiz: aiQuizLive,
+      queryUserId,
     });
     if (aiRestored.restored > 0) aiAutosave.setStatus(`Draft restored (${aiRestored.restored} answered).`);
 
@@ -1347,6 +1355,7 @@ async function main() {
       practiceKind: 'daily_warmup',
       assignmentId: warmupAssignmentId,
       sectionKey: 'warmup',
+      queryUserId,
     });
     bindUploadHandlers({
       session: gate.session,
@@ -1354,6 +1363,7 @@ async function main() {
       practiceKind: 'daily_target',
       assignmentId: targetAssignmentId,
       sectionKey: 'target',
+      queryUserId,
     });
     bindUploadHandlers({
       session: gate.session,
@@ -1361,6 +1371,7 @@ async function main() {
       practiceKind: 'daily_mixed',
       assignmentId: mixedAssignmentId,
       sectionKey: 'mixed',
+      queryUserId,
     });
     bindUploadHandlers({
       session: gate.session,
@@ -1368,6 +1379,7 @@ async function main() {
       practiceKind: 'daily_ai',
       assignmentId: aiAssignmentId,
       sectionKey: 'ai',
+      queryUserId,
     });
 
     bindQuizSectionHandlers({
@@ -1432,7 +1444,7 @@ async function main() {
           const saveMsg = document.getElementById('saveMsg');
           if (saveMsg) saveMsg.textContent = 'Saving…';
           try {
-            await upsertDailyLog(gate.session, dayISO, { reflection: reflectionEl.value || '' });
+            await upsertDailyLog(gate.session, dayISO, queryUserId, { reflection: reflectionEl.value || '' });
             if (saveMsg) saveMsg.textContent = completion.completed ? 'Completed today.' : 'Saved.';
           } catch (e) {
             if (saveMsg) saveMsg.textContent = '';

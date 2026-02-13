@@ -23,12 +23,12 @@ function todayLocalISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-async function loadProgressMap(session) {
+async function loadProgressMap(session, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_assignment_progress')
     .select('assignment_id,status,score,last_attempt_at,notes')
-    .eq('user_id', session.user.id);
+    .eq('user_id', queryUserId);
 
   if (error) throw error;
 
@@ -148,10 +148,10 @@ function renderAssignmentCard(a, progress) {
   `;
 }
 
-async function upsertAssignmentProgress(session, assignmentId, patch) {
+async function upsertAssignmentProgress(session, queryUserId, assignmentId, patch) {
   const sb = MHA_Auth.getSupabase();
   const { error } = await sb.from('brady_assignment_progress').upsert({
-    user_id: session.user.id,
+    user_id: queryUserId,
     assignment_id: assignmentId,
     last_attempt_at: new Date().toISOString(),
     ...patch,
@@ -174,7 +174,7 @@ function setAlert(msg) {
 async function main() {
   try {
     const gate = await MHA_Brady.requireBrady({ nextPath: 'brady/assignments.html' });
-    if (!gate) return;
+  if (!gate) return;
 
     await MHA_Auth.initAuthUI(false);
     document.body.classList.add('has-user-nav');
@@ -191,7 +191,8 @@ async function main() {
       });
     });
 
-    const progressMap = await loadProgressMap(gate.session);
+    const { userId: queryUserId } = MHA_Brady.getBradyQueryUser(gate.session, gate.context);
+    const progressMap = await loadProgressMap(gate.session, queryUserId);
 
     const listEl = document.getElementById('assignmentList');
     if (!listEl) return;
@@ -226,7 +227,7 @@ async function main() {
             try {
               const status = statusEl.value;
               const notes = notesEl.value || null;
-              await upsertAssignmentProgress(gate.session, a.id, { status, notes });
+              await upsertAssignmentProgress(gate.session, queryUserId, a.id, { status, notes });
               progressMap[a.id] = { ...(progressMap[a.id] || {}), status, notes, last_attempt_at: new Date().toISOString() };
               if (msgEl) msgEl.textContent = 'Saved.';
             } catch (e) {
@@ -241,7 +242,7 @@ async function main() {
             setAlert('');
             if (msgEl) msgEl.textContent = 'Resetting…';
             try {
-              await upsertAssignmentProgress(gate.session, a.id, { status: 'not_started', notes: null, score: null });
+              await upsertAssignmentProgress(gate.session, queryUserId, a.id, { status: 'not_started', notes: null, score: null });
               statusEl.value = 'not_started';
               notesEl.value = '';
               progressMap[a.id] = { ...(progressMap[a.id] || {}), status: 'not_started', notes: null, last_attempt_at: new Date().toISOString() };

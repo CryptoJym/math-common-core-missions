@@ -700,3 +700,153 @@ test('handler: Supabase insert error -> 500', async () => {
   global.fetch = oldFetch;
   process.env.OPENAI_API_KEY = oldApiKey;
 });
+
+test('handler: supports delegated learner context when queryUserId is allowed', async () => {
+  const oldFetch = global.fetch;
+  const oldApiKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = 'test-key';
+  const delegatedUserId = '11111111-1111-4111-8111-111111111111';
+  const attemptedAt = '2026-02-01T00:00:00Z';
+
+  const generatedQuiz = {
+    passPercent: 80,
+    title: 'AI Quiz',
+    questions: Array.from({ length: 10 }, (_, i) => ({
+      id: `q${i + 1}`,
+      type: 'mc',
+      prompt: `Q${i + 1}`,
+      choices: ['A', 'B'],
+      answer: 'A',
+      explanation: 'ok',
+      tags: ['tag_one'],
+    })),
+  };
+
+  let insertBody = null;
+  const fetchStub = createFetchStub([
+    {
+      match: /\/auth\/v1\/user$/,
+      handle: async () => jsonResponse(200, { id: '00000000-0000-4000-8000-000000000000', email: 'james@jamesbrady.org' }),
+    },
+    {
+      match: /\/rest\/v1\/brady_sub_accounts\?/,
+      handle: async () => jsonResponse(200, [{ id: 'link1', learner_id: delegatedUserId }]),
+    },
+    {
+      match: /\/rest\/v1\/brady_assignment_attempts\?/,
+      handle: async (href) => {
+        assert.ok(href.includes(`user_id=eq.${delegatedUserId}`));
+        return jsonResponse(200, [
+          {
+            attempted_at: attemptedAt,
+            score_percent: 60,
+          },
+        ]);
+      },
+    },
+    {
+      match: /\/rest\/v1\/brady_practice_attempts\?/,
+      handle: async (href) => {
+        assert.ok(href.includes(`user_id=eq.${delegatedUserId}`));
+        return jsonResponse(200, [
+          {
+            practiced_at: '2026-02-12T00:00:00Z',
+            score_percent: 80,
+          },
+        ]);
+      },
+    },
+    {
+      match: /\/rest\/v1\/brady_generated_quizzes\?/,
+      handle: async () => jsonResponse(200, []),
+    },
+    {
+      match: (href) => href === 'https://api.openai.com/v1/chat/completions',
+      handle: async () =>
+        jsonResponse(200, {
+          choices: [{ message: { content: JSON.stringify(generatedQuiz) } }],
+        }),
+    },
+    {
+      match: /\/rest\/v1\/brady_generated_quizzes$/,
+      handle: async (_href, opts) => {
+        insertBody = JSON.parse(opts.body || '{}');
+        return jsonResponse(201, [{ id: 'row2' }]);
+      },
+    },
+  ]);
+  global.fetch = fetchStub;
+
+  const req = makeReq({
+    method: 'POST',
+    headers: { Authorization: 'Bearer test-token' },
+    body: {
+      assignmentId: 'math_equivalent_fractions',
+      assignment: { id: 'math_equivalent_fractions', title: 'Equivalent Fractions' },
+      queryUserId: delegatedUserId,
+      basedOnAttemptedAt: attemptedAt,
+    },
+  });
+  const res = makeRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(insertBody?.user_id, delegatedUserId);
+  assert.ok(fetchStub.calls.some((c) => c.url.includes('/rest/v1/brady_assignment_attempts') && c.url.includes(`user_id=eq.${delegatedUserId}`)));
+  assert.equal(res._getJson().reused, false);
+
+  global.fetch = oldFetch;
+  process.env.OPENAI_API_KEY = oldApiKey;
+});
+
+test('handler: delegated queryUserId without permission returns 403', async () => {
+  const oldFetch = global.fetch;
+  const req = makeReq({
+    method: 'POST',
+    headers: { Authorization: 'Bearer test-token' },
+    body: {
+      assignmentId: 'math_equivalent_fractions',
+      assignment: { id: 'math_equivalent_fractions', title: 'Equivalent Fractions' },
+      queryUserId: '22222222-2222-4222-8222-222222222222',
+      basedOnAttemptedAt: '2026-02-01T00:00:00Z',
+    },
+  });
+  const res = makeRes();
+
+  global.fetch = createFetchStub([
+    {
+      match: /\/auth\/v1\/user$/,
+      handle: async () => jsonResponse(200, { id: '00000000-0000-4000-8000-000000000000', email: 'james@jamesbrady.org' }),
+    },
+    {
+      match: /\/rest\/v1\/brady_sub_accounts\?/,
+      handle: async () => jsonResponse(200, []),
+    },
+    {
+      match: /\/rest\/v1\/brady_assignment_attempts\?/,
+      handle: async () => {
+        throw new Error('should not query attempts');
+      },
+    },
+    {
+      match: /api.openai.com\/v1\/chat\/completions/,
+      handle: async () => {
+        throw new Error('should not call openai');
+      },
+    },
+    {
+      match: /\/rest\/v1\/brady_generated_quizzes$/,
+      handle: async () => {
+        throw new Error('should not insert generated quiz');
+      },
+    },
+  ]);
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 403);
+  assert.equal(res._getJson().error, 'Not allowed for this learner');
+
+  global.fetch = oldFetch;
+});
