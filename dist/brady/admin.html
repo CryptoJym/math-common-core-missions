@@ -65,6 +65,36 @@
     </div>
 
     <div class="section">
+      <h2>Export Progress</h2>
+      <div class="small">Download a JSON report for a specific learner and date range.</div>
+      <div class="field-row" style="margin-top:10px;">
+        <div>
+          <label for="exportLearner">Learner</label>
+          <select id="exportLearner"></select>
+        </div>
+        <div>
+          <label for="exportStart">Start</label>
+          <input id="exportStart" type="date">
+        </div>
+        <div>
+          <label for="exportEnd">End</label>
+          <input id="exportEnd" type="date">
+        </div>
+        <div>
+          <label for="exportIncludeFiles">Include Files</label>
+          <select id="exportIncludeFiles">
+            <option value="0" selected>No (metadata only)</option>
+            <option value="1">Yes (larger download)</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" type="button" id="downloadExportBtn">Download JSON</button>
+        <span class="small" id="exportMsg" style="color: var(--text-secondary);"></span>
+      </div>
+    </div>
+
+    <div class="section">
       <h2>How It Works</h2>
       <ul style="padding-left: 18px;">
         <li class="small">Create one or more learners by email.</li>

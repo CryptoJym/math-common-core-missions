@@ -223,6 +223,26 @@ class TestBradyPersonalizationTables:
         if resp.status_code == 200:
             assert resp.json() == [], "RLS should prevent anonymous access to brady_practice_drafts"
 
+    def test_brady_assignment_drafts_table_exists(self):
+        resp = supabase_rest_get("brady_assignment_drafts", {"select": "id", "limit": "1"})
+        assert resp.status_code in (200, 401, 403), \
+            f"brady_assignment_drafts table query returned unexpected status {resp.status_code}"
+
+    def test_brady_assignment_drafts_rls_blocks_anon_reads(self):
+        resp = supabase_rest_get("brady_assignment_drafts", {"select": "*"})
+        if resp.status_code == 200:
+            assert resp.json() == [], "RLS should prevent anonymous access to brady_assignment_drafts"
+
+    def test_brady_reading_drafts_table_exists(self):
+        resp = supabase_rest_get("brady_reading_drafts", {"select": "id", "limit": "1"})
+        assert resp.status_code in (200, 401, 403), \
+            f"brady_reading_drafts table query returned unexpected status {resp.status_code}"
+
+    def test_brady_reading_drafts_rls_blocks_anon_reads(self):
+        resp = supabase_rest_get("brady_reading_drafts", {"select": "*"})
+        if resp.status_code == 200:
+            assert resp.json() == [], "RLS should prevent anonymous access to brady_reading_drafts"
+
     def test_brady_ai_learner_profile_table_exists(self):
         resp = supabase_rest_get("brady_ai_learner_profile", {"select": "user_id", "limit": "1"})
         assert resp.status_code in (200, 401, 403), \

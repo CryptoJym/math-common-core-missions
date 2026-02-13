@@ -205,9 +205,21 @@ async function fetchCoachPlan(session, queryUserId, force = false) {
 
   const payload = await resp.json().catch(() => ({}));
   if (!resp.ok) {
-    throw new Error(payload?.error || `Coach request failed (${resp.status}).`);
+    const err = new Error(payload?.error || `Coach request failed (${resp.status}).`);
+    err.statusCode = resp.status;
+    err.errorCode = payload?.error_code || payload?.errorCode || payload?.error_code || null;
+    throw err;
   }
   return payload;
+}
+
+async function signOutLocalAndRedirectToLogin(nextPath) {
+  try {
+    await MHA_Auth.getSupabase().auth.signOut({ scope: 'local' });
+  } catch (_) {
+    // ignore
+  }
+  window.location.href = MHA_Brady.bradyLoginUrl(nextPath);
 }
 
 async function main() {
@@ -276,6 +288,12 @@ async function main() {
         renderPlan(out.daily_plan, { reused: out.reused, provider: out.provider, model: out.model });
         renderProfile(out.profile);
       } catch (e) {
+        const status = Number(e?.statusCode || e?.status || 0);
+        const code = String(e?.errorCode || e?.error_code || '');
+        if (status === 401 || code === 'session_not_found') {
+          await signOutLocalAndRedirectToLogin('brady/coach.html');
+          return;
+        }
         setAlert(e?.message || 'Coach failed.');
       } finally {
         if (refreshBtn) refreshBtn.disabled = false;
@@ -296,4 +314,3 @@ async function main() {
 document.addEventListener('DOMContentLoaded', () => {
   void main();
 });
-

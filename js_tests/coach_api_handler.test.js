@@ -405,7 +405,7 @@ test('coach handler: returns 403 when delegated mapping is missing', async () =>
   await handler(req, res);
 
   assert.equal(res.statusCode, 403);
-  assert.deepEqual(res._getJson(), { error: 'Not allowed for this learner' });
+  assert.deepEqual(res._getJson(), { error: 'Not allowed for this learner', error_code: null });
 
   global.fetch = oldFetch;
   process.env.OPENAI_API_KEY = oldApiKey;

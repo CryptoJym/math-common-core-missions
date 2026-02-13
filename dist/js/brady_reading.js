@@ -24,9 +24,89 @@ function setAlert(msg) {
   el.style.display = 'block';
 }
 
+function setDraftMsg(msg) {
+  const el = document.getElementById('draftMsg');
+  if (!el) return;
+  el.textContent = String(msg || '');
+}
+
 function bookTitle(bookId) {
   const match = BRADY_BOOKS.find((b) => b.id === bookId);
   return match ? match.title : String(bookId || '');
+}
+
+function readingDraftKey(userId, dayISO, bookId) {
+  return `mha_reading_draft:${String(userId || '')}:${String(dayISO || '')}:${String(bookId || '')}`;
+}
+
+function readLocalDraft(userId, dayISO, bookId) {
+  try {
+    const raw = localStorage.getItem(readingDraftKey(userId, dayISO, bookId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeLocalDraft(userId, dayISO, bookId, payload) {
+  try {
+    localStorage.setItem(readingDraftKey(userId, dayISO, bookId), JSON.stringify(payload));
+  } catch (_) {
+    // ignore
+  }
+}
+
+function clearLocalDraft(userId, dayISO, bookId) {
+  try {
+    localStorage.removeItem(readingDraftKey(userId, dayISO, bookId));
+  } catch (_) {
+    // ignore
+  }
+}
+
+async function loadReadingDraftRow(session, queryUserId, dayISO, bookId) {
+  void session;
+  const sb = MHA_Auth.getSupabase();
+  const { data, error } = await sb
+    .from('brady_reading_drafts')
+    .select('day,book_id,minutes,journal,updated_at')
+    .eq('user_id', queryUserId)
+    .eq('day', dayISO)
+    .eq('book_id', bookId)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+async function saveReadingDraftRow(session, queryUserId, dayISO, bookId, minutes, journal) {
+  void session;
+  const sb = MHA_Auth.getSupabase();
+  const { error } = await sb
+    .from('brady_reading_drafts')
+    .upsert({
+      user_id: queryUserId,
+      day: dayISO,
+      book_id: bookId,
+      minutes,
+      journal,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,day,book_id' });
+  if (error) throw error;
+}
+
+async function clearReadingDraftRow(session, queryUserId, dayISO, bookId) {
+  void session;
+  const sb = MHA_Auth.getSupabase();
+  const { error } = await sb
+    .from('brady_reading_drafts')
+    .delete()
+    .eq('user_id', queryUserId)
+    .eq('day', dayISO)
+    .eq('book_id', bookId);
+  if (error) throw error;
 }
 
 function setAiPrompts() {
@@ -193,6 +273,124 @@ async function main() {
       bookEl.innerHTML = BRADY_BOOKS.map((b) => `<option value="${b.id}">${b.title}</option>`).join('');
     }
 
+    let draftSaveTimer = null;
+    let draftFlushTimer = null;
+    let lastDraftKey = '';
+
+    const getCurrentKey = () => {
+      const day = document.getElementById('day')?.value || todayLocalISO();
+      const bookId = document.getElementById('book')?.value || BRADY_BOOKS[0]?.id;
+      return { day, bookId };
+    };
+
+    const applyDraftToForm = (draft) => {
+      const minutesEl = document.getElementById('minutes');
+      const journalEl = document.getElementById('journal');
+      if (minutesEl) minutesEl.value = draft?.minutes != null ? String(draft.minutes) : '';
+      if (journalEl) journalEl.value = String(draft?.journal || '');
+    };
+
+    const clearFormFields = () => {
+      const minutesEl = document.getElementById('minutes');
+      const journalEl = document.getElementById('journal');
+      if (minutesEl) minutesEl.value = '';
+      if (journalEl) journalEl.value = '';
+    };
+
+    const restoreDraftForCurrentSelection = async (reason) => {
+      void reason;
+      const { day, bookId } = getCurrentKey();
+      const key = readingDraftKey(queryUserId, day, bookId);
+      lastDraftKey = key;
+
+      const local = readLocalDraft(queryUserId, day, bookId);
+      let remote = null;
+      try {
+        remote = await loadReadingDraftRow(gate.session, queryUserId, day, bookId);
+      } catch (_) {
+        remote = null;
+      }
+
+      const localAt = local?.updated_at ? new Date(local.updated_at).getTime() : NaN;
+      const remoteAt = remote?.updated_at ? new Date(remote.updated_at).getTime() : NaN;
+      const useRemote = Number.isFinite(remoteAt) && (!Number.isFinite(localAt) || remoteAt >= localAt);
+      const draft = useRemote ? remote : local;
+
+      if (draft) {
+        applyDraftToForm(draft);
+        setDraftMsg('Draft restored.');
+      } else {
+        clearFormFields();
+        setDraftMsg('');
+      }
+      setAiPrompts();
+    };
+
+    const captureDraftPayload = () => {
+      const { day, bookId } = getCurrentKey();
+      const minutesRaw = document.getElementById('minutes')?.value;
+      const journal = document.getElementById('journal')?.value || '';
+      const minutesNum = minutesRaw === '' ? null : Number(minutesRaw);
+      const minutes = Number.isFinite(minutesNum) ? Number(minutesNum) : null;
+      return {
+        day,
+        book_id: bookId,
+        minutes,
+        journal,
+        updated_at: new Date().toISOString(),
+      };
+    };
+
+    const writeLocalNow = () => {
+      const payload = captureDraftPayload();
+      writeLocalDraft(queryUserId, payload.day, payload.book_id, payload);
+      return payload;
+    };
+
+    const scheduleDraftSave = () => {
+      if (draftSaveTimer) window.clearTimeout(draftSaveTimer);
+      draftSaveTimer = window.setTimeout(async () => {
+        const payload = captureDraftPayload();
+        try {
+          await saveReadingDraftRow(gate.session, queryUserId, payload.day, payload.book_id, payload.minutes, payload.journal || null);
+          setDraftMsg('Draft saved.');
+        } catch (_) {
+          // Still saved locally.
+          setDraftMsg('Draft saved locally (offline).');
+        }
+      }, 650);
+    };
+
+    const bindDraftAutosave = () => {
+      const onInput = () => {
+        setDraftMsg('Saving…');
+        writeLocalNow();
+        scheduleDraftSave();
+        if (draftFlushTimer) window.clearTimeout(draftFlushTimer);
+        draftFlushTimer = window.setTimeout(() => setAiPrompts(), 250);
+      };
+      ['minutes', 'journal'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', onInput);
+        el.addEventListener('change', onInput);
+      });
+    };
+
+    // Load any existing draft for today's default selection.
+    await restoreDraftForCurrentSelection('init');
+    bindDraftAutosave();
+
+    // If day/book changes, load the corresponding draft (or clear).
+    ['day', 'book'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('change', async () => {
+        setAlert('');
+        await restoreDraftForCurrentSelection('selection_change');
+      });
+    });
+
     const rows = await loadReadingLogs(gate.session, queryUserId);
     renderReadingLogs(rows);
 
@@ -204,6 +402,12 @@ async function main() {
         saveBtn.textContent = 'Saving…';
         try {
           await saveReading(gate.session, queryUserId);
+          // Clear the draft for this entry after the real save succeeds.
+          const { day, bookId } = getCurrentKey();
+          clearLocalDraft(queryUserId, day, bookId);
+          try { await clearReadingDraftRow(gate.session, queryUserId, day, bookId); } catch (_) { /* ignore */ }
+          setDraftMsg('');
+
           const nextRows = await loadReadingLogs(gate.session, queryUserId);
           renderReadingLogs(nextRows);
           setAiPrompts();

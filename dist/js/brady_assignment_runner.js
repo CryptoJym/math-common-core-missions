@@ -28,6 +28,19 @@ function seedFromString(s) {
   return h >>> 0;
 }
 
+function ensureSeedInUrl(seed) {
+  try {
+    const url = new URL(window.location.href);
+    const current = url.searchParams.get('seed');
+    const next = String(seed);
+    if (current === next) return;
+    url.searchParams.set('seed', next);
+    window.history.replaceState({}, document.title, url.toString());
+  } catch (_) {
+    // ignore
+  }
+}
+
 function setAlert(msg) {
   const el = document.getElementById('alert');
   if (!el) return;
@@ -38,6 +51,89 @@ function setAlert(msg) {
   }
   el.textContent = msg;
   el.style.display = 'block';
+}
+
+function setDraftMsg(msg) {
+  const el = document.getElementById('draftMsg');
+  if (!el) return;
+  el.textContent = String(msg || '');
+}
+
+function assignmentDraftKey(userId, assignmentId, seed) {
+  return `mha_assignment_draft:${String(userId || '')}:${String(assignmentId || '')}:${String(seed || '')}`;
+}
+
+function readLocalDraft(userId, assignmentId, seed) {
+  try {
+    const raw = localStorage.getItem(assignmentDraftKey(userId, assignmentId, seed));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeLocalDraft(userId, assignmentId, seed, payload) {
+  try {
+    localStorage.setItem(assignmentDraftKey(userId, assignmentId, seed), JSON.stringify(payload));
+  } catch (_) {
+    // ignore
+  }
+}
+
+function clearLocalDraft(userId, assignmentId, seed) {
+  try {
+    localStorage.removeItem(assignmentDraftKey(userId, assignmentId, seed));
+  } catch (_) {
+    // ignore
+  }
+}
+
+async function loadAssignmentDraftRow(session, queryUserId, assignmentId, seed) {
+  void session;
+  const sb = MHA_Auth.getSupabase();
+  const { data, error } = await sb
+    .from('brady_assignment_drafts')
+    .select('assignment_id,seed,quiz,answers,updated_at')
+    .eq('user_id', queryUserId)
+    .eq('assignment_id', assignmentId)
+    .eq('seed', seed)
+    .eq('draft_kind', 'test')
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+async function saveAssignmentDraftRow(session, queryUserId, assignmentId, seed, quiz, answers) {
+  void session;
+  const sb = MHA_Auth.getSupabase();
+  const { error } = await sb
+    .from('brady_assignment_drafts')
+    .upsert({
+      user_id: queryUserId,
+      assignment_id: assignmentId,
+      seed,
+      draft_kind: 'test',
+      quiz: quiz || {},
+      answers: answers || {},
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,assignment_id,seed,draft_kind' });
+  if (error) throw error;
+}
+
+async function clearAssignmentDraftRow(session, queryUserId, assignmentId, seed) {
+  void session;
+  const sb = MHA_Auth.getSupabase();
+  const { error } = await sb
+    .from('brady_assignment_drafts')
+    .delete()
+    .eq('user_id', queryUserId)
+    .eq('assignment_id', assignmentId)
+    .eq('seed', seed)
+    .eq('draft_kind', 'test');
+  if (error) throw error;
 }
 
 const LOCKOUT_DAYS = 3;
@@ -382,8 +478,103 @@ function renderQuiz(quiz) {
       <button class="btn" type="button" id="submitQuiz">Submit & Grade</button>
       <button class="btn secondary" type="button" id="retakeQuiz">New Version</button>
       <span class="small" id="submitMsg"></span>
+      <span class="small" id="draftMsg" style="color: var(--text-secondary);"></span>
     </div>
   `;
+}
+
+async function setupTestDraftAutosave(session, queryUserId, assignmentId, seed, quiz) {
+  const snapshotQuiz = quiz && typeof quiz === 'object'
+    ? {
+      title: quiz.title || '',
+      passPercent: quiz.passPercent,
+      questions: Array.isArray(quiz.questions) ? quiz.questions : [],
+    }
+    : { title: '', passPercent: 80, questions: [] };
+
+  const local = readLocalDraft(queryUserId, assignmentId, seed);
+  let remote = null;
+  try {
+    remote = await loadAssignmentDraftRow(session, queryUserId, assignmentId, seed);
+  } catch (_) {
+    remote = null;
+  }
+
+  const localAt = local?.updated_at ? new Date(local.updated_at).getTime() : NaN;
+  const remoteAt = remote?.updated_at ? new Date(remote.updated_at).getTime() : NaN;
+  const useRemote = Number.isFinite(remoteAt) && (!Number.isFinite(localAt) || remoteAt >= localAt);
+  const chosen = useRemote ? remote : local;
+
+  const draftAnswers = (chosen?.answers && typeof chosen.answers === 'object') ? { ...chosen.answers } : {};
+  if (chosen) {
+    for (const q of (snapshotQuiz.questions || [])) {
+      setQuestionInputValue(q, draftAnswers[q.id]);
+    }
+    setDraftMsg('Draft restored.');
+  }
+
+  let saveTimerId = null;
+  const scheduleSave = () => {
+    if (saveTimerId) window.clearTimeout(saveTimerId);
+    saveTimerId = window.setTimeout(async () => {
+      try {
+        await saveAssignmentDraftRow(session, queryUserId, assignmentId, seed, snapshotQuiz, draftAnswers);
+        setDraftMsg('Draft saved.');
+      } catch (_) {
+        setDraftMsg('Draft saved locally (offline).');
+      }
+    }, 650);
+  };
+
+  const flush = async () => {
+    const payload = {
+      assignment_id: assignmentId,
+      seed,
+      quiz: snapshotQuiz,
+      answers: draftAnswers,
+      updated_at: new Date().toISOString(),
+    };
+    writeLocalDraft(queryUserId, assignmentId, seed, payload);
+    try {
+      await saveAssignmentDraftRow(session, queryUserId, assignmentId, seed, snapshotQuiz, draftAnswers);
+    } catch (_) {
+      // ignore
+    }
+  };
+
+  const onAnyInput = (q) => {
+    draftAnswers[q.id] = getAnswerFromDom(q);
+    writeLocalDraft(queryUserId, assignmentId, seed, {
+      assignment_id: assignmentId,
+      seed,
+      quiz: snapshotQuiz,
+      answers: draftAnswers,
+      updated_at: new Date().toISOString(),
+    });
+    setDraftMsg('Saving…');
+    scheduleSave();
+  };
+
+  for (const q of (snapshotQuiz.questions || [])) {
+    const el = document.getElementById(`ans_${q.id}`);
+    if (!el) continue;
+    el.addEventListener('input', () => onAnyInput(q));
+    el.addEventListener('change', () => onAnyInput(q));
+  }
+
+  const onHide = () => { void flush(); };
+  window.addEventListener('pagehide', onHide);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') void flush();
+  });
+
+  const clear = async () => {
+    clearLocalDraft(queryUserId, assignmentId, seed);
+    try { await clearAssignmentDraftRow(session, queryUserId, assignmentId, seed); } catch (_) { /* ignore */ }
+    setDraftMsg('');
+  };
+
+  return { flush, clear };
 }
 
 function getPracticeAnswerFromDom(q) {
@@ -944,7 +1135,10 @@ async function generateQuizViaApi(session, payload) {
   try { data = JSON.parse(text); } catch (_) { data = null; }
   if (!resp.ok) {
     const msg = data?.error || `AI generation failed (${resp.status}).`;
-    throw new Error(msg);
+    const err = new Error(msg);
+    err.statusCode = resp.status;
+    err.errorCode = data?.error_code || data?.errorCode || data?.error_code || null;
+    throw err;
   }
   if (!data || !data.quiz) throw new Error('AI generation returned no quiz.');
   return data.quiz;
@@ -1111,6 +1305,7 @@ async function main() {
     if (!Number.isFinite(seed)) {
       seed = (Date.now() & 0xffffffff) >>> 0;
     }
+    ensureSeedInUrl(seed);
 
     // If they already failed once and cooldown expired, they must pass practice before retaking the test.
     const practiceBlocksTest = (!isLocked && practiceRequired && !practicePassed);
@@ -1184,6 +1379,17 @@ async function main() {
               });
               localStorage.removeItem(throttleKey);
             } catch (e) {
+              const status = Number(e?.statusCode || e?.status || 0);
+              const code = String(e?.errorCode || e?.error_code || '');
+              if (status === 401 || code === 'session_not_found') {
+                try {
+                  await MHA_Auth.getSupabase().auth.signOut({ scope: 'local' });
+                } catch (_) {
+                  // ignore
+                }
+                window.location.href = MHA_Brady.bradyLoginUrl(nextPath);
+                return;
+              }
               localStorage.setItem(throttleKey, String(now));
               aiGenErrorMsg = String(e?.message || 'AI generation failed.');
               aiQuiz = null;
@@ -1253,6 +1459,14 @@ async function main() {
         lockoutTimerId = null;
       }
 
+      // Autosave in-progress answers so refresh/navigation doesn't lose work.
+      let draftHandle = null;
+      try {
+        draftHandle = await setupTestDraftAutosave(gate.session, queryUserId, a.id, seed, quiz);
+      } catch (_) {
+        draftHandle = null;
+      }
+
       // Optional hint: this version is adaptive if last attempt failed.
       if (submitMsg && latestAttempt && Number(latestAttempt.score_percent) < passPercent && Object.keys(focusTags).length > 0) {
         submitMsg.textContent = `Adaptive version (focus: ${Object.keys(focusTags).slice(0, 4).join(', ')})`;
@@ -1260,6 +1474,7 @@ async function main() {
 
       if (retakeBtn) {
         retakeBtn.addEventListener('click', () => {
+          if (draftHandle) void draftHandle.clear();
           const nextSeed = (Date.now() & 0xffffffff) >>> 0;
           window.location.href = `assignment.html?id=${encodeURIComponent(a.id)}&seed=${encodeURIComponent(nextSeed)}`;
         });
@@ -1335,6 +1550,7 @@ async function main() {
             // Save attempt + update mastery.
             await saveAttempt(gate.session, queryUserId, a.id, seed, summary, answers, results);
             await upsertProgressFromScore(gate.session, queryUserId, a.id, scorePercent, quiz.passPercent);
+            if (draftHandle) await draftHandle.clear();
 
             // Refresh history UI.
             const history = await loadAttemptHistory(gate.session, queryUserId, a.id);

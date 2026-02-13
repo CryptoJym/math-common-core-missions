@@ -351,6 +351,16 @@ async function reviewArtifactById(artifactId, queryUserId) {
   });
   const body = await resp.json().catch(() => ({}));
   if (!resp.ok) {
+    const code = String(body?.error_code || body?.errorCode || '');
+    if (resp.status === 401 || code === 'session_not_found') {
+      try {
+        await MHA_Auth.getSupabase().auth.signOut({ scope: 'local' });
+      } catch (_) {
+        // ignore
+      }
+      window.location.href = MHA_Brady.bradyLoginUrl('brady/daily.html');
+      return {};
+    }
     throw new Error(body?.error || `AI review failed (${resp.status})`);
   }
   return body || {};

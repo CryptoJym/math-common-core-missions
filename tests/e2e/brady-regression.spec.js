@@ -227,7 +227,7 @@ test.describe('Brady smoke', () => {
 
   test('@smoke guard rails preserve safe next path for brady routes', async ({ page }) => {
     const runtime = await installRuntimeGuards(page);
-    const paths = ['brady/assignments.html', 'brady/daily.html', 'brady/avatar.html', 'brady/admin.html'];
+    const paths = ['brady/assignments.html', 'brady/daily.html', 'brady/avatar.html', 'brady/admin.html', 'brady/coach.html'];
     for (const path of paths) {
       await clearAuthState(page);
       await page.goto(toAbs(path), { waitUntil: 'domcontentloaded' });

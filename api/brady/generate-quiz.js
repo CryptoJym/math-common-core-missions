@@ -204,7 +204,22 @@ async function supabaseGetUser({ supabaseUrl, anonKey, accessToken }) {
   });
   if (!resp.ok) {
     const text = await resp.text();
-    throw new Error(`Supabase auth failed (${resp.status}): ${text}`);
+    let parsed = null;
+    try { parsed = JSON.parse(text); } catch (_) { parsed = null; }
+    const errorCode = String(parsed?.error_code || parsed?.code || '');
+    const msg = String(parsed?.msg || parsed?.message || text || '');
+
+    if (resp.status === 403 && (errorCode === 'session_not_found' || msg.includes('session_id claim'))) {
+      const err = new Error('Session expired. Please log in again.');
+      err.statusCode = 401;
+      err.errorCode = 'session_not_found';
+      throw err;
+    }
+
+    const err = new Error(`Supabase auth failed (${resp.status}): ${text}`);
+    err.statusCode = resp.status;
+    err.errorCode = errorCode || '';
+    throw err;
   }
   return await resp.json();
 }
@@ -514,7 +529,10 @@ async function handler(req, res) {
     sendJson(res, 200, { reused: false, quiz });
   } catch (e) {
     const status = Number.isFinite(Number(e?.statusCode)) ? Number(e.statusCode) : 500;
-    sendJson(res, status, { error: e?.message || 'Unknown error' });
+    sendJson(res, status, {
+      error: e?.message || 'Unknown error',
+      error_code: e?.errorCode || e?.code || e?.error_code || null,
+    });
   }
 }
 

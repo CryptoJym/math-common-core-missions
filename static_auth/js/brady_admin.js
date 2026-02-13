@@ -74,6 +74,26 @@ function formatDate(iso) {
   return d.toLocaleString();
 }
 
+function todayLocalISO() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function shiftLocalISO(dayISO, deltaDays) {
+  const base = new Date(`${String(dayISO || '').slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(base.getTime())) return todayLocalISO();
+  base.setDate(base.getDate() + Number(deltaDays || 0));
+  const yyyy = base.getFullYear();
+  const mm = String(base.getMonth() + 1).padStart(2, '0');
+  const dd = String(base.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+let _gateContext = null;
+
 async function loadRows(session) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
@@ -277,6 +297,113 @@ async function refresh(session) {
   if (current) {
     current.textContent = `Loaded ${rows.length} learner link${rows.length === 1 ? '' : 's'}.`;
   }
+
+  // Also refresh export UI from the same rows.
+  renderExportUI(rows, session);
+}
+
+function renderExportUI(rows, session) {
+  const learnerSelect = document.getElementById('exportLearner');
+  if (!learnerSelect) return;
+
+  const options = [];
+  options.push({ value: session.user.id, label: `Me (${session.user.email})` });
+
+  const claimed = (Array.isArray(rows) ? rows : []).filter((r) => r && r.is_active && r.learner_id);
+  claimed.forEach((r) => {
+    const label = r.learner_name || r.learner_email || r.learner_id;
+    options.push({ value: r.learner_id, label });
+  });
+
+  learnerSelect.innerHTML = options
+    .map((o) => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`)
+    .join('');
+
+  // Default selection: current working learner context, if set.
+  try {
+    const current = MHA_Brady.getBradyQueryUser(session, _gateContext).userId;
+    if (current) learnerSelect.value = current;
+  } catch (_) {
+    // ignore
+  }
+
+  const startEl = document.getElementById('exportStart');
+  const endEl = document.getElementById('exportEnd');
+  const end = todayLocalISO();
+  if (endEl && !endEl.value) endEl.value = end;
+  if (startEl && !startEl.value) startEl.value = shiftLocalISO(end, -7);
+
+  const btn = document.getElementById('downloadExportBtn');
+  if (btn && btn.dataset.bound !== '1') {
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', async () => {
+      const msgEl = document.getElementById('exportMsg');
+      const includeFilesEl = document.getElementById('exportIncludeFiles');
+
+      const queryUserId = String(learnerSelect.value || '').trim();
+      const startDay = String(startEl?.value || '').trim();
+      const endDay = String(endEl?.value || '').trim();
+      const includeFiles = String(includeFilesEl?.value || '0') === '1';
+
+      if (!queryUserId) {
+        setAlert('Select a learner to export.');
+        return;
+      }
+      if (!startDay || !endDay) {
+        setAlert('Pick a start and end date.');
+        return;
+      }
+
+      btn.disabled = true;
+      if (msgEl) msgEl.textContent = 'Preparing…';
+      setAlert('', false);
+
+      try {
+        const resp = await fetch('/api/brady/export', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            queryUserId,
+            startDay,
+            endDay,
+            includeArtifactContent: includeFiles,
+          }),
+        });
+
+        if (!resp.ok) {
+          const body = await resp.json().catch(() => ({}));
+          const code = String(body?.error_code || body?.errorCode || '');
+          if (resp.status === 401 || code === 'session_not_found') {
+            try { await MHA_Auth.getSupabase().auth.signOut({ scope: 'local' }); } catch (_) { /* ignore */ }
+            window.location.href = MHA_Brady.bradyLoginUrl('brady/admin.html');
+            return;
+          }
+          throw new Error(body?.error || `Export failed (${resp.status})`);
+        }
+
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `mha_export_${queryUserId}_${startDay}_to_${endDay}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 30_000);
+
+        if (msgEl) msgEl.textContent = 'Downloaded.';
+        setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 1600);
+      } catch (e) {
+        setAlert(String(e?.message || e));
+        if (msgEl) msgEl.textContent = '';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
 }
 
 async function addSubAccount(session) {
@@ -332,6 +459,7 @@ async function main() {
     return;
   }
 
+  _gateContext = gate.context;
   const { session } = gate;
   renderAccountSummary(session);
 

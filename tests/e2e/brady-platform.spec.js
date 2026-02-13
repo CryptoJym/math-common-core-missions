@@ -492,6 +492,55 @@ test.describe('Brady dashboard and assignments flow (authenticated)', () => {
     await assertNoRuntimeErrors(page, runtime);
   });
 
+  test('Assignment drafts autosave and survive refresh', async ({ page }) => {
+    const runtime = await installRuntimeGuards(page);
+    await signInAdmin(page);
+    await assertRouteExistsOrSkip(page, 'brady/assignment.html?id=math_equivalent_fractions');
+    await page.goto(toAbs('brady/assignment.html?id=math_equivalent_fractions&seed=123456'), { waitUntil: 'domcontentloaded' });
+
+    await page.waitForSelector('[data-question], #resultsContainer', { timeout: 20_000 });
+    const submitVisible = await page.locator('#submitQuiz').isVisible().catch(() => false);
+    const resultsHeading = (await page.locator('#resultsContainer h2').first().textContent().catch(() => ''))
+      .trim()
+      .toLowerCase();
+    const isLockout = resultsHeading.includes('lockout') || (await page.locator('#alert').textContent().catch(() => '')).toLowerCase().includes('locked');
+    if (!submitVisible || isLockout) {
+      test.skip(true, 'Assignment is not in an editable state (lockout/review/practice-required).');
+    }
+
+    const first = page.locator('[data-question]').first();
+    const select = first.locator('select');
+    const input = first.locator('input[type="text"]');
+
+    let expected = '0';
+    if (await select.count()) {
+      const opt = select.locator('option').nth(1);
+      expected = (await opt.getAttribute('value')) || (await opt.textContent()) || 'A';
+      await select.selectOption({ index: 1 });
+      await expect(select).toHaveValue(expected);
+    } else {
+      await input.fill(expected);
+      await expect(input).toHaveValue(expected);
+    }
+
+    // Local draft write is immediate; remote draft write is debounced.
+    await page.waitForTimeout(150);
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-question]', { timeout: 20_000 });
+
+    const firstAfter = page.locator('[data-question]').first();
+    const selectAfter = firstAfter.locator('select');
+    const inputAfter = firstAfter.locator('input[type="text"]');
+    if (await selectAfter.count()) {
+      await expect(selectAfter).toHaveValue(expected);
+    } else {
+      await expect(inputAfter).toHaveValue(expected);
+    }
+
+    await assertNoRuntimeErrors(page, runtime);
+  });
+
   test('Assignment page gracefully handles invalid assignment IDs', async ({ page }) => {
     const runtime = await installRuntimeGuards(page);
     await signInAdmin(page);
@@ -644,6 +693,43 @@ test.describe('Reading + Journal workflow', () => {
     await expect(copyButtons).toHaveCount(3);
     await assertNoRuntimeErrors(page, runtime);
   });
+
+  test('Reading drafts autosave and survive refresh', async ({ page }) => {
+    const runtime = await installRuntimeGuards(page);
+    await signInAdmin(page);
+    await assertRouteExistsOrSkip(page, 'brady/reading.html');
+    await page.goto(toAbs('brady/reading.html'), { waitUntil: 'domcontentloaded' });
+
+    const token = Date.now();
+    const journalText = `Draft autosave e2e ${token}`;
+
+    await page.fill('#minutes', '17');
+    await page.fill('#journal', journalText);
+    await page.waitForTimeout(150);
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#minutes')).toHaveValue('17');
+    await expect(page.locator('#journal')).toHaveValue(journalText);
+    await assertNoRuntimeErrors(page, runtime);
+  });
+});
+
+test.describe('AI Coach', () => {
+  test('Coach page loads without auth/session errors', async ({ page }) => {
+    const runtime = await installRuntimeGuards(page);
+    await signInAdmin(page);
+    await assertRouteExistsOrSkip(page, 'brady/coach.html');
+    await page.goto(toAbs('brady/coach.html'), { waitUntil: 'domcontentloaded' });
+
+    await expect(page.locator('h1')).toHaveText('AI Coach');
+    await expect(page.locator('#planContainer')).toBeVisible();
+    await expect(page.locator('#profileContainer')).toBeVisible();
+
+    // Allow the auto-run to call the backend and update UI (or show alert).
+    await page.waitForTimeout(1200);
+    expect(page.url().includes('login.html'), 'Coach should not redirect to login with a valid session').toBeFalsy();
+    await assertNoRuntimeErrors(page, runtime);
+  });
 });
 
 test.describe('Admin portal', () => {
@@ -659,9 +745,38 @@ test.describe('Admin portal', () => {
     await expect(page.locator('#learnerEmail')).toBeVisible();
     await expect(page.locator('#learnerRole')).toBeVisible();
     await expect(page.locator('#clearContextBtn')).toBeVisible();
+    await expect(page.locator('#downloadExportBtn')).toBeVisible();
+    await expect(page.locator('#exportLearner')).toBeVisible();
 
     await page.click('#clearContextBtn');
     await expect(page.locator('#alert')).toContainText(/context|work as your own|signed/i, { timeout: 10_000 });
+    await assertNoRuntimeErrors(page, runtime);
+  });
+
+  test('Admin export endpoint returns JSON for a short date range', async ({ page }) => {
+    const runtime = await installRuntimeGuards(page);
+    await signInAdmin(page);
+    await assertRouteExistsOrSkip(page, 'brady/admin.html');
+    await page.goto(toAbs('brady/admin.html'), { waitUntil: 'domcontentloaded' });
+
+    await expect(page.locator('#downloadExportBtn')).toBeVisible();
+    await expect(page.locator('#exportStart')).toBeVisible();
+    await expect(page.locator('#exportEnd')).toBeVisible();
+
+    // Use the default date range prefilled by the UI (today + last 7 days).
+    const exportResp = page.waitForResponse((resp) => {
+      const req = resp.request();
+      return req.url().includes('/api/brady/export') && req.method() === 'POST';
+    }, { timeout: 25_000 });
+
+    await page.click('#downloadExportBtn');
+    const resp = await exportResp;
+    expect(resp.status(), 'export endpoint should respond successfully').toBeLessThan(400);
+
+    const out = await resp.json().catch(() => null);
+    expect(Boolean(out && out.export_version), 'export should return JSON payload').toBeTruthy();
+    expect(out.data && typeof out.data === 'object', 'export should include data object').toBeTruthy();
+
     await assertNoRuntimeErrors(page, runtime);
   });
 

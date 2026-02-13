@@ -8,6 +8,7 @@ const SUPABASE_URL = window.MHA_CONFIG?.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = window.MHA_CONFIG?.SUPABASE_ANON_KEY || '';
 
 let _supabase = null;
+let _didValidateSessionThisPage = false;
 
 function getSupabase() {
   if (!_supabase) {
@@ -108,7 +109,42 @@ function clearAuthRedirectParams() {
 
 /** Get current session, returns null if not logged in */
 async function getSession() {
-  const { data: { session } } = await getSupabase().auth.getSession();
+  const sb = getSupabase();
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return null;
+
+  // Supabase can return a locally-cached session that no longer exists server-side
+  // (common after long inactivity or manual session revocation). Validate once per
+  // page-load and clear local auth state if the session is stale.
+  if (_didValidateSessionThisPage) return session;
+  _didValidateSessionThisPage = true;
+
+  try {
+    const { error } = await sb.auth.getUser();
+    if (error) {
+      const status = Number(error?.status || error?.statusCode || 0);
+      const code = String(error?.code || error?.error_code || '');
+      const msg = String(error?.message || '').toLowerCase();
+      const looksLikeMissingSession =
+        (status === 403 && code === 'session_not_found') ||
+        msg.includes('session_not_found') ||
+        msg.includes('session from session_id claim');
+
+      if (looksLikeMissingSession) {
+        try {
+          // Local-only so we don't fail if the remote session is already gone.
+          await sb.auth.signOut({ scope: 'local' });
+        } catch (_) {
+          // ignore
+        }
+        return null;
+      }
+    }
+  } catch (_) {
+    // If validation fails due to network issues, keep the local session and let
+    // downstream calls decide how to handle it.
+  }
+
   return session;
 }
 
