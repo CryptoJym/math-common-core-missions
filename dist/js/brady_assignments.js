@@ -639,6 +639,299 @@ const BRADY_ASSIGNMENTS = [
       ].join('\n'),
     },
   },
+  {
+    id: 'book_1984_foundations',
+    subject: 'reading',
+    priority: 200,
+    quizId: 'book_1984_foundations',
+    passPercent: 80,
+    title: '1984: Foundations (Concepts + Themes)',
+    standards: ['Book study'],
+    band: 'reading',
+    learningTargets: [
+      'Define dystopia and explain why authors use it.',
+      'Identify tools of control (language, information, fear, surveillance).',
+      'Connect one theme to real life using evidence from your reading (not just opinions).',
+    ],
+    practicePlan: [
+      'Read your daily pages/chapters.',
+      'On Reading & Journal: click "Book Worksheet Template" and fill it out.',
+      'Then take this quiz. If you score below 80%, redo the worksheet before retrying.',
+    ],
+    masteryCheck: [
+      'Score >= 80% on the quiz.',
+      'Write one worksheet entry that clearly explains one control tool + its effect.',
+    ],
+    ai: {
+      chatgpt_web: [
+        'I am reading 1984. Ask me Socratic questions (no spoilers) to check my understanding of:',
+        '- control through language and information',
+        '- fear/surveillance and how it changes choices',
+        'Then help me write 5 flashcards (Q/A) from what I read today.',
+        'Finally, quiz me with 6 short questions and wait for my answers before correcting.',
+      ].join('\n'),
+      codex_cli: [
+        'Write a small Python CLI tool that helps me study a book with "Make It Stick" methods:',
+        '- Store daily entries (date, pages, summary, 3 ideas, 1 question)',
+        '- Generate spaced-retrieval prompts from past entries',
+        '- Print a weekly report of what themes I keep repeating',
+        'Include unit tests for the data model and spaced-retrieval scheduler.',
+      ].join('\n'),
+      claude_code: [
+        'Review my book-study CLI tool for reliability and UX.',
+        'Add: input validation, clear error messages, and tests for edge cases (empty entries, long text, missing dates).',
+      ].join('\n'),
+    },
+  },
+  {
+    id: 'book_animal_farm_foundations',
+    subject: 'reading',
+    priority: 210,
+    quizId: 'book_animal_farm_foundations',
+    passPercent: 80,
+    title: 'Animal Farm: Foundations (Allegory + Power + Language)',
+    standards: ['Book study'],
+    band: 'reading',
+    learningTargets: [
+      'Explain what an allegory is and why writers use it.',
+      'Identify how slogans/rules can shape beliefs.',
+      'Explain one lesson about leadership and power from your reading.',
+    ],
+    practicePlan: [
+      'Read your daily pages/chapters.',
+      'Complete the Book Worksheet Template for Animal Farm (Reading & Journal).',
+      'Take this quiz and review any missed questions.',
+    ],
+    masteryCheck: [
+      'Score >= 80% on the quiz.',
+      'In your worksheet, name one manipulation tactic and its outcome.',
+    ],
+    ai: {
+      chatgpt_web: [
+        'I am reading Animal Farm. Ask me 8 Socratic questions (no spoilers) about:',
+        '- power changing leaders over time',
+        '- how language/slogans change behavior',
+        'Then help me write a 6-sentence objective summary of what I read today.',
+      ].join('\n'),
+      codex_cli: [
+        'Write a script that turns my daily worksheet into study questions:',
+        '- Extract 5 questions from my summary and 3 ideas',
+        '- Save them to a JSON file and quiz me tomorrow (spaced retrieval)',
+        'Add tests.',
+      ].join('\n'),
+      claude_code: [
+        'Improve the script to avoid hallucinating: only use text I wrote as source material.',
+        'Add tests that prove it never invents facts not present in my entry.',
+      ].join('\n'),
+    },
+  },
+  {
+    id: 'book_anthem_foundations',
+    subject: 'reading',
+    priority: 220,
+    quizId: 'book_anthem_foundations',
+    passPercent: 80,
+    title: 'Anthem: Foundations (Individualism + Conformity)',
+    standards: ['Book study'],
+    band: 'reading',
+    learningTargets: [
+      'Explain the difference between individualism and collectivism.',
+      'Identify ways a society can pressure people to conform.',
+      'Describe why language (like using "I") can matter to identity.',
+    ],
+    practicePlan: [
+      'Read your daily pages/chapters.',
+      'Fill out the Anthem Book Worksheet Template on Reading & Journal.',
+      'Take this quiz and fix misunderstandings.',
+    ],
+    masteryCheck: [
+      'Score >= 80% on the quiz.',
+      'Write one worksheet entry connecting the theme to a real-life choice you control.',
+    ],
+    ai: {
+      chatgpt_web: [
+        'I am reading Anthem. Ask me Socratic questions to test understanding of:',
+        '- conformity vs individuality',
+        '- fear and incentives',
+        '- language shaping thought',
+        'Then help me write a 1-paragraph reflection in my voice.',
+      ].join('\n'),
+      codex_cli: [
+        'Help me build a "values tracker" script:',
+        '- Each day I log a value (e.g., courage, honesty) and one action that proved it',
+        '- Tie it to my reading worksheet (book, date)',
+        '- Output a weekly summary',
+        'Add tests.',
+      ].join('\n'),
+      claude_code: [
+        'Improve the values tracker: better CLI prompts, robust storage, and tests for weird inputs.',
+      ].join('\n'),
+    },
+  },
+  {
+    id: 'book_alchemist_foundations',
+    subject: 'reading',
+    priority: 230,
+    quizId: 'book_alchemist_foundations',
+    passPercent: 80,
+    title: 'The Alchemist: Foundations (Journey + Symbolism)',
+    standards: ['Book study'],
+    band: 'reading',
+    learningTargets: [
+      'Explain how a journey story can teach a life lesson.',
+      'Identify symbolism (an object/event meaning more than itself).',
+      'Connect one idea from the book to your real-life goals.',
+    ],
+    practicePlan: [
+      'Read your daily pages/chapters.',
+      'Use the Alchemist worksheet template (Reading & Journal).',
+      'Take the quiz. Re-read missed concepts and try again later.',
+    ],
+    masteryCheck: [
+      'Score >= 80% on the quiz.',
+      'Write one worksheet entry that names a symbol and what you think it represents.',
+    ],
+    ai: {
+      chatgpt_web: [
+        'I am reading The Alchemist. Ask me 6 Socratic questions about:',
+        '- goals vs distractions',
+        '- fear and persistence',
+        '- symbols/omens',
+        'Then help me make 5 flashcards and quiz me on them.',
+      ].join('\n'),
+      codex_cli: [
+        'Write a script that generates daily reflection prompts using "Make It Stick":',
+        '- 2 retrieval questions from yesterday',
+        '- 2 elaboration questions from today',
+        '- 1 transfer question (apply to a real situation)',
+        'Add tests.',
+      ].join('\n'),
+      claude_code: [
+        'Review the reflection-prompt script for quality and add guardrails so prompts stay specific and testable.',
+      ].join('\n'),
+    },
+  },
+  {
+    id: 'book_richest_man_babylon_foundations',
+    subject: 'reading',
+    priority: 240,
+    quizId: 'book_richest_man_babylon_foundations',
+    passPercent: 80,
+    title: 'The Richest Man in Babylon: Foundations (Money Principles)',
+    standards: ['Book study'],
+    band: 'reading',
+    learningTargets: [
+      'Explain "pay yourself first" in plain language.',
+      'Identify the difference between needs and wants.',
+      'Describe one method to protect savings from loss.',
+    ],
+    practicePlan: [
+      'Read your daily pages/chapters.',
+      'Fill out the Richest Man worksheet template (Reading & Journal).',
+      'Take the quiz and correct missed ideas.',
+    ],
+    masteryCheck: [
+      'Score >= 80% on the quiz.',
+      'Write a worksheet entry that turns one principle into a rule you could follow.',
+    ],
+    ai: {
+      chatgpt_web: [
+        'I am reading The Richest Man in Babylon. Teach me the key principle from what I read today.',
+        'Then quiz me with 8 questions. After each answer, ask me to give an example from real life.',
+      ].join('\n'),
+      codex_cli: [
+        'Write a tiny budgeting practice simulator:',
+        '- Input weekly income and fixed costs',
+        '- Enforce "pay yourself first" as a rule',
+        '- Show a 4-week projection',
+        'Add unit tests for calculations.',
+      ].join('\n'),
+      claude_code: [
+        'Review my budgeting simulator and harden it: validate inputs, handle edge cases, and improve tests.',
+      ].join('\n'),
+    },
+  },
+  {
+    id: 'book_meditations_foundations',
+    subject: 'reading',
+    priority: 250,
+    quizId: 'book_meditations_foundations',
+    passPercent: 80,
+    title: 'Meditations: Foundations (Stoic Discipline)',
+    standards: ['Book study'],
+    band: 'reading',
+    learningTargets: [
+      'Explain the idea of controlling what you can and accepting what you cannot.',
+      'Describe virtue (good character) as a daily practice, not a mood.',
+      'Write one example of responding calmly to a challenge.',
+    ],
+    practicePlan: [
+      'Read a short passage/section.',
+      'Use the Meditations worksheet template (Reading & Journal).',
+      'Take the quiz, then apply one idea the same day.',
+    ],
+    masteryCheck: [
+      'Score >= 80% on the quiz.',
+      'Write one worksheet entry that lists: situation, what you control, what you do next.',
+    ],
+    ai: {
+      chatgpt_web: [
+        'I am reading Meditations. Ask me Socratic questions to check I understand:',
+        '- control vs uncontrollable',
+        '- virtue and discipline',
+        'Then help me create a 3-step plan for a real situation I have today.',
+      ].join('\n'),
+      codex_cli: [
+        'Create a simple "Stoic daily drill" script:',
+        '- Prompt: situation -> what I control -> what I will do',
+        '- Save entries to JSON',
+        '- Print weekly patterns',
+        'Add tests.',
+      ].join('\n'),
+      claude_code: [
+        'Improve the stoic drill script: better prompts, better summaries, and tests for date handling.',
+      ].join('\n'),
+    },
+  },
+  {
+    id: 'book_as_a_man_thinketh_foundations',
+    subject: 'reading',
+    priority: 260,
+    quizId: 'book_as_a_man_thinketh_foundations',
+    passPercent: 80,
+    title: 'As a Man Thinketh: Foundations (Thoughts -> Habits -> Outcomes)',
+    standards: ['Book study'],
+    band: 'reading',
+    learningTargets: [
+      'Explain how thoughts can shape habits and results over time.',
+      'Identify one negative thought pattern and one replacement thought.',
+      'Describe one daily habit that supports the replacement thought.',
+    ],
+    practicePlan: [
+      'Read a section.',
+      'Use the As a Man Thinketh worksheet template (Reading & Journal).',
+      'Take the quiz and correct missed ideas.',
+    ],
+    masteryCheck: [
+      'Score >= 80% on the quiz.',
+      'Write one worksheet entry that includes a replacement thought and a daily habit.',
+    ],
+    ai: {
+      chatgpt_web: [
+        'I am reading As a Man Thinketh. Ask me 6 Socratic questions to check understanding.',
+        'Then help me write a "replacement thought" I can repeat daily and a habit that supports it.',
+      ].join('\n'),
+      codex_cli: [
+        'Write a habit tracker script:',
+        '- Each day: record replacement thought + 1 action',
+        '- Output streaks and a weekly reflection summary',
+        'Add tests.',
+      ].join('\n'),
+      claude_code: [
+        'Review my habit tracker script: improve resilience and add tests for data integrity and streak calculations.',
+      ].join('\n'),
+    },
+  },
 ];
 
 window.BRADY_ASSIGNMENTS = BRADY_ASSIGNMENTS;

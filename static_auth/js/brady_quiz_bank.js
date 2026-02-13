@@ -927,6 +927,545 @@ function quiz_reading_vocabulary_context_roots(seed) {
   return { passPercent: 80, title: 'Vocabulary + Context + Figurative Language', questions };
 }
 
+function quiz_book_1984_foundations(seed) {
+  void seed;
+  const questions = [];
+
+  questions.push(makeMc('q1', 'What is a dystopia?', [
+    'A perfect society with no problems',
+    'A society with oppression, fear, and unfair control',
+    'A story told only as a poem',
+    'A place where everyone has the same hobby',
+  ], 'A society with oppression, fear, and unfair control', 'A dystopia shows a harmful society to warn or teach.', ['dystopia'], {}));
+
+  questions.push(makeMc('q2', 'What is propaganda?', [
+    'A balanced report showing all sides equally',
+    'Information designed to persuade people, often by controlling what facts they see',
+    'A math formula',
+    'A dictionary definition',
+  ], 'Information designed to persuade people, often by controlling what facts they see', 'Propaganda pushes a message and may hide or twist facts.', ['propaganda'], {}));
+
+  questions.push(makeMc('q3', 'What is surveillance?', [
+    'Helping someone study',
+    'Constantly watching or monitoring people',
+    'A celebration',
+    'A type of vacation',
+  ], 'Constantly watching or monitoring people', 'Surveillance is monitoring behavior, often to control it.', ['surveillance'], {}));
+
+  questions.push(makeMc('q4', 'Why might a government want to control language?', [
+    'To make jokes funnier',
+    'To limit what people can think, question, or communicate',
+    'To teach everyone to sing',
+    'To make books longer',
+  ], 'To limit what people can think, question, or communicate', 'Language shapes how we describe ideas; controlling it can limit thought.', ['language_control'], {}));
+
+  questions.push(makeMc('q5', 'Which best matches the idea of “doublethink”?', [
+    'Learning two languages',
+    'Holding two conflicting beliefs and accepting both as true',
+    'Thinking carefully before speaking',
+    'Changing your mind when you get new evidence',
+  ], 'Holding two conflicting beliefs and accepting both as true', 'Doublethink is accepting contradictions without questioning.', ['doublethink'], {}));
+
+  questions.push(makeMc('q6', 'If a society reduces vocabulary and removes words for certain ideas, what is a likely goal?', [
+    'To help people write more poetry',
+    'To make it harder for people to express and defend certain thoughts',
+    'To make school easier for everyone',
+    'To improve spelling contests',
+  ], 'To make it harder for people to express and defend certain thoughts', 'Fewer words can mean fewer ways to explain or challenge ideas.', ['newspeak'], {}));
+
+  questions.push(makeMc('q7', 'Which is a theme (message/lesson), not just a topic?', [
+    'A city',
+    'A man’s job',
+    'Fear and information control can shape what people believe is real',
+    'Telescreens',
+  ], 'Fear and information control can shape what people believe is real', 'A theme is usually a full-sentence message.', ['theme'], {}));
+
+  questions.push(makeMc('q8', 'Which statement is the MOST objective summary?', [
+    'The story is scary and the author is obviously right.',
+    'The text describes a society where control and fear affect people’s choices.',
+    'This is the best book ever written.',
+    'I felt angry reading this.',
+  ], 'The text describes a society where control and fear affect people’s choices.', 'Objective summaries state what happens/what the text shows without opinions.', ['objective_summary'], {}));
+
+  questions.push(makeMc('q9', 'What is a common effect of constant surveillance on behavior?', [
+    'People share every thought freely',
+    'People self-censor to avoid punishment',
+    'People forget how to read',
+    'People stop needing sleep',
+  ], 'People self-censor to avoid punishment', 'When people feel watched, they often change behavior to avoid consequences.', ['surveillance_effect'], {}));
+
+  questions.push(makeMc('q10', 'When you hear a strong claim online, what is the BEST next step?', [
+    'Repeat it louder so it becomes true',
+    'Check multiple independent sources and evidence',
+    'Only trust the first post you saw',
+    'Ignore all facts that disagree',
+  ], 'Check multiple independent sources and evidence', 'Information literacy helps you resist manipulation.', ['information_literacy'], {}));
+
+  return { passPercent: 80, title: '1984: Foundations', questions };
+}
+
+function quiz_book_animal_farm_foundations(seed) {
+  void seed;
+  const questions = [];
+
+  questions.push(makeMc('q1', 'What is an allegory?', [
+    'A story where characters and events represent deeper ideas',
+    'A story that only uses facts and data tables',
+    'A poem with a strict rhyme scheme',
+    'A list of rules for grammar',
+  ], 'A story where characters and events represent deeper ideas', 'Allegories use a story to communicate a message about real life.', ['allegory'], {}));
+
+  questions.push(makeMc('q2', 'What is satire?', [
+    'A serious scientific report',
+    'Writing that uses humor/irony to criticize people or systems',
+    'A biography of a famous person',
+    'A dictionary entry',
+  ], 'Writing that uses humor/irony to criticize people or systems', 'Satire points out problems by exaggerating or mocking them.', ['satire'], {}));
+
+  questions.push(makeMc('q3', 'Which is an example of propaganda?', [
+    '“Here are the facts and sources. Decide for yourself.”',
+    '“Only our leaders are always right, and anyone who disagrees is an enemy.”',
+    '“Let’s list pros and cons of both sides.”',
+    '“Please check the evidence before believing this.”',
+  ], '“Only our leaders are always right, and anyone who disagrees is an enemy.”', 'Propaganda pushes a message and discourages critical thinking.', ['propaganda'], {}));
+
+  questions.push(makeMc('q4', 'How can changing rules help people in power?', [
+    'It makes rules easier for everyone to follow',
+    'It can make unfair actions seem “allowed”',
+    'It always increases equality',
+    'It forces everyone to tell the truth',
+  ], 'It can make unfair actions seem “allowed”', 'If rules shift, leaders can justify selfish choices.', ['rule_manipulation'], {}));
+
+  questions.push(makeMc('q5', 'Which is a theme (message/lesson)?', [
+    'A barn',
+    'Animals',
+    'Power can corrupt leaders and harm fairness over time',
+    'A windmill',
+  ], 'Power can corrupt leaders and harm fairness over time', 'A theme is a full-sentence message, not a single topic.', ['theme'], {}));
+
+  questions.push(makeMc('q6', 'Which statement is an opinion?', [
+    'A leader changed the rules.',
+    'The group worked longer hours.',
+    'The leader was obviously the best and deserved everything.',
+    'The story includes speeches and rules.',
+  ], 'The leader was obviously the best and deserved everything.', 'Opinions use judgment words like “obviously best”.', ['opinion_vs_fact'], {}));
+
+  questions.push(makeMc('q7', 'Why might a leader discourage education or questions?', [
+    'To help everyone learn faster',
+    'To reduce critical thinking and keep control',
+    'To make books more exciting',
+    'To improve art skills',
+  ], 'To reduce critical thinking and keep control', 'If people can’t question, it’s easier to control beliefs.', ['control_information'], {}));
+
+  questions.push(makeMc('q8', 'Which detail best supports the idea “propaganda can make people accept unfairness”?', [
+    'People repeat a slogan even when it conflicts with what they see.',
+    'The weather changed.',
+    'The story has a setting on a farm.',
+    'The characters eat food.',
+  ], 'People repeat a slogan even when it conflicts with what they see.', 'Supporting details directly connect to the claim.', ['supporting_evidence'], {}));
+
+  questions.push(makeMc('q9', 'When evaluating a leader’s message, which question is MOST useful?', [
+    'Who benefits and who pays the cost?',
+    'Is it written in all caps?',
+    'Does it rhyme?',
+    'Is it short?',
+  ], 'Who benefits and who pays the cost?', 'This helps you test fairness and incentives.', ['critical_thinking'], {}));
+
+  questions.push(makeMc('q10', 'Which word best matches “equality”?', [
+    'Everyone gets the exact same outcomes no matter what',
+    'Fair treatment and equal rights under the rules',
+    'Only leaders have rights',
+    'Changing rules whenever you want',
+  ], 'Fair treatment and equal rights under the rules', 'Equality is about rights and fair treatment, not favoritism.', ['equality'], {}));
+
+  return { passPercent: 80, title: 'Animal Farm: Foundations', questions };
+}
+
+function quiz_book_anthem_foundations(seed) {
+  void seed;
+  const questions = [];
+
+  questions.push(makeMc('q1', 'What is individualism?', [
+    'Believing the group is always right',
+    'Valuing the individual’s rights, choices, and identity',
+    'Never working with others',
+    'Always doing what you are told',
+  ], 'Valuing the individual’s rights, choices, and identity', 'Individualism focuses on the value and freedom of each person.', ['individualism'], {}));
+
+  questions.push(makeMc('q2', 'What is collectivism (in the extreme)?', [
+    'A belief that the group’s goals always come before individual rights',
+    'A belief that everyone must live alone',
+    'A belief that rules do not matter',
+    'A belief that only art matters',
+  ], 'A belief that the group’s goals always come before individual rights', 'In extreme collectivism, the individual is treated as less important than the group.', ['collectivism'], {}));
+
+  questions.push(makeMc('q3', 'Why might a society discourage the word “I”?', [
+    'To improve spelling',
+    'To reduce individual identity and independence',
+    'To make jokes funnier',
+    'To increase creativity',
+  ], 'To reduce individual identity and independence', 'Language can reinforce how people think about themselves.', ['language_identity'], {}));
+
+  questions.push(makeMc('q4', 'Which is a theme (message/lesson)?', [
+    'A city',
+    'A group of people',
+    'Freedom to think and choose can lead to growth and progress',
+    'A rulebook',
+  ], 'Freedom to think and choose can lead to growth and progress', 'Themes are usually full sentences that communicate a message.', ['theme'], {}));
+
+  questions.push(makeMc('q5', 'Which is an example of conformity pressure?', [
+    'A teacher asks students to show their work',
+    'A group threatens someone for being different',
+    'A friend asks for help with homework',
+    'A store sells new shoes',
+  ], 'A group threatens someone for being different', 'Conformity pressure often uses fear, shame, or punishment.', ['conformity'], {}));
+
+  questions.push(makeMc('q6', 'Which action best shows healthy independent thinking?', [
+    'Agreeing with the group without understanding',
+    'Asking “What evidence supports this rule?”',
+    'Copying answers to fit in',
+    'Never listening to anyone',
+  ], 'Asking “What evidence supports this rule?”', 'Independent thinking asks questions and looks for reasons/evidence.', ['critical_thinking'], {}));
+
+  questions.push(makeMc('q7', 'Which is the best meaning of “identity”?', [
+    'A random number',
+    'Who you are: values, choices, and character',
+    'A type of sandwich',
+    'A school subject',
+  ], 'Who you are: values, choices, and character', 'Identity includes beliefs, values, and choices.', ['identity'], {}));
+
+  questions.push(makeMc('q8', 'Which statement is MOST objective?', [
+    'The society is stupid and unfair.',
+    'The text describes strict rules that limit individual choices.',
+    'I hated this part.',
+    'This is the best story.',
+  ], 'The text describes strict rules that limit individual choices.', 'Objective summaries avoid judgment words.', ['objective_summary'], {}));
+
+  questions.push(makeMc('q9', 'If a narrator uses “we” instead of “I,” what might that suggest about the society?', [
+    'The society celebrates individuality',
+    'The society expects people to think of themselves as part of a group first',
+    'The story is about sports',
+    'The story is a comedy',
+  ], 'The society expects people to think of themselves as part of a group first', 'Pronouns can reveal how people are expected to think about identity.', ['inference'], {}));
+
+  questions.push(makeMc('q10', 'If you disagree with the group, what is a strong next step?', [
+    'Stay silent forever',
+    'Ask a question and explain your reasoning respectfully',
+    'Attack people personally',
+    'Make up evidence',
+  ], 'Ask a question and explain your reasoning respectfully', 'Good disagreement uses reasons and respect, not insults.', ['communication'], {}));
+
+  return { passPercent: 80, title: 'Anthem: Foundations', questions };
+}
+
+function quiz_book_alchemist_foundations(seed) {
+  void seed;
+  const questions = [];
+
+  questions.push(makeMc('q1', 'What is symbolism?', [
+    'A list of dates in order',
+    'When something stands for a deeper idea beyond itself',
+    'A math equation',
+    'A literal instruction manual',
+  ], 'When something stands for a deeper idea beyond itself', 'Symbols can represent ideas like hope, fear, or growth.', ['symbolism'], {}));
+
+  questions.push(makeMc('q2', 'In many journey stories, what is the main purpose of the journey?', [
+    'To show the character getting stronger and learning a life lesson',
+    'To list random events with no meaning',
+    'To avoid any challenge',
+    'To prove the character is perfect',
+  ], 'To show the character getting stronger and learning a life lesson', 'A journey often represents growth and learning.', ['journey_story'], {}));
+
+  questions.push(makeMc('q3', 'What is an “omen” in a story context?', [
+    'A mistake in spelling',
+    'A sign or clue that guides a decision',
+    'A type of sandwich',
+    'A math tool',
+  ], 'A sign or clue that guides a decision', 'Omens are signs characters interpret to decide what to do next.', ['omens'], {}));
+
+  questions.push(makeMc('q4', 'Which is a theme (message/lesson)?', [
+    'A desert',
+    'A treasure chest',
+    'Pursuing a meaningful goal often requires courage and persistence',
+    'A map',
+  ], 'Pursuing a meaningful goal often requires courage and persistence', 'Themes are lessons/messages, usually full sentences.', ['theme'], {}));
+
+  questions.push(makeMc('q5', 'What is the difference between a WANT and a NEED?', [
+    'A want is optional; a need is necessary',
+    'A want is always bad; a need is always good',
+    'A need is never important',
+    'They mean the same thing',
+  ], 'A want is optional; a need is necessary', 'Needs are essential; wants are preferences.', ['want_vs_need'], {}));
+
+  questions.push(makeMc('q6', 'Which is an example of a calculated risk?', [
+    'Doing something dangerous with no plan',
+    'Taking a step toward a goal after thinking about possible outcomes',
+    'Never trying anything new',
+    'Ignoring all consequences',
+  ], 'Taking a step toward a goal after thinking about possible outcomes', 'Calculated risk means you consider consequences before acting.', ['risk'], {}));
+
+  questions.push(makeMc('q7', 'Which statement is MOST objective?', [
+    'This part was amazing and the character is awesome.',
+    'The text follows a character who faces choices and continues traveling toward a goal.',
+    'I felt bored reading this.',
+    'The author is wrong.',
+  ], 'The text follows a character who faces choices and continues traveling toward a goal.', 'Objective summaries avoid opinions.', ['objective_summary'], {}));
+
+  questions.push(makeMc('q8', 'Which sentence uses figurative language?', [
+    'The backpack is on the table.',
+    'Hope was a candle in the darkness.',
+    'She wrote her name.',
+    'The door is open.',
+  ], 'Hope was a candle in the darkness.', 'Figurative language compares for effect.', ['figurative_language'], {}));
+
+  questions.push(makeMc('q9', 'Which is the BEST way to make progress toward a long-term goal?', [
+    'Wait until you feel perfect motivation',
+    'Break it into small steps and practice consistently',
+    'Quit when it is hard',
+    'Only talk about the goal',
+  ], 'Break it into small steps and practice consistently', 'Small consistent steps make goals achievable.', ['goal_setting'], {}));
+
+  questions.push(makeMc('q10', '“Alchemy” literally refers to:', [
+    'Turning base metals into gold',
+    'A type of sport',
+    'A kind of weather',
+    'A music style',
+  ], 'Turning base metals into gold', 'The literal meaning helps you understand the metaphor of transformation.', ['vocabulary'], {}));
+
+  return { passPercent: 80, title: 'The Alchemist: Foundations', questions };
+}
+
+function quiz_book_richest_man_babylon_foundations(seed) {
+  void seed;
+  const questions = [];
+
+  questions.push(makeMc('q1', 'What does “pay yourself first” mean?', [
+    'Spend your money immediately',
+    'Save a portion of your income before spending on anything else',
+    'Only buy expensive things',
+    'Never save money',
+  ], 'Save a portion of your income before spending on anything else', 'Pay yourself first means saving before spending.', ['pay_yourself_first'], {}));
+
+  questions.push(makeMc('q2', 'Which is a NEED, not a WANT?', [
+    'A new video game',
+    'Food for the week',
+    'A fancy phone upgrade',
+    'Designer shoes',
+  ], 'Food for the week', 'Needs are necessary for health/safety; wants are optional.', ['needs_vs_wants'], {}));
+
+  questions.push(makeMc('q3', 'What is a budget?', [
+    'A plan for how you will use your money',
+    'A way to avoid paying bills',
+    'A type of investment',
+    'A random guess',
+  ], 'A plan for how you will use your money', 'Budgets help you decide spending and saving on purpose.', ['budget'], {}));
+
+  questions.push(makeMc('q4', 'What is the difference between saving and investing?', [
+    'They are identical',
+    'Saving keeps money safer; investing tries to grow money but has risk',
+    'Investing always loses money',
+    'Saving is illegal',
+  ], 'Saving keeps money safer; investing tries to grow money but has risk', 'Investing aims for growth; saving is usually lower risk.', ['saving_investing'], {}));
+
+  questions.push(makeMc('q5', 'Which is a smart way to protect savings from loss?', [
+    'Give money to strangers who promise huge returns',
+    'Ask for advice and avoid deals you do not understand',
+    'Put all money into one risky bet',
+    'Never track where money goes',
+  ], 'Ask for advice and avoid deals you do not understand', 'Protection means reducing risk and avoiding scams.', ['protect_from_loss'], {}));
+
+  questions.push(makeMc('q6', 'What does “live below your means” mean?', [
+    'Spend more than you earn',
+    'Spend less than you earn so you can save',
+    'Never buy anything',
+    'Only buy things you dislike',
+  ], 'Spend less than you earn so you can save', 'Spending less than you earn creates savings.', ['below_means'], {}));
+
+  questions.push(makeMc('q7', 'What is interest/compounding?', [
+    'Money shrinking over time',
+    'Money growing because it earns gains, and those gains earn gains too',
+    'A kind of meal',
+    'A school subject',
+  ], 'Money growing because it earns gains, and those gains earn gains too', 'Compounding means growth on growth over time.', ['compounding'], {}));
+
+  questions.push(makeMc('q8', 'If you earn $200 and save 10% first, how much do you save?', [
+    '$10',
+    '$20',
+    '$40',
+    '$200',
+  ], '$20', '10% of 200 is 20.', ['percent'], {}));
+
+  questions.push(makeMc('q9', 'Before buying something expensive, which question is MOST helpful?', [
+    'Will this impress someone?',
+    'Do I need this now, and does it fit my plan?',
+    'Can I hide it?',
+    'Is it trending?',
+  ], 'Do I need this now, and does it fit my plan?', 'Good spending matches your goals and budget.', ['decision_making'], {}));
+
+  questions.push(makeMc('q10', 'Which statement is the best long-term money mindset?', [
+    'Wealth happens instantly with no effort',
+    'Small consistent saving and smart choices add up over time',
+    'Tracking money is pointless',
+    'Debt is always harmless',
+  ], 'Small consistent saving and smart choices add up over time', 'Consistency matters more than quick wins.', ['mindset'], {}));
+
+  return { passPercent: 80, title: 'The Richest Man in Babylon: Foundations', questions };
+}
+
+function quiz_book_meditations_foundations(seed) {
+  void seed;
+  const questions = [];
+
+  questions.push(makeMc('q1', 'Which is MOST in your control?', [
+    'Other people’s opinions',
+    'Your choices and actions',
+    'The weather tomorrow',
+    'What happened yesterday',
+  ], 'Your choices and actions', 'Stoicism focuses on what you can control: your actions and attitude.', ['control'], {}));
+
+  questions.push(makeMc('q2', 'In Stoic philosophy, “virtue” is closest to:', [
+    'Being famous',
+    'Good character (wisdom, justice, courage, self-control)',
+    'Getting everything you want',
+    'Never feeling emotions',
+  ], 'Good character (wisdom, justice, courage, self-control)', 'Virtue is about character and right action.', ['virtue'], {}));
+
+  questions.push(makeMc('q3', 'What is discipline?', [
+    'Doing what is easy every time',
+    'Training yourself to do the right thing consistently',
+    'Avoiding responsibility',
+    'Winning every argument',
+  ], 'Training yourself to do the right thing consistently', 'Discipline is consistent practice of right choices.', ['discipline'], {}));
+
+  questions.push(makeMc('q4', 'A Stoic response to a setback is BEST described as:', [
+    'Panic and blame others',
+    'Pause, accept what happened, then choose a wise next action',
+    'Pretend nothing happened',
+    'Give up immediately',
+  ], 'Pause, accept what happened, then choose a wise next action', 'Stoicism is calm acceptance + wise action.', ['response'], {}));
+
+  questions.push(makeMc('q5', 'Which is a helpful Stoic question to ask yourself?', [
+    '“How can I control everyone?”',
+    '“What part of this is up to me right now?”',
+    '“How can I avoid learning?”',
+    '“How can I make this last forever?”',
+  ], '“What part of this is up to me right now?”', 'This separates controllable actions from uncontrollable events.', ['control_question'], {}));
+
+  questions.push(makeMc('q6', 'Which is a strong example of self-control?', [
+    'Saying the first thing that comes to mind',
+    'Choosing to respond calmly even when annoyed',
+    'Quitting when it is hard',
+    'Blaming someone else for your choices',
+  ], 'Choosing to respond calmly even when annoyed', 'Self-control is choosing your response.', ['self_control'], {}));
+
+  questions.push(makeMc('q7', 'Which is a theme (message/lesson) consistent with Stoicism?', [
+    'Always chase popularity',
+    'Focus on character and right action, not outcomes you can’t control',
+    'Never think about your choices',
+    'Avoid all effort',
+  ], 'Focus on character and right action, not outcomes you can’t control', 'Stoicism values character and wise action.', ['theme'], {}));
+
+  questions.push(makeMc('q8', 'Which statement is MOST objective?', [
+    'This philosophy is boring.',
+    'The text encourages calm thinking and purposeful action.',
+    'I hate this.',
+    'Only weak people stay calm.',
+  ], 'The text encourages calm thinking and purposeful action.', 'Objective statements avoid judgment words.', ['objective_summary'], {}));
+
+  questions.push(makeMc('q9', 'Why might journaling help learning and self-control?', [
+    'It replaces all action',
+    'It helps you review patterns, remember lessons, and plan better choices',
+    'It guarantees you will be perfect',
+    'It makes other people agree with you',
+  ], 'It helps you review patterns, remember lessons, and plan better choices', 'Writing helps memory and reflection.', ['journaling'], {}));
+
+  questions.push(makeMc('q10', 'When something external goes wrong, what is the Stoic first step?', [
+    'Control the external event',
+    'Blame someone',
+    'Notice your reaction and choose your response',
+    'Ignore it forever',
+  ], 'Notice your reaction and choose your response', 'You can’t control events, but you can control your response.', ['response'], {}));
+
+  return { passPercent: 80, title: 'Meditations: Foundations', questions };
+}
+
+function quiz_book_as_a_man_thinketh_foundations(seed) {
+  void seed;
+  const questions = [];
+
+  questions.push(makeMc('q1', 'What is the main idea of “thoughts -> habits -> outcomes”?', [
+    'Thoughts do not matter at all',
+    'What you repeatedly think can shape what you do and who you become',
+    'Only luck determines results',
+    'Habits are random',
+  ], 'What you repeatedly think can shape what you do and who you become', 'Repeated thoughts influence choices and habits over time.', ['main_idea'], {}));
+
+  questions.push(makeMc('q2', 'What is a habit?', [
+    'A one-time event',
+    'A repeated behavior that becomes easier over time',
+    'A random accident',
+    'A rule you never follow',
+  ], 'A repeated behavior that becomes easier over time', 'Habits are repeated actions that become automatic.', ['habit'], {}));
+
+  questions.push(makeMc('q3', 'What is a “replacement thought”?', [
+    'Ignoring problems',
+    'A better, more helpful thought you choose instead of a harmful one',
+    'Pretending nothing matters',
+    'Repeating insults',
+  ], 'A better, more helpful thought you choose instead of a harmful one', 'Replacement thoughts support better actions.', ['replacement_thought'], {}));
+
+  questions.push(makeMc('q4', 'Which is a negative thought pattern?', [
+    'Planning steps for a goal',
+    'Catastrophizing: “One mistake means I will fail forever.”',
+    'Asking for feedback',
+    'Studying consistently',
+  ], 'Catastrophizing: “One mistake means I will fail forever.”', 'Catastrophizing turns a small problem into a huge story.', ['negative_thought'], {}));
+
+  questions.push(makeMc('q5', 'Which action best supports a replacement thought?', [
+    'Taking a small daily action that matches the thought',
+    'Waiting forever',
+    'Hiding your work',
+    'Blaming others',
+  ], 'Taking a small daily action that matches the thought', 'Thoughts become real through repeated actions.', ['habit_action'], {}));
+
+  questions.push(makeMc('q6', 'Which statement is MOST objective?', [
+    'This idea is obviously stupid.',
+    'The text argues that thinking patterns affect behavior over time.',
+    'I felt annoyed reading this.',
+    'Only losers have habits.',
+  ], 'The text argues that thinking patterns affect behavior over time.', 'Objective statements describe the text without insults/opinions.', ['objective_summary'], {}));
+
+  questions.push(makeMc('q7', 'What is the difference between wishful thinking and a plan?', [
+    'A plan includes steps and actions; wishful thinking is hoping without action',
+    'They are the same',
+    'Wishful thinking is always better',
+    'Plans never work',
+  ], 'A plan includes steps and actions; wishful thinking is hoping without action', 'Plans connect thoughts to behaviors.', ['planning'], {}));
+
+  questions.push(makeMc('q8', 'Which is a strong piece of evidence that habits are changing?', [
+    'A single good day',
+    'A consistent streak of actions over time',
+    'A rumor',
+    'A feeling with no action',
+  ], 'A consistent streak of actions over time', 'Consistency is evidence of habit formation.', ['evidence'], {}));
+
+  questions.push(makeMc('q9', 'Which choice is most likely to improve results long-term?', [
+    'Blaming luck for everything',
+    'Practicing a helpful thought and action daily',
+    'Avoiding feedback',
+    'Quitting when it feels uncomfortable',
+  ], 'Practicing a helpful thought and action daily', 'Daily repetition builds skill and habits.', ['growth'], {}));
+
+  questions.push(makeMc('q10', 'What is a good next step after noticing a harmful thought?', [
+    'Repeat it louder',
+    'Write it down, challenge it, and replace it with a better thought',
+    'Pretend it never happened',
+    'Insult yourself',
+  ], 'Write it down, challenge it, and replace it with a better thought', 'Awareness + replacement is a practical strategy.', ['replacement'], {}));
+
+  return { passPercent: 80, title: 'As a Man Thinketh: Foundations', questions };
+}
+
 function quiz_language_pronouns_possessives(seed) {
   const rng = mulberry32(seed);
   const questions = [];
@@ -1068,6 +1607,13 @@ const QUIZ_BUILDERS = {
   reading_theme_and_summary: quiz_reading_theme_and_summary,
   reading_informational_text_claims_structure: quiz_reading_informational_text_claims_structure,
   reading_vocabulary_context_roots: quiz_reading_vocabulary_context_roots,
+  book_1984_foundations: quiz_book_1984_foundations,
+  book_animal_farm_foundations: quiz_book_animal_farm_foundations,
+  book_anthem_foundations: quiz_book_anthem_foundations,
+  book_alchemist_foundations: quiz_book_alchemist_foundations,
+  book_richest_man_babylon_foundations: quiz_book_richest_man_babylon_foundations,
+  book_meditations_foundations: quiz_book_meditations_foundations,
+  book_as_a_man_thinketh_foundations: quiz_book_as_a_man_thinketh_foundations,
   language_pronouns_possessives: quiz_language_pronouns_possessives,
   language_sentence_combining_verb_tense: quiz_language_sentence_combining_verb_tense,
   language_commas_transitions_formal_tone: quiz_language_commas_transitions_formal_tone,

@@ -8,8 +8,12 @@ function todayLocalISO() {
 
 const BRADY_BOOKS = [
   { id: 'richest_man_babylon', title: 'The Richest Man in Babylon' },
-  { id: 'alchemist', title: 'The Alchemist' },
+  { id: 'alchemist', title: 'The Alchemist (Graphic Novel)' },
   { id: 'anthem', title: 'Anthem (Ayn Rand)' },
+  { id: 'nineteen_eighty_four', title: '1984 (George Orwell)' },
+  { id: 'animal_farm', title: 'Animal Farm (George Orwell)' },
+  { id: 'meditations', title: 'Meditations (Marcus Aurelius)' },
+  { id: 'as_a_man_thinketh', title: 'As a Man Thinketh (James Allen)' },
 ];
 
 function setAlert(msg) {
@@ -67,6 +71,256 @@ function clearLocalDraft(dayISO, bookId) {
   } catch (_) {
     // ignore
   }
+}
+
+function worksheetTemplateForBook(bookId, dayISO) {
+  const title = bookTitle(bookId);
+
+  const common = [
+    'BOOK WORKSHEET (Daily)',
+    `Date: ${String(dayISO || '')}`,
+    `Book: ${title}`,
+    '',
+    'How to use this:',
+    '- First: answer WITHOUT looking back (retrieval practice).',
+    '- Then: open the book and add 1 correction you missed.',
+    '',
+    '1) Pages/Chapters read today:',
+    '',
+    '2) Retrieval summary (3-5 sentences, no peeking):',
+    '',
+    '3) 3 important ideas (bullets):',
+    '-',
+    '-',
+    '-',
+    '',
+    '4) 1 question you have (confusion, prediction, or curiosity):',
+    '',
+    '5) 1 action you will take today because of this reading:',
+    '',
+    '6) Correction after you re-open the book (what did you miss at first?):',
+    '',
+  ];
+
+  const byBook = {
+    richest_man_babylon: [
+      'BOOK-SPECIFIC FOCUS (Richest Man in Babylon)',
+      '- Write the financial principle in your own words.',
+      '- Give one example of how you could apply it this week.',
+      '',
+      'Socratic check:',
+      '- What would happen if you did the opposite of the principle for 30 days?',
+      '',
+    ],
+    alchemist: [
+      'BOOK-SPECIFIC FOCUS (The Alchemist)',
+      '- What is the "Personal Legend" idea from what you read today?',
+      '- What "omen" or sign did you notice (literal or symbolic)?',
+      '',
+      'Socratic check:',
+      '- What did the main character WANT? What did they NEED?',
+      '',
+    ],
+    anthem: [
+      'BOOK-SPECIFIC FOCUS (Anthem)',
+      '- Where do you see conformity or fear being used to control people?',
+      '- What does the story suggest about the word "I" (and why it matters)?',
+      '',
+      'Socratic check:',
+      '- If you could ask the Council one question, what would it be and why?',
+      '',
+    ],
+    nineteen_eighty_four: [
+      'BOOK-SPECIFIC FOCUS (1984)',
+      '- Describe one example of control (information, language, fear, surveillance).',
+      '- What effect does that control have on a person’s choices?',
+      '',
+      'Socratic check:',
+      '- What is the warning the book is trying to give society?',
+      '',
+    ],
+    animal_farm: [
+      'BOOK-SPECIFIC FOCUS (Animal Farm)',
+      '- Identify one way language/slogans/rules are used to shape what others believe.',
+      '- What does the story show about power changing people over time?',
+      '',
+      'Socratic check:',
+      '- What is one "lesson" this farm teaches about leadership?',
+      '',
+    ],
+    meditations: [
+      'BOOK-SPECIFIC FOCUS (Meditations)',
+      '- Write one idea about what you can control vs what you cannot.',
+      '- Give a real example from your life today.',
+      '',
+      'Socratic check:',
+      '- What would a calm, disciplined version of you do next?',
+      '',
+    ],
+    as_a_man_thinketh: [
+      'BOOK-SPECIFIC FOCUS (As a Man Thinketh)',
+      '- What thought pattern does the author say creates a bad outcome?',
+      '- What thought will you replace it with (write the replacement thought)?',
+      '',
+      'Socratic check:',
+      '- How would your week change if you practiced that replacement thought daily?',
+      '',
+    ],
+  };
+
+  const extra = byBook[bookId] || [
+    'BOOK-SPECIFIC FOCUS',
+    '- What is one big idea from today?',
+    '- How does it connect to your life?',
+    '',
+  ];
+
+  return common.concat(extra).join('\n');
+}
+
+function utf8ToBase64(text) {
+  const enc = new TextEncoder();
+  const bytes = enc.encode(String(text || ''));
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    for (let j = 0; j < chunk.length; j++) {
+      binary += String.fromCharCode(chunk[j]);
+    }
+  }
+  return { base64: btoa(binary), sizeBytes: bytes.length };
+}
+
+async function upsertWorksheetArtifact(queryUserId, dayISO, bookId, minutes, journal) {
+  const sb = MHA_Auth.getSupabase();
+  const title = bookTitle(bookId);
+  const assignmentId = `reading_worksheet_${String(bookId || '')}`;
+  const filename = `worksheet_${String(bookId || '')}_${String(dayISO || '')}.txt`;
+  const payloadText = [
+    'MHA Reading Worksheet Submission',
+    `Date: ${String(dayISO || '')}`,
+    `Book: ${title}`,
+    `Minutes: ${minutes ?? ''}`,
+    '',
+    'Student responses:',
+    '---',
+    String(journal || '').trim(),
+    '---',
+  ].join('\n');
+
+  const { base64, sizeBytes } = utf8ToBase64(payloadText);
+  if (sizeBytes > 8_000_000) {
+    throw new Error('Worksheet is too large to save (max 8 MB).');
+  }
+
+  const { data: existingRows, error: findErr } = await sb
+    .from('brady_artifacts')
+    .select('id,created_at')
+    .eq('user_id', queryUserId)
+    .eq('day', dayISO)
+    .eq('practice_kind', 'reading')
+    .eq('assignment_id', assignmentId)
+    .eq('filename', filename)
+    .order('created_at', { ascending: false })
+    .limit(1);
+  if (findErr) throw findErr;
+  const existing = Array.isArray(existingRows) && existingRows[0] ? existingRows[0] : null;
+
+  if (existing?.id) {
+    const { error: updateErr } = await sb
+      .from('brady_artifacts')
+      .update({
+        mime_type: 'text/plain',
+        size_bytes: sizeBytes,
+        content_base64: base64,
+      })
+      .eq('id', existing.id);
+    if (updateErr) throw updateErr;
+
+    // If the worksheet content changed, force AI to regenerate feedback next time.
+    try {
+      await sb.from('brady_ai_reviews').delete().eq('user_id', queryUserId).eq('artifact_id', existing.id);
+    } catch (_) {
+      // ignore
+    }
+    return { id: existing.id, reusedArtifact: true };
+  }
+
+  const { data: insertedRows, error: insErr } = await sb.from('brady_artifacts').insert({
+    user_id: queryUserId,
+    day: dayISO,
+    practice_kind: 'reading',
+    assignment_id: assignmentId,
+    filename,
+    mime_type: 'text/plain',
+    size_bytes: sizeBytes,
+    content_base64: base64,
+  }).select('id');
+  if (insErr) throw insErr;
+  const inserted = Array.isArray(insertedRows) && insertedRows[0] ? insertedRows[0] : null;
+  if (!inserted?.id) throw new Error('Unable to save worksheet artifact.');
+  return { id: inserted.id, reusedArtifact: false };
+}
+
+async function reviewArtifactById(artifactId, queryUserId) {
+  const token = await MHA_Auth.getAccessToken();
+  const resp = await fetch('/api/brady/review-artifact', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ artifactId, queryUserId }),
+  });
+
+  const body = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    const err = new Error(body?.error || `AI review failed (${resp.status}).`);
+    err.statusCode = resp.status;
+    err.errorCode = body?.error_code || body?.errorCode || '';
+    throw err;
+  }
+  return body || {};
+}
+
+function renderWorksheetReview(result) {
+  const box = document.getElementById('worksheetReviewBox');
+  const metaEl = document.getElementById('worksheetReviewMeta');
+  const feedbackEl = document.getElementById('worksheetReviewFeedback');
+  const stepsEl = document.getElementById('worksheetReviewNextSteps');
+
+  const review = result?.review && typeof result.review === 'object' ? result.review : null;
+  if (!box || !review) return;
+
+  const score = (review.score_percent !== null && review.score_percent !== undefined) ? Number(review.score_percent) : null;
+  const provider = String(review.provider || '');
+  const model = String(review.model || '');
+  const reused = result?.reused ? 'Reused cached review.' : 'Generated new review.';
+
+  if (metaEl) {
+    metaEl.textContent = `${reused} Score: ${Number.isFinite(score) ? `${score}%` : '—'}. Provider: ${provider}${model ? ` (${model})` : ''}.`;
+  }
+  if (feedbackEl) feedbackEl.textContent = String(review.feedback || '');
+
+  const next = Array.isArray(review.next_steps) ? review.next_steps : [];
+  if (stepsEl) {
+    const safe = (s) => String(s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    stepsEl.innerHTML = next.length
+      ? `<div><span class="mono">Next steps:</span></div><ul style="padding-left:18px; margin-top:6px;">${next.slice(0, 6).map((s) => `<li>${safe(s)}</li>`).join('')}</ul>`
+      : '';
+  }
+
+  box.style.display = 'block';
+}
+
+async function signOutLocalAndRedirectToLogin(nextPath) {
+  try {
+    await MHA_Auth.getSupabase().auth.signOut({ scope: 'local' });
+  } catch (_) {
+    // ignore
+  }
+  window.location.href = MHA_Brady.bradyLoginUrl(nextPath);
 }
 
 async function loadReadingDraftRow(session, queryUserId, dayISO, bookId) {
@@ -158,6 +412,27 @@ function bindPromptControls() {
   const marker = document.body?.dataset?.mhaReadingBound;
   if (marker === '1') return;
   if (document.body && document.body.dataset) document.body.dataset.mhaReadingBound = '1';
+
+  const fillWorksheetBtn = document.getElementById('fillWorksheet');
+  if (fillWorksheetBtn) {
+    fillWorksheetBtn.addEventListener('click', () => {
+      setAlert('');
+      const day = document.getElementById('day')?.value || todayLocalISO();
+      const bookId = document.getElementById('book')?.value || BRADY_BOOKS[0]?.id;
+      const journalEl = document.getElementById('journal');
+      if (!journalEl) return;
+
+      const current = String(journalEl.value || '').trim();
+      if (current && !current.startsWith('BOOK WORKSHEET')) {
+        const ok = window.confirm('Replace your current journal text with the worksheet template?');
+        if (!ok) return;
+      }
+      journalEl.value = worksheetTemplateForBook(bookId, day);
+      journalEl.dispatchEvent(new Event('input', { bubbles: true }));
+      setAlert('Worksheet template loaded. Fill it out, then click "AI Check Worksheet".');
+      setTimeout(() => setAlert(''), 1400);
+    });
+  }
 
   const fillPromptBtn = document.getElementById('fillPrompt');
   const aiBox = document.getElementById('aiBox');
@@ -426,6 +701,53 @@ async function main() {
         } finally {
           saveBtn.disabled = false;
           saveBtn.textContent = 'Save';
+        }
+      });
+    }
+
+    const aiCheckBtn = document.getElementById('aiCheckWorksheet');
+    if (aiCheckBtn) {
+      aiCheckBtn.addEventListener('click', async () => {
+        setAlert('');
+        aiCheckBtn.disabled = true;
+        const originalText = aiCheckBtn.textContent;
+        aiCheckBtn.textContent = 'Checking…';
+        try {
+          // Save the reading log first so the work is recorded even if AI is down.
+          await saveReading(gateSession, queryUserId);
+
+          const day = document.getElementById('day')?.value || todayLocalISO();
+          const bookId = document.getElementById('book')?.value;
+          const minutesRaw = document.getElementById('minutes')?.value;
+          const minutesNum = minutesRaw === '' ? null : Number(minutesRaw);
+          const minutes = Number.isFinite(minutesNum) ? Number(minutesNum) : null;
+          const journal = document.getElementById('journal')?.value || '';
+
+          if (!bookId) throw new Error('Select a book first.');
+          if (minutes === null) throw new Error('Enter minutes before AI check.');
+          if (!String(journal || '').trim()) throw new Error('Write your worksheet/journal before AI check.');
+
+          const artifact = await upsertWorksheetArtifact(queryUserId, day, bookId, minutes, journal);
+          const out = await reviewArtifactById(artifact.id, queryUserId);
+          renderWorksheetReview(out);
+          setAlert(out?.reused ? 'AI review loaded.' : 'AI review saved.');
+          setTimeout(() => setAlert(''), 1400);
+        } catch (e) {
+          const status = Number(e?.statusCode || e?.status || 0);
+          const code = String(e?.errorCode || e?.error_code || '');
+          const msg = String(e?.message || '').toLowerCase();
+          const looksLikeMissingSession = status === 401
+            || code === 'session_not_found'
+            || msg.includes('session_not_found')
+            || msg.includes('session_id claim');
+          if (looksLikeMissingSession) {
+            await signOutLocalAndRedirectToLogin('brady/reading.html');
+            return;
+          }
+          setAlert(e?.message || 'AI check failed.');
+        } finally {
+          aiCheckBtn.disabled = false;
+          aiCheckBtn.textContent = originalText || 'AI Check Worksheet';
         }
       });
     }

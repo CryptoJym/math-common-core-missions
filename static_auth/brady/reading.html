@@ -39,8 +39,17 @@
       </div>
       <div class="btn-row">
         <button class="btn" type="button" id="saveReading">Save</button>
+        <button class="btn secondary" type="button" id="fillWorksheet">Book Worksheet Template</button>
+        <button class="btn secondary" type="button" id="aiCheckWorksheet">AI Check Worksheet</button>
         <button class="btn secondary" type="button" id="fillPrompt">AI Reflection Prompt</button>
         <span class="small" id="draftMsg" style="color: var(--text-secondary);"></span>
+      </div>
+
+      <div class="ai-box" id="worksheetReviewBox" style="display:none; margin-top:12px;">
+        <h4>AI Worksheet Review</h4>
+        <div id="worksheetReviewMeta" class="small"></div>
+        <div id="worksheetReviewFeedback" class="small" style="margin-top:10px; white-space: pre-wrap;"></div>
+        <div id="worksheetReviewNextSteps" class="small" style="margin-top:10px;"></div>
       </div>
 
       <div class="ai-box" id="aiBox" style="display:none;">
