@@ -112,6 +112,18 @@ function makeExpandedSum(questionId, prompt, answerNumber, explanation, tags, me
   };
 }
 
+function difficultyForIndex(idx, total) {
+  const t = Math.max(1, Math.floor(Number(total) || 1));
+  const pos = Math.min(t, Math.max(1, Math.floor(Number(idx) || 0) + 1));
+  const level = Math.ceil((pos / t) * 5);
+  return Math.max(1, Math.min(5, level));
+}
+
+function withDifficulty(meta, difficulty) {
+  const base = meta && typeof meta === 'object' ? meta : {};
+  return { ...base, difficulty: Number(difficulty) || 1 };
+}
+
 // ---------------------------------------------------------------------------
 // Quiz generators
 // ---------------------------------------------------------------------------
@@ -126,10 +138,37 @@ function quiz_math_fractions_number_line(seed, options) {
   const reverseCount = missReverse > missTick ? 5 : 3;
   const tickCount = 10 - reverseCount;
 
-  for (let i = 1; i <= tickCount; i++) {
-    const den = randInt(rng, 3, 12);
-    const num = randInt(rng, 1, den - 1);
-    const qid = `q${i}`;
+  const denRangeForDifficulty = (difficulty) => {
+    const d = Number(difficulty);
+    if (d <= 1) return [2, 6];
+    if (d === 2) return [3, 8];
+    if (d === 3) return [4, 10];
+    if (d === 4) return [6, 12];
+    return [8, 12];
+  };
+
+  for (let i = 0; i < tickCount; i++) {
+    const qIndex = i;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const [denMin, denMax] = denRangeForDifficulty(difficulty);
+    const den = randInt(rng, denMin, denMax);
+
+    let num = 1;
+    for (let t = 0; t < 25; t++) {
+      let candidate = 1;
+      if (difficulty <= 1) candidate = 1;
+      else if (difficulty === 2) candidate = randInt(rng, 1, Math.min(2, den - 1));
+      else if (difficulty === 3) candidate = randInt(rng, 1, den - 1);
+      else if (difficulty === 4) candidate = (den >= 5) ? randInt(rng, 2, den - 2) : 1;
+      else candidate = (den >= 7) ? randInt(rng, 3, den - 3) : randInt(rng, 2, den - 2);
+
+      if (candidate > 0 && candidate < den && gcd(candidate, den) === 1) {
+        num = candidate;
+        break;
+      }
+    }
+
+    const qid = `q${i + 1}`;
     const prompt = `On a number line from 0 to 1, split into ${den} equal parts. Which tick number (0 to ${den}) is ${num}/${den}?`;
     questions.push(
       makeNumber(
@@ -138,15 +177,21 @@ function quiz_math_fractions_number_line(seed, options) {
         num,
         `If you split into ${den} equal parts, the ticks are 0/${den}, 1/${den}, 2/${den} ... so ${num}/${den} is tick ${num}.`,
         ['tick_from_fraction'],
-        { num, den }
+        withDifficulty({ num, den }, difficulty)
       )
     );
   }
 
-  for (let j = 1; j <= reverseCount; j++) {
-    const den = randInt(rng, 3, 12);
-    const tick = randInt(rng, 1, den - 1);
-    const qid = `q${tickCount + j}`;
+  for (let j = 0; j < reverseCount; j++) {
+    const qIndex = tickCount + j;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const [denMin, denMax] = denRangeForDifficulty(Math.max(2, difficulty));
+    const den = randInt(rng, denMin, denMax);
+    const tickMin = (difficulty >= 5 && den >= 4) ? 2 : 1;
+    const tickMax = (difficulty >= 5 && den >= 4) ? (den - 2) : (den - 1);
+    const tick = randInt(rng, tickMin, tickMax);
+
+    const qid = `q${tickCount + j + 1}`;
     const prompt = `On a number line from 0 to 1, split into ${den} equal parts. What fraction is at tick ${tick}? (type like 3/8)`;
     questions.push(
       makeFraction(
@@ -156,7 +201,7 @@ function quiz_math_fractions_number_line(seed, options) {
         den,
         `Tick ${tick} means ${tick} parts of size 1/${den}, so the fraction is ${tick}/${den}.`,
         ['fraction_from_tick'],
-        { num: tick, den }
+        withDifficulty({ num: tick, den }, difficulty)
       )
     );
   }
@@ -178,10 +223,45 @@ function quiz_math_equivalent_fractions(seed, options) {
   const simplifyCount = missSimplify > missEquivalence ? 8 : 6;
   const eqCount = 10 - simplifyCount;
 
+  const denRangeForDifficulty = (difficulty) => {
+    const d = Number(difficulty);
+    if (d <= 1) return [2, 6];
+    if (d === 2) return [3, 8];
+    if (d === 3) return [4, 10];
+    if (d === 4) return [5, 12];
+    return [6, 12];
+  };
+
+  const kRangeForDifficulty = (difficulty) => {
+    const d = Number(difficulty);
+    if (d <= 1) return [2, 3];
+    if (d === 2) return [2, 4];
+    if (d === 3) return [2, 6];
+    if (d === 4) return [3, 8];
+    return [4, 10];
+  };
+
   for (let i = 1; i <= simplifyCount; i++) {
-    const baseDen = randInt(rng, 2, 12);
-    const baseNum = randInt(rng, 1, baseDen - 1);
-    const k = randInt(rng, 2, 6);
+    const qIndex = i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const [denMin, denMax] = denRangeForDifficulty(difficulty);
+    const baseDen = randInt(rng, denMin, denMax);
+
+    let baseNum = randInt(rng, 1, baseDen - 1);
+    if (difficulty <= 2) {
+      // Make early problems cleaner: start with reduced fractions so the only
+      // simplification step is "undo the multiplier".
+      for (let t = 0; t < 25; t++) {
+        const candidate = randInt(rng, 1, baseDen - 1);
+        if (gcd(candidate, baseDen) === 1) {
+          baseNum = candidate;
+          break;
+        }
+      }
+    }
+
+    const [kMin, kMax] = kRangeForDifficulty(difficulty);
+    const k = randInt(rng, kMin, kMax);
     const n2 = baseNum * k;
     const d2 = baseDen * k;
     const reduced = reduceFrac(n2, d2);
@@ -192,16 +272,36 @@ function quiz_math_equivalent_fractions(seed, options) {
       reduced.den,
       `Divide numerator and denominator by their greatest common factor.`,
       ['simplify'],
-      { original: { num: n2, den: d2 } }
+      withDifficulty({ original: { num: n2, den: d2 }, base: { num: baseNum, den: baseDen }, k }, difficulty)
     ));
   }
 
   for (let i = 1; i <= eqCount; i++) {
-    const den = randInt(rng, 2, 12);
+    const qIndex = simplifyCount + i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const [denMin, denMax] = denRangeForDifficulty(difficulty);
+    const den = randInt(rng, denMin, denMax);
     const num = randInt(rng, 1, den - 1);
-    const k = randInt(rng, 2, 6);
+    const [kMin, kMax] = kRangeForDifficulty(difficulty);
+    const k = randInt(rng, kMin, kMax);
     const a = { num, den };
-    const b = rng() < 0.6 ? { num: num * k, den: den * k } : { num: num * k + 1, den: den * k }; // often non-equivalent
+    const wantEquivalent = rng() < (difficulty <= 2 ? 0.7 : (difficulty === 3 ? 0.6 : 0.5));
+    let b = { num: num * k, den: den * k };
+    if (!wantEquivalent) {
+      // Near-miss fractions get harder later (sometimes tweak denominator too).
+      const deltaNumPool = difficulty >= 4 ? [-2, -1, 1, 2] : [-1, 1];
+      const deltaDenPool = difficulty >= 4 ? [-1, 1] : [0];
+      const deltaNum = pickOne(rng, deltaNumPool);
+      const deltaDen = pickOne(rng, deltaDenPool);
+      b = { num: b.num + deltaNum, den: Math.max(2, b.den + deltaDen) };
+      b.num = Math.max(1, Math.min(b.den - 1, b.num));
+      // Ensure we didn't accidentally create an equivalent fraction.
+      if (a.num * b.den === b.num * a.den) {
+        b.num = Math.max(1, Math.min(b.den - 1, b.num + 1));
+        if (a.num * b.den === b.num * a.den) b.num = Math.max(1, Math.min(b.den - 1, b.num - 2));
+      }
+    }
+
     const equivalent = a.num * b.den === b.num * a.den;
     const choices = ['Equivalent', 'Not equivalent'];
     const qid = `q${simplifyCount + i}`;
@@ -212,7 +312,7 @@ function quiz_math_equivalent_fractions(seed, options) {
       equivalent ? 'Equivalent' : 'Not equivalent',
       `Two fractions are equivalent if cross-products match: a*d == b*c.`,
       ['equivalence'],
-      { a, b }
+      withDifficulty({ a, b }, difficulty)
     ));
   }
 
@@ -241,25 +341,109 @@ function quiz_math_place_value_expanded_form(seed, options) {
     digitCount = 3; compareCount = 6; expandedCount = 1;
   }
 
+  const placeValuesForLength = (len) => {
+    const out = [];
+    for (let i = 0; i < len; i++) out.push(10 ** (len - i - 1));
+    return out;
+  };
+
+  const PLACE_NAMES = {
+    1: 'ones',
+    10: 'tens',
+    100: 'hundreds',
+    1000: 'thousands',
+    10000: 'ten-thousands',
+    100000: 'hundred-thousands',
+    1000000: 'millions',
+  };
+
+  const lengthForDifficulty = (difficulty) => {
+    const d = Number(difficulty);
+    if (d <= 1) return 4;
+    if (d === 2) return 5;
+    if (d === 3) return 6;
+    return 7;
+  };
+
+  const makeDigits = (len, includeZeros) => {
+    const digits = [];
+    for (let i = 0; i < len; i++) {
+      if (i === 0) {
+        digits.push(randInt(rng, 1, 9));
+        continue;
+      }
+      if (includeZeros && rng() < 0.28) digits.push(0);
+      else digits.push(randInt(rng, 1, 9));
+    }
+    return digits;
+  };
+
+  const numberFromDigits = (digits) => Number(digits.join(''));
+
+  const pickNonZeroPos = (digits, preferred) => {
+    const len = digits.length;
+    const prefs = Array.isArray(preferred) ? preferred.slice() : [];
+    for (const p of prefs) {
+      const pos = Number(p);
+      if (Number.isFinite(pos) && pos >= 0 && pos < len && digits[pos] !== 0) return pos;
+    }
+    const candidates = [];
+    for (let i = 0; i < len; i++) if (digits[i] !== 0) candidates.push(i);
+    return candidates.length ? pickOne(rng, candidates) : 0;
+  };
+
   for (let i = 1; i <= digitCount; i++) {
-    const n = randInt(rng, 120000, 999999);
-    const digits = String(n).split('').map((d) => Number(d));
-    const pos = randInt(rng, 0, digits.length - 1);
-    const placeValues = [100000, 10000, 1000, 100, 10, 1];
+    const qIndex = i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const len = lengthForDifficulty(difficulty);
+    const includeZeros = difficulty >= 5;
+
+    const digits = makeDigits(len, includeZeros);
+    const n = numberFromDigits(digits);
+    const placeValues = placeValuesForLength(len);
+
+    const preferred =
+      difficulty <= 1 ? [len - 1, len - 2] :
+      difficulty === 2 ? [len - 2, len - 3, len - 1] :
+      difficulty === 3 ? [len - 3, len - 2, len - 4] :
+      [0, 1, 2, 3, len - 1];
+    const pos = pickNonZeroPos(digits, preferred);
+
     const value = digits[pos] * placeValues[pos];
+    const placeName = PLACE_NAMES[placeValues[pos]] || 'place';
     questions.push(makeNumber(
       `q${i}`,
-      `In the number ${n}, what is the value of the digit ${digits[pos]} in position ${pos + 1} from the left? (Type the value as a number.)`,
+      `In the number ${n}, what is the value of the digit ${digits[pos]} in the ${placeName} place? (Type the value as a number.)`,
       value,
       `Multiply the digit by its place value (hundred-thousands, ten-thousands, etc.).`,
       ['digit_value'],
-      { n, digit: digits[pos], pos }
+      withDifficulty({ n, digit: digits[pos], pos, placeValue: placeValues[pos] }, difficulty)
     ));
   }
 
   for (let i = 1; i <= compareCount; i++) {
-    const a = randInt(rng, 10000, 999999);
-    const b = randInt(rng, 10000, 999999);
+    const qIndex = digitCount + i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const len = lengthForDifficulty(difficulty);
+    const includeZeros = difficulty >= 5;
+
+    const base = makeDigits(len, includeZeros);
+    const other = base.slice();
+
+    const posPool =
+      difficulty <= 1 ? [len - 1] :
+      difficulty === 2 ? [len - 2, len - 1] :
+      difficulty === 3 ? [len - 3, len - 2] :
+      difficulty === 4 ? [1, 2, 3] :
+      [0, 1, 2];
+    const pos = Math.max(0, Math.min(len - 1, pickOne(rng, posPool)));
+
+    const delta = pickOne(rng, [-1, 1]) * randInt(rng, 1, difficulty >= 4 ? 3 : 1);
+    other[pos] = Math.max(0, Math.min(9, other[pos] + delta));
+    if (pos === 0 && other[pos] === 0) other[pos] = 1;
+
+    const a = numberFromDigits(base);
+    const b = numberFromDigits(other);
     const correct = a > b ? '>' : (a < b ? '<' : '=');
     const qid = `q${digitCount + i}`;
     questions.push(makeMc(
@@ -269,14 +453,19 @@ function quiz_math_place_value_expanded_form(seed, options) {
       correct,
       `Compare digits from left to right until one differs.`,
       ['compare'],
-      { a, b }
+      withDifficulty({ a, b }, difficulty)
     ));
   }
 
   for (let i = 1; i <= expandedCount; i++) {
-    const n = randInt(rng, 10000, 999999);
-    const digits = String(n).split('').map((d) => Number(d));
-    const placeValues = [100000, 10000, 1000, 100, 10, 1];
+    const qIndex = digitCount + compareCount + i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const len = lengthForDifficulty(difficulty);
+    const includeZeros = difficulty >= 4;
+
+    const digits = makeDigits(len, includeZeros);
+    const n = numberFromDigits(digits);
+    const placeValues = placeValuesForLength(len);
     const parts = digits.map((d, idx) => d * placeValues[idx]).filter((v) => v !== 0);
     const prompt = `Type an expanded form (sum) that equals ${n}. Example format: 500000 + 7000 + 400 + 30 + 2`;
     const qid = `q${digitCount + compareCount + i}`;
@@ -286,7 +475,7 @@ function quiz_math_place_value_expanded_form(seed, options) {
       n,
       `One correct answer is: ${parts.join(' + ')}`,
       ['expanded_form'],
-      { n }
+      withDifficulty({ n, parts }, difficulty)
     ));
   }
 
@@ -334,19 +523,32 @@ function quiz_math_factors_primes_multiples(seed, options) {
   }
 
   for (let i = 1; i <= factorsCount; i++) {
-    const n = randInt(rng, 12, 60);
+    const qIndex = i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const pools = {
+      1: [12, 15, 16, 18, 20, 24, 25, 27, 28],
+      2: [30, 32, 36, 40, 42, 45, 48],
+      3: [50, 54, 56, 60, 63, 64, 66],
+      4: [70, 72, 75, 80, 81, 84, 90],
+      5: [84, 90, 96, 98, 99, 100],
+    };
+    const pool = pools[difficulty] || pools[3];
+    const n = pickOne(rng, pool);
     questions.push(makeSetNumbers(
       `q${i}`,
       `List ALL factors of ${n}. Type numbers separated by commas (example: 1,2,3,6).`,
       factorsOf(n),
       `Factors divide the number evenly (remainder 0).`,
       ['factors'],
-      { n }
+      withDifficulty({ n }, difficulty)
     ));
   }
 
   for (let i = 1; i <= primeCount; i++) {
-    const n = randInt(rng, 2, 97);
+    const qIndex = factorsCount + i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const min = difficulty <= 1 ? 2 : (difficulty === 2 ? 2 : (difficulty === 3 ? 10 : (difficulty === 4 ? 30 : 50)));
+    const n = randInt(rng, min, 97);
     const correct = isPrime(n) ? 'Prime' : 'Composite';
     const qid = `q${factorsCount + i}`;
     questions.push(makeMc(
@@ -356,13 +558,23 @@ function quiz_math_factors_primes_multiples(seed, options) {
       correct,
       `Prime has exactly 2 factors: 1 and itself.`,
       ['prime'],
-      { n }
+      withDifficulty({ n }, difficulty)
     ));
   }
 
   for (let i = 1; i <= multipleCount; i++) {
-    const base = randInt(rng, 12, 96);
-    const d = pickOne(rng, [2, 3, 4, 5, 6, 8, 9]);
+    const qIndex = factorsCount + primeCount + i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const divisorPool =
+      difficulty <= 1 ? [2, 3, 4, 5] :
+      difficulty === 2 ? [2, 3, 4, 5, 6] :
+      difficulty === 3 ? [3, 4, 5, 6, 8] :
+      difficulty === 4 ? [4, 5, 6, 8, 9, 10] :
+      [6, 7, 8, 9, 10, 12];
+    const d = pickOne(rng, divisorPool);
+    const baseMin = difficulty <= 2 ? 12 : (difficulty === 3 ? 24 : 40);
+    const baseMax = difficulty >= 4 ? 144 : 96;
+    const base = randInt(rng, baseMin, baseMax);
     const n = rng() < 0.6 ? base - (base % d) : base - (base % d) + 1;
     const correct = (n % d === 0) ? 'Yes' : 'No';
     const qid = `q${factorsCount + primeCount + i}`;
@@ -373,7 +585,7 @@ function quiz_math_factors_primes_multiples(seed, options) {
       correct,
       `A multiple of ${d} has remainder 0 when divided by ${d}.`,
       ['multiple'],
-      { n, d }
+      withDifficulty({ n, d }, difficulty)
     ));
   }
 
@@ -389,19 +601,34 @@ function evalOrderOfOps(expr) {
 function quiz_math_order_of_operations_exponents(seed, options) {
   const rng = mulberry32(seed);
   const questions = [];
-  const ops = [' + ', ' - ', ' * '];
 
   const focus = options?.focusTags || {};
   const missExponents = Number(focus.exponents || 0);
   const missOrder = Number(focus.order_ops || 0);
-  const expProb = missExponents > missOrder ? 0.8 : 0.5;
+  const baseExpProb = missExponents > missOrder ? 0.8 : 0.5;
 
   for (let i = 1; i <= 10; i++) {
-    const a = randInt(rng, 2, 12);
-    const b = randInt(rng, 2, 12);
-    const c = randInt(rng, 2, 12);
-    const d = randInt(rng, 1, 4);
+    const qIndex = i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+
+    const ops =
+      difficulty <= 2 ? [' + ', ' - '] :
+      difficulty === 3 ? [' + ', ' - ', ' * '] :
+      [' + ', ' - ', ' * '];
+
+    const max = difficulty <= 1 ? 9 : (difficulty === 2 ? 12 : (difficulty === 3 ? 14 : 16));
+    const a = randInt(rng, 2, max);
+    const b = randInt(rng, 2, max);
+    const c = randInt(rng, 2, max);
+
+    const expCurve = difficulty <= 1 ? 0
+      : (difficulty === 2 ? 0.25 : (difficulty === 3 ? 0.5 : (difficulty === 4 ? 0.75 : 1)));
+    const expProb = Math.min(0.95, baseExpProb * expCurve);
     const hasExp = rng() < expProb;
+    const d = hasExp
+      ? randInt(rng, 2, difficulty >= 5 ? 4 : (difficulty >= 4 ? 3 : 2))
+      : 1;
+
     const op1 = pickOne(rng, ops);
     const op2 = pickOne(rng, ops);
     const left = hasExp ? `(${a} ** ${d})` : `${a}`;
@@ -414,7 +641,7 @@ function quiz_math_order_of_operations_exponents(seed, options) {
       ans,
       `Follow parentheses first, then exponents, then multiply/divide, then add/subtract.`,
       tags,
-      { expr, hasExp }
+      withDifficulty({ expr, hasExp, ops, max }, difficulty)
     ));
   }
 
@@ -430,50 +657,91 @@ function quiz_math_translate_and_parts_of_expression(seed, options) {
   const missParts = Number(focus.parts || 0);
 
   const translationItems = [
-    { prompt: '“3 more than 2x”', choices: ['2x + 3', '3x + 2', '2(x + 3)', 'x/2 + 3'], answer: '2x + 3' },
-    { prompt: '“5 less than x”', choices: ['x - 5', '5 - x', 'x + 5', '5x'], answer: 'x - 5' },
-    { prompt: '“Half of (x + 8)”', choices: ['(x + 8)/2', 'x/2 + 8', '2(x + 8)', '(x + 8) - 2'], answer: '(x + 8)/2' },
-    { prompt: '“The product of 7 and (x - 1)”', choices: ['7(x - 1)', '7x - 1', 'x(7 - 1)', '7 + (x - 1)'], answer: '7(x - 1)' },
-    { prompt: '“Twice x, then subtract 4”', choices: ['2x - 4', '2(x - 4)', 'x/2 - 4', 'x - 8'], answer: '2x - 4' },
-    { prompt: '“Three times the sum of x and 2”', choices: ['3x + 2', '3(x + 2)', '(x + 2)/3', 'x + 6'], answer: '3(x + 2)' },
-    { prompt: '“The quotient of x and 5”', choices: ['x/5', '5/x', 'x - 5', '5x'], answer: 'x/5' },
-    { prompt: '“Four less than 3x”', choices: ['3x - 4', '4x - 3', '4 - 3x', '3(x - 4)'], answer: '3x - 4' },
+    { difficulty: 1, prompt: '“5 less than x”', choices: ['x - 5', '5 - x', 'x + 5', '5x'], answer: 'x - 5' },
+    { difficulty: 1, prompt: '“The quotient of x and 5”', choices: ['x/5', '5/x', 'x - 5', '5x'], answer: 'x/5' },
+    { difficulty: 2, prompt: '“3 more than 2x”', choices: ['2x + 3', '3x + 2', '2(x + 3)', 'x/2 + 3'], answer: '2x + 3' },
+    { difficulty: 2, prompt: '“Twice x, then subtract 4”', choices: ['2x - 4', '2(x - 4)', 'x/2 - 4', 'x - 8'], answer: '2x - 4' },
+    { difficulty: 3, prompt: '“Half of (x + 8)”', choices: ['(x + 8)/2', 'x/2 + 8', '2(x + 8)', '(x + 8) - 2'], answer: '(x + 8)/2' },
+    { difficulty: 3, prompt: '“Four less than 3x”', choices: ['3x - 4', '4x - 3', '4 - 3x', '3(x - 4)'], answer: '3x - 4' },
+    { difficulty: 4, prompt: '“The product of 7 and (x - 1)”', choices: ['7(x - 1)', '7x - 1', 'x(7 - 1)', '7 + (x - 1)'], answer: '7(x - 1)' },
+    { difficulty: 5, prompt: '“Three times the sum of x and 2”', choices: ['3x + 2', '3(x + 2)', '(x + 2)/3', 'x + 6'], answer: '3(x + 2)' },
   ];
 
   let translateCount = missTranslate > missParts ? 7 : 6;
   translateCount = Math.min(translateCount, translationItems.length);
   const partsCount = 10 - translateCount;
 
-  const picked = shuffle(rng, translationItems).slice(0, translateCount);
-  picked.forEach((it, idx) => {
+  const remaining = translationItems.slice();
+  for (let idx = 0; idx < translateCount; idx++) {
+    const qIndex = idx;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const candidates = remaining.filter((it) => Number(it.difficulty || 1) <= difficulty);
+    const chosen = pickOne(rng, (candidates.length ? candidates : remaining));
+    const removeAt = remaining.indexOf(chosen);
+    if (removeAt >= 0) remaining.splice(removeAt, 1);
+
     questions.push(makeMc(
       `q${idx + 1}`,
-      `Translate to an algebraic expression: ${it.prompt}`,
-      it.choices,
-      it.answer,
+      `Translate to an algebraic expression: ${chosen.prompt}`,
+      chosen.choices,
+      chosen.answer,
       `Look for keywords: “more than” means +, “less than” means -, “product” means multiply.`,
       ['translate'],
-      { prompt: it.prompt }
+      withDifficulty({ prompt: chosen.prompt, expected: chosen.answer }, difficulty)
     ));
-  });
+  }
 
-  const partsItems = [
-    { expr: '5x + 3', correct: '5', question: 'What is the coefficient of x?' },
-    { expr: '7x - 12', correct: '7', question: 'What is the coefficient of x?' },
-    { expr: '2x + 9 + 4x', correct: '3', question: 'How many terms are in the expression (after simplifying)?' },
-    { expr: '8 + 6x - x', correct: '5', question: 'What is the coefficient of x after simplifying?' },
-  ];
-  const pickedParts = shuffle(rng, partsItems).slice(0, partsCount);
-  pickedParts.forEach((it, i) => {
+  const fmtSigned = (n) => (n >= 0 ? `+ ${n}` : `- ${Math.abs(n)}`);
+
+  const buildPartsItem = (difficulty) => {
+    const d = Number(difficulty);
+    if (d <= 1) {
+      const a = randInt(rng, 2, 9);
+      const b = randInt(rng, 1, 12);
+      return { expr: `${a}x + ${b}`, answer: a, question: 'What is the coefficient of x?', explanation: 'The coefficient is the number multiplying x.' };
+    }
+    if (d === 2) {
+      const a = randInt(rng, 2, 12);
+      const b = randInt(rng, -12, 12);
+      return { expr: `${a}x ${fmtSigned(b)}`, answer: a, question: 'What is the coefficient of x?', explanation: 'The coefficient is the number multiplying x (the sign matters).' };
+    }
+    if (d === 3) {
+      const a = randInt(rng, 1, 9);
+      const c = randInt(rng, 1, 9);
+      const b = randInt(rng, -12, 12);
+      return { expr: `${a}x + ${c}x ${fmtSigned(b)}`, answer: a + c, question: 'What is the coefficient of x after simplifying?', explanation: `Combine like terms: ${a}x + ${c}x = ${(a + c)}x.` };
+    }
+    if (d === 4) {
+      const ax = randInt(rng, 1, 8);
+      const by = randInt(rng, 2, 9);
+      const cx = randInt(rng, 1, 8);
+      const dy = randInt(rng, 1, 8);
+      const k = randInt(rng, -10, 10);
+      return { expr: `${ax}x + ${by}y + ${cx}x - ${dy}y ${fmtSigned(k)}`, answer: by - dy, question: 'What is the coefficient of y after simplifying?', explanation: `Combine y terms: ${by}y - ${dy}y = ${(by - dy)}y.` };
+    }
+    const ax = randInt(rng, 1, 8);
+    const by = randInt(rng, 1, 8);
+    const c = randInt(rng, 1, 12);
+    const dx = randInt(rng, 1, 8);
+    const ey = randInt(rng, 1, 8);
+    const f = randInt(rng, 1, 12);
+    const expr = `${ax}x + ${by}y - ${c} + ${dx}x - ${ey}y + ${f}`;
+    return { expr, answer: 6, question: 'How many terms are in this expression?', explanation: 'A term is a part separated by + or - (including variable terms and constants).' };
+  };
+
+  for (let i = 0; i < partsCount; i++) {
+    const qIndex = translateCount + i;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const it = buildPartsItem(difficulty);
     questions.push(makeNumber(
       `q${translateCount + 1 + i}`,
       `${it.expr}: ${it.question}`,
-      Number(it.correct),
-      `Coefficient is the number multiplying x.`,
+      Number(it.answer),
+      it.explanation || `Coefficient is the number multiplying x.`,
       ['parts'],
-      { expr: it.expr }
+      withDifficulty({ expr: it.expr, kind: it.question }, difficulty)
     ));
-  });
+  }
 
   return { passPercent: 80, title: 'Translate + Parts of an Expression', questions };
 }
@@ -488,15 +756,42 @@ function quiz_math_evaluate_expressions_and_combine_like_terms(seed, options) {
   const combineCount = missCombine > missEvaluate ? 6 : 5;
   const evalCount = 10 - combineCount;
 
+  const fmtSigned = (n) => (n >= 0 ? `+ ${n}` : `- ${Math.abs(n)}`);
+
   // Combine like terms: ask for coefficient OR constant term (mixed).
   for (let i = 1; i <= combineCount; i++) {
-    const a = randInt(rng, 1, 9);
-    const b = randInt(rng, 1, 9);
-    const c = randInt(rng, -9, 9);
-    const d = randInt(rng, -9, 9);
-    const coef = a + b;
-    const constant = c + d;
-    const expr = `${a}x + ${b}x ${c >= 0 ? '+ ' + c : '- ' + Math.abs(c)} ${d >= 0 ? '+ ' + d : '- ' + Math.abs(d)}`;
+    const qIndex = i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+
+    const xTermCount = difficulty >= 5 ? 3 : 2;
+    const constCount = difficulty <= 1 ? 1 : 2;
+
+    const xCoeffs = [];
+    for (let t = 0; t < xTermCount; t++) {
+      const mag = randInt(rng, 1, difficulty >= 4 ? 12 : 9);
+      const sign = (difficulty >= 4 && rng() < 0.35) ? -1 : 1;
+      xCoeffs.push(mag * sign);
+    }
+
+    const constants = [];
+    for (let t = 0; t < constCount; t++) {
+      const mag = randInt(rng, 0, difficulty >= 4 ? 15 : 9);
+      const sign = (difficulty >= 3 && rng() < 0.45) ? -1 : 1;
+      constants.push(mag * sign);
+    }
+
+    const coef = xCoeffs.reduce((acc, v) => acc + v, 0);
+    const constant = constants.reduce((acc, v) => acc + v, 0);
+
+    let expr = `${xCoeffs[0]}x`;
+    if (xCoeffs[0] < 0) expr = `-${Math.abs(xCoeffs[0])}x`;
+    for (let t = 1; t < xCoeffs.length; t++) {
+      const c = xCoeffs[t];
+      expr += c >= 0 ? ` + ${c}x` : ` - ${Math.abs(c)}x`;
+    }
+    for (const k of constants) {
+      expr += ` ${fmtSigned(k)}`;
+    }
 
     const askCoef = (i % 2 === 1);
     if (askCoef) {
@@ -504,27 +799,34 @@ function quiz_math_evaluate_expressions_and_combine_like_terms(seed, options) {
         `q${i}`,
         `Simplify: ${expr}. What is the coefficient of x in the simplified expression?`,
         coef,
-        `Combine x terms: ${a}x + ${b}x = ${coef}x.`,
+        `Combine like x terms to get ${coef}x.`,
         ['combine_like_terms'],
-        { expr, coef, constant }
+        withDifficulty({ expr, coef, constant }, difficulty)
       ));
     } else {
       questions.push(makeNumber(
         `q${i}`,
         `Simplify: ${expr}. What is the constant term in the simplified expression?`,
         constant,
-        `Combine constants: ${c} + ${d} = ${constant}.`,
+        `Combine constants to get ${constant}.`,
         ['combine_like_terms'],
-        { expr, coef, constant }
+        withDifficulty({ expr, coef, constant }, difficulty)
       ));
     }
   }
 
   // Evaluate expressions.
   for (let i = 1; i <= evalCount; i++) {
-    const m = randInt(rng, -6, 6) || 2;
-    const b = randInt(rng, -10, 10);
-    const x = randInt(rng, -5, 5);
+    const qIndex = combineCount + i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+
+    const mMax = difficulty <= 2 ? 6 : (difficulty === 3 ? 8 : 12);
+    const bMax = difficulty <= 2 ? 12 : (difficulty === 3 ? 15 : 20);
+    const xMax = difficulty <= 2 ? 8 : (difficulty === 3 ? 8 : 10);
+
+    const m = randInt(rng, -mMax, mMax) || (difficulty <= 2 ? 2 : -3);
+    const b = randInt(rng, -bMax, bMax);
+    const x = randInt(rng, -xMax, xMax);
     const ans = m * x + b;
     const qid = `q${combineCount + i}`;
     questions.push(makeNumber(
@@ -533,7 +835,7 @@ function quiz_math_evaluate_expressions_and_combine_like_terms(seed, options) {
       ans,
       `Substitute x=${x} then compute.`,
       ['evaluate'],
-      { m, b, x }
+      withDifficulty({ m, b, x }, difficulty)
     ));
   }
 
@@ -547,56 +849,105 @@ function quiz_math_one_step_two_step_equations(seed, options) {
   const focus = options?.focusTags || {};
   const missOne = Number(focus.one_step || 0);
   const missTwo = Number(focus.two_step || 0);
-  const twoStepCount = missTwo > missOne ? 5 : 3;
-  const oneStepCount = 10 - twoStepCount;
-  const oneAddCount = Math.max(2, Math.round(oneStepCount * 0.6));
-  const oneMulCount = oneStepCount - oneAddCount;
+  const wordCount = 2; // ensure we always include word-problem mastery checks
+  const coreTotal = 10 - wordCount;
+  const desiredTwoStep = missTwo > missOne ? 4 : 3;
+  const twoStepCount = Math.max(2, Math.min(6, desiredTwoStep));
+  const oneStepCount = coreTotal - twoStepCount;
+  const oneAddCount = Math.min(oneStepCount, Math.max(2, Math.round(oneStepCount * 0.6)));
+  const oneMulCount = Math.max(0, oneStepCount - oneAddCount);
 
   // One-step: x + a = b
-  for (let i = 1; i <= oneAddCount; i++) {
-    const x = randInt(rng, -10, 10);
-    const a = randInt(rng, -12, 12);
+  for (let i = 0; i < oneAddCount; i++) {
+    const qIndex = i;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const x = difficulty <= 2 ? randInt(rng, 0, 12) : randInt(rng, -12, 12);
+    const a = difficulty <= 2 ? randInt(rng, 1, 12) : randInt(rng, -12, 12);
     const b = x + a;
     questions.push(makeNumber(
-      `q${i}`,
+      `q${i + 1}`,
       `Solve for x: x ${a >= 0 ? '+ ' + a : '- ' + Math.abs(a)} = ${b}`,
       x,
       `Undo ${a >= 0 ? 'adding' : 'subtracting'} ${Math.abs(a)}.`,
       ['one_step'],
-      { a, b }
+      withDifficulty({ a, b }, difficulty)
     ));
   }
 
   // One-step: ax = b
-  for (let i = 1; i <= oneMulCount; i++) {
-    const a = pickOne(rng, [2, 3, 4, 5, 6, 7, 8, 9]);
-    const x = randInt(rng, -10, 10);
+  for (let i = 0; i < oneMulCount; i++) {
+    const qIndex = oneAddCount + i;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const a = pickOne(rng, difficulty <= 2 ? [2, 3, 4, 5, 6] : [2, 3, 4, 5, 6, 7, 8, 9]);
+    const x = difficulty <= 2 ? randInt(rng, 0, 12) : randInt(rng, -12, 12);
     const b = a * x;
-    const qid = `q${oneAddCount + i}`;
+    const qid = `q${oneAddCount + i + 1}`;
     questions.push(makeNumber(
       qid,
       `Solve for x: ${a}x = ${b}`,
       x,
       `Divide both sides by ${a}.`,
       ['one_step'],
-      { a, b }
+      withDifficulty({ a, b }, difficulty)
     ));
   }
 
   // Two-step: px + q = r
-  for (let i = 1; i <= twoStepCount; i++) {
-    const p = pickOne(rng, [2, 3, 4, 5, 6, 7, 8]);
-    const x = randInt(rng, -10, 10);
-    const q = randInt(rng, -12, 12);
+  for (let i = 0; i < twoStepCount; i++) {
+    const qIndex = oneAddCount + oneMulCount + i;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const p = pickOne(rng, difficulty <= 2 ? [2, 3, 4, 5, 6] : [2, 3, 4, 5, 6, 7, 8]);
+    const x = difficulty <= 3 ? randInt(rng, 0, 12) : randInt(rng, -12, 12);
+    const q = difficulty <= 3 ? randInt(rng, 0, 12) : randInt(rng, -12, 12);
     const r = p * x + q;
-    const qid = `q${oneAddCount + oneMulCount + i}`;
+    const qid = `q${oneAddCount + oneMulCount + i + 1}`;
     questions.push(makeNumber(
       qid,
       `Solve for x: ${p}x ${q >= 0 ? '+ ' + q : '- ' + Math.abs(q)} = ${r}`,
       x,
       `Undo +/-, then divide by ${p}.`,
       ['two_step'],
-      { p, q, r }
+      withDifficulty({ p, q, r }, difficulty)
+    ));
+  }
+
+  // Word problems (harder, mastery-stretching, exam-like).
+  for (let i = 0; i < wordCount; i++) {
+    const qIndex = coreTotal + i;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const qid = `q${coreTotal + i + 1}`;
+
+    if (i === 0) {
+      // One-step word problem.
+      const spent = randInt(rng, 3, 12);
+      const remaining = randInt(rng, 1, 20);
+      const start = remaining + spent;
+      questions.push(makeNumber(
+        qid,
+        `Word problem: You had x points. You lost ${spent} points and now you have ${remaining} points. What is x?`,
+        start,
+        `If you lost ${spent} and ended with ${remaining}, you started with ${remaining} + ${spent}.`,
+        ['one_step', 'word_problem'],
+        withDifficulty({ spent, remaining }, difficulty)
+      ));
+      continue;
+    }
+
+    // Two-step word problem.
+    const count = pickOne(rng, [3, 4, 5, 6, 7, 8]);
+    const price = randInt(rng, 2, 15);
+    const feeOrDiscount = difficulty >= 5 ? -randInt(rng, 1, 6) : randInt(rng, 0, 6);
+    const total = count * price + feeOrDiscount;
+    const feeText = feeOrDiscount >= 0
+      ? `a fee of $${feeOrDiscount}`
+      : `a discount of $${Math.abs(feeOrDiscount)}`;
+    questions.push(makeNumber(
+      qid,
+      `Word problem: You buy ${count} items. Each item costs $x. You also have ${feeText}. Your total is $${total}. What is x?`,
+      price,
+      `Model it as ${count}x ${feeOrDiscount >= 0 ? '+ ' + feeOrDiscount : '- ' + Math.abs(feeOrDiscount)} = ${total}, then solve.`,
+      ['two_step', 'word_problem'],
+      withDifficulty({ count, feeOrDiscount, total }, difficulty)
     ));
   }
 
@@ -607,6 +958,13 @@ function quiz_math_proportions_and_slope(seed, options) {
   const rng = mulberry32(seed);
   const questions = [];
 
+  function pickSlopeByDifficulty(difficulty) {
+    if (difficulty <= 2) return pickOne(rng, [1, 2, 3, 4, 5, 6]);
+    if (difficulty === 3) return pickOne(rng, [0.5, 1.5, 2.5, 3.5, 4.5, 2, 3, 4, 5]);
+    if (difficulty === 4) return pickOne(rng, [-1, -2, -3, -4, -5, -6, 2, 3, 4]);
+    return pickOne(rng, [-0.5, -1.5, -2.5, -3.5, -4.5, -2, -3, -4, 0.5, 1.5, 2.5, 3.5, 4]);
+  }
+
   const focus = options?.focusTags || {};
   const missUnitRate = Number(focus.unit_rate || 0);
   const missEvalY = Number(focus.evaluate_y || 0);
@@ -614,9 +972,12 @@ function quiz_math_proportions_and_slope(seed, options) {
   const evalYCount = 10 - unitRateCount;
 
   for (let i = 1; i <= unitRateCount; i++) {
-    const m = pickOne(rng, [1, 2, 3, 4, 5, 6, 0.5, 1.5, 2.5]);
-    const x1 = randInt(rng, 1, 6);
-    const x2 = x1 + randInt(rng, 1, 4);
+    const qIndex = i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const m = pickSlopeByDifficulty(difficulty);
+    const x1Max = difficulty <= 2 ? 6 : (difficulty === 3 ? 10 : 12);
+    const x1 = randInt(rng, 1, x1Max);
+    const x2 = x1 + randInt(rng, 1, difficulty <= 2 ? 4 : 8);
     const y1 = m * x1;
     const y2 = m * x2;
     questions.push(makeNumber(
@@ -625,13 +986,22 @@ function quiz_math_proportions_and_slope(seed, options) {
       m,
       `For proportional relationships through 0, m = y/x.`,
       ['unit_rate'],
-      { m, x1, y1, x2, y2 }
+      withDifficulty({ m, x1, y1, x2, y2 }, difficulty)
     ));
   }
 
   for (let i = 1; i <= evalYCount; i++) {
-    const m = pickOne(rng, [1, 2, 3, 4, 5, 0.5, 1.5, 2.5]);
-    const x = randInt(rng, 2, 10);
+    const qIndex = unitRateCount + i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const m = pickSlopeByDifficulty(difficulty);
+    let x;
+    if (difficulty <= 2) x = randInt(rng, 2, 10);
+    else if (difficulty === 3) x = randInt(rng, 4, 12);
+    else if (difficulty === 4) x = randInt(rng, 6, 15);
+    else {
+      x = randInt(rng, -15, 15);
+      if (x === 0) x = 7;
+    }
     const y = m * x;
     const qid = `q${unitRateCount + i}`;
     questions.push(makeNumber(
@@ -640,7 +1010,7 @@ function quiz_math_proportions_and_slope(seed, options) {
       y,
       `Multiply x by m.`,
       ['evaluate_y'],
-      { m, x, y }
+      withDifficulty({ m, x, y }, difficulty)
     ));
   }
 
@@ -662,58 +1032,149 @@ function quiz_math_solutions_of_linear_equations(seed, options) {
   const solveCount = missSolve > missClassify ? 6 : 4;
   const classifyCount = 10 - solveCount;
 
-  // Classification: one / none / infinite.
-  const templates = [
-    { kind: 'one', make: () => {
-      const a = pickOne(rng, [2, 3, 4, 5]);
-      const x = randInt(rng, -10, 10);
-      const b = a * x;
-      return { eq: `${a}x = ${b}`, kind: 'One solution', x };
-    }},
-    { kind: 'none', make: () => {
-      const a = pickOne(rng, [2, 3, 4, 5]);
-      const b = randInt(rng, 1, 10);
-      const c = b + randInt(rng, 1, 6);
-      return { eq: `${a}x + ${b} = ${a}x + ${c}`, kind: 'No solution', x: null };
-    }},
-    { kind: 'inf', make: () => {
-      const a = pickOne(rng, [2, 3, 4, 5]);
-      const b = randInt(rng, 1, 10);
-      return { eq: `${a}x + ${b} = ${a}x + ${b}`, kind: 'Infinitely many', x: null };
-    }},
-  ];
+  function formatLinearTerm(coef, variableName) {
+    const c = Number(coef);
+    if (c === 1) return variableName;
+    if (c === -1) return `-${variableName}`;
+    return `${c}${variableName}`;
+  }
 
+  function formatConst(n) {
+    const v = Number(n);
+    return v >= 0 ? `+ ${v}` : `- ${Math.abs(v)}`;
+  }
+
+  function buildClassificationQuestion(difficulty) {
+    const kindPool = difficulty <= 1
+      ? ['one', 'one', 'none']
+      : (difficulty === 2 ? ['one', 'none', 'inf'] : ['one', 'none', 'inf', 'one']);
+    const kind = pickOne(rng, kindPool);
+
+    // Difficulty 1-2: simple patterns.
+    if (difficulty <= 2) {
+      if (kind === 'one') {
+        const a = pickOne(rng, [2, 3, 4, 5]);
+        const x = randInt(rng, -10, 10);
+        const b = a * x;
+        return { eq: `${a}x = ${b}`, kindText: 'One solution' };
+      }
+      if (kind === 'none') {
+        const a = pickOne(rng, [2, 3, 4, 5]);
+        const b = randInt(rng, 1, 12);
+        const c = b + randInt(rng, 1, 6);
+        return { eq: `${a}x + ${b} = ${a}x + ${c}`, kindText: 'No solution' };
+      }
+      const a = pickOne(rng, [2, 3, 4, 5]);
+      const b = randInt(rng, 1, 12);
+      return { eq: `${a}x + ${b} = ${a}x + ${b}`, kindText: 'Infinitely many' };
+    }
+
+    // Difficulty 3+: x on both sides (harder classification; requires simplifying).
+    if (kind === 'one') {
+      const x = randInt(rng, -10, 10);
+      const a = pickOne(rng, [2, 3, 4, 5, 6]);
+      const c = pickOne(rng, [1, 2, 3, 4, 5, 7]);
+      const b = randInt(rng, -12, 12);
+      const d = (a - c) * x + b;
+      const eq = `${formatLinearTerm(a, 'x')} ${formatConst(b)} = ${formatLinearTerm(c, 'x')} ${formatConst(d)}`;
+      return { eq, kindText: 'One solution' };
+    }
+
+    if (kind === 'none') {
+      // Same x coefficient, different constant -> contradiction.
+      const a = pickOne(rng, [2, 3, 4, 5, 6]);
+      const b = randInt(rng, -12, 12);
+      const c = b + pickOne(rng, [1, 2, 3, 4, 5, 6]);
+      const eq = `${formatLinearTerm(a, 'x')} ${formatConst(b)} = ${formatLinearTerm(a, 'x')} ${formatConst(c)}`;
+      return { eq, kindText: 'No solution' };
+    }
+
+    // Identical both sides -> identity.
+    const a = pickOne(rng, [2, 3, 4, 5, 6]);
+    const b = randInt(rng, -12, 12);
+    const eq = `${formatLinearTerm(a, 'x')} ${formatConst(b)} = ${formatLinearTerm(a, 'x')} ${formatConst(b)}`;
+    return { eq, kindText: 'Infinitely many' };
+  }
+
+  function buildSolveQuestion(difficulty) {
+    const x = randInt(rng, -10, 10);
+
+    // Difficulty 1-3: ax + b = c (two-step).
+    if (difficulty <= 3) {
+      const a = pickOne(rng, difficulty <= 2 ? [2, 3, 4, 5] : [2, 3, 4, 5, 6, 7]);
+      const b = difficulty <= 2 ? randInt(rng, -9, 9) : randInt(rng, -12, 12);
+      const c = a * x + b;
+      const eq = `${a}x ${formatConst(b)} = ${c}`;
+      return { x, eq, explanation: `Undo +/-, then divide by ${a}.`, meta: { a, b, c } };
+    }
+
+    // Difficulty 4: ax + b = cx + d (variables on both sides).
+    if (difficulty === 4) {
+      for (let tries = 0; tries < 30; tries++) {
+        const a = pickOne(rng, [2, 3, 4, 5, 6, 7, 8]);
+        const c = pickOne(rng, [1, 2, 3, 4, 5, 6, 7]);
+        if (a === c) continue;
+        const b = randInt(rng, -12, 12);
+        const d = (a - c) * x + b;
+        if (Math.abs(d) > 40) continue;
+        const eq = `${formatLinearTerm(a, 'x')} ${formatConst(b)} = ${formatLinearTerm(c, 'x')} ${formatConst(d)}`;
+        return { x, eq, explanation: 'Get x terms on one side, constants on the other, then divide.', meta: { a, b, c, d } };
+      }
+    }
+
+    // Difficulty 5: p(ax + b) = cx + d (distribution + variables on both sides).
+    for (let tries = 0; tries < 50; tries++) {
+      const p = pickOne(rng, [2, 3, 4]);
+      const a = pickOne(rng, [2, 3, 4, 5, 6]);
+      const b = randInt(rng, -10, 10);
+      const c = pickOne(rng, [1, 2, 3, 4, 5, 6, 7, 8]);
+      const d = (p * a - c) * x + p * b;
+      if (p * a === c) continue;
+      if (Math.abs(d) > 60) continue;
+      const inside = `${formatLinearTerm(a, 'x')} ${formatConst(b)}`;
+      const eq = `${p}(${inside}) = ${formatLinearTerm(c, 'x')} ${formatConst(d)}`;
+      return { x, eq, explanation: 'Distribute, combine like terms, then solve for x.', meta: { p, a, b, c, d } };
+    }
+
+    // Fallback (should be rare).
+    const a = 3;
+    const b = 4;
+    const c = a * x + b;
+    return { x, eq: `${a}x + ${b} = ${c}`, explanation: `Undo +/-, then divide by ${a}.`, meta: { a, b, c } };
+  }
+
+  // Classification: one / none / infinite.
   for (let i = 1; i <= classifyCount; i++) {
-    const t = pickOne(rng, templates).make();
+    const qIndex = i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const t = buildClassificationQuestion(difficulty);
     const choices = ['One solution', 'No solution', 'Infinitely many'];
-    const subtype = t.kind === 'One solution' ? 'classify_one'
-      : (t.kind === 'No solution' ? 'classify_none' : 'classify_infinite');
+    const subtype = t.kindText === 'One solution' ? 'classify_one'
+      : (t.kindText === 'No solution' ? 'classify_none' : 'classify_infinite');
     questions.push(makeMc(
       `q${i}`,
       `Classify: ${t.eq}`,
       choices,
-      t.kind,
+      t.kindText,
       `Simplify both sides. If you get x=a -> one solution. If you get a=b (a≠b) -> none. If you get a=a -> infinitely many.`,
       ['classify', subtype],
-      { eq: t.eq, kind: t.kind }
+      withDifficulty({ eq: t.eq, kind: t.kindText }, difficulty)
     ));
   }
 
   // Solve multi-step linear equation.
   for (let i = 1; i <= solveCount; i++) {
-    const x = randInt(rng, -10, 10);
-    const a = pickOne(rng, [2, 3, 4, 5, 6]);
-    const b = randInt(rng, -10, 10);
-    const c = a * x + b;
+    const qIndex = classifyCount + i - 1;
+    const difficulty = difficultyForIndex(qIndex, 10);
+    const built = buildSolveQuestion(difficulty);
     const qid = `q${classifyCount + i}`;
-    const eq = `${a}x ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)} = ${c}`;
     questions.push(makeNumber(
       qid,
-      `Solve: ${eq}`,
-      x,
-      `Undo +/-, then divide by ${a}.`,
+      `Solve: ${built.eq}`,
+      built.x,
+      built.explanation,
       ['solve_linear'],
-      { eq, a, b, c }
+      withDifficulty({ eq: built.eq, ...built.meta }, difficulty)
     ));
   }
 
