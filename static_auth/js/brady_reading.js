@@ -549,6 +549,59 @@ async function main() {
     let queryUserId = null;
     let draftSaveTimer = null;
     let draftFlushTimer = null;
+    let savePending = false;
+    let saveInFlight = false;
+
+    const runReadingSave = async () => {
+      const saveBtn = document.getElementById('saveReading');
+      if (saveInFlight) return;
+      if (!gateSession || !queryUserId) {
+        savePending = true;
+        setAlert('Preparing account context. Please wait and retry.');
+        return;
+      }
+
+      savePending = false;
+      saveInFlight = true;
+      setAlert('');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+      }
+
+      try {
+        await saveReading(gateSession, queryUserId);
+        const { day, bookId } = getCurrentKey();
+        clearLocalDraft(day, bookId);
+        try { await clearReadingDraftRow(gateSession, queryUserId, day, bookId); } catch (_) { /* ignore */ }
+        setDraftMsg('');
+
+        const nextRows = await loadReadingLogs(gateSession, queryUserId);
+        renderReadingLogs(nextRows);
+        setAiPrompts();
+        setAlert('Saved.');
+        setTimeout(() => setAlert(''), 1200);
+      } catch (e) {
+        setAlert(e?.message || 'Save failed.');
+      } finally {
+        saveInFlight = false;
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save';
+        }
+      }
+    };
+
+    const bindSaveControls = () => {
+      const saveBtn = document.getElementById('saveReading');
+      if (!saveBtn || saveBtn.dataset && saveBtn.dataset.mhaReadingSaveBound === '1') return;
+      if (saveBtn) saveBtn.dataset.mhaReadingSaveBound = '1';
+      if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+          void runReadingSave();
+        });
+      }
+    };
 
     const getCurrentKey = () => {
       const day = document.getElementById('day')?.value || todayLocalISO();
@@ -659,6 +712,9 @@ async function main() {
       });
     });
 
+    // Bind save immediately so early clicks are not dropped while auth/session resolves.
+    bindSaveControls();
+
     // Restore local draft as early as possible.
     await restoreDraftForCurrentSelection('init');
 
@@ -674,6 +730,11 @@ async function main() {
 
     await MHA_Auth.initAuthUI(false);
     document.body.classList.add('has-user-nav');
+    bindSaveControls();
+
+    if (savePending) {
+      void runReadingSave();
+    }
 
     // Now that auth resolved, prefer remote drafts if they are newer than local.
     await restoreDraftForCurrentSelection('post_auth');
@@ -694,34 +755,6 @@ async function main() {
 
     const rows = await loadReadingLogs(gateSession, queryUserId);
     renderReadingLogs(rows);
-
-    const saveBtn = document.getElementById('saveReading');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', async () => {
-        setAlert('');
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Saving…';
-        try {
-          await saveReading(gateSession, queryUserId);
-          // Clear the draft for this entry after the real save succeeds.
-          const { day, bookId } = getCurrentKey();
-          clearLocalDraft(day, bookId);
-          try { await clearReadingDraftRow(gateSession, queryUserId, day, bookId); } catch (_) { /* ignore */ }
-          setDraftMsg('');
-
-          const nextRows = await loadReadingLogs(gateSession, queryUserId);
-          renderReadingLogs(nextRows);
-          setAiPrompts();
-          setAlert('Saved.');
-          setTimeout(() => setAlert(''), 1200);
-        } catch (e) {
-          setAlert(e?.message || 'Save failed.');
-        } finally {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save';
-        }
-      });
-    }
 
     const aiCheckBtn = document.getElementById('aiCheckWorksheet');
     if (aiCheckBtn) {
@@ -775,4 +808,8 @@ async function main() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', main);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', main);
+} else {
+  void main();
+}

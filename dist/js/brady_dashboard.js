@@ -34,6 +34,8 @@ async function loadAssignmentProgress(session, queryUserId) {
 
 function pickTargetAssignment(progressMap) {
   const list = (BRADY_ASSIGNMENTS || []).slice().sort((a, b) => (a.priority || 9999) - (b.priority || 9999));
+  const firstInProgress = list.find((a) => (progressMap[a.id]?.status || 'not_started') === 'in_progress');
+  if (firstInProgress) return firstInProgress;
   const firstNotMastered = list.find((a) => (progressMap[a.id]?.status || 'not_started') !== 'mastered');
   return firstNotMastered || list[0] || null;
 }
@@ -135,6 +137,15 @@ function renderNextUp(target, progressRow) {
 
 async function main() {
   try {
+    try {
+      // Render shell auth UI immediately so session actions are visible as soon
+      // as the page hydrates, then run strict access control.
+      await MHA_Auth.initAuthUI(false);
+      document.body.classList.add('has-user-nav');
+    } catch (_) {
+      // Auth UI failure is non-fatal for the route gate; continue to access check.
+    }
+
     const gate = await MHA_Brady.requireBrady({ nextPath: 'brady/index.html' });
     if (!gate) return;
 
@@ -142,8 +153,6 @@ async function main() {
       window.MHA_BradyNav.setContext(gate.context);
     }
 
-    await MHA_Auth.initAuthUI(false);
-    document.body.classList.add('has-user-nav');
     const { userId: queryUserId } = MHA_Brady.getBradyQueryUser(gate.session, gate.context);
 
     const dayISO = todayLocalISO();

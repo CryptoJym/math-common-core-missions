@@ -93,6 +93,9 @@ function shiftLocalISO(dayISO, deltaDays) {
 }
 
 let _gateContext = null;
+let _adminSubAccountSession = null;
+let _addSubAccountSubmitListenerAttached = false;
+let _addSubAccountSubmitting = false;
 
 async function loadRows(session) {
   const sb = MHA_Auth.getSupabase();
@@ -414,6 +417,71 @@ function renderExportUI(rows, session) {
   }
 }
 
+function bindAddSubAccountSubmit(session) {
+  if (session?.user?.id) {
+    _adminSubAccountSession = session;
+  }
+  const addForm = document.getElementById('addSubAccountForm');
+  if (!addForm) return;
+  if (_addSubAccountSubmitListenerAttached) return;
+  _addSubAccountSubmitListenerAttached = true;
+
+  const submitBtn = addForm.querySelector('button[type="submit"]');
+
+  const resolveSession = async () => {
+    if (_adminSubAccountSession?.user?.id) return _adminSubAccountSession;
+    try {
+      const latest = await MHA_Auth.getSession();
+      if (latest?.user?.id) {
+        _adminSubAccountSession = latest;
+        return latest;
+      }
+    } catch (_) {
+      // Ignore and surface a user-facing message below.
+    }
+    return null;
+  };
+
+  const submitHandler = async (event) => {
+    if (event) {
+      event.preventDefault();
+    }
+
+    if (_addSubAccountSubmitting) return;
+    _addSubAccountSubmitting = true;
+
+    const submit = addForm.querySelector('button[type="submit"]');
+    if (submit) submit.disabled = true;
+
+    try {
+      const activeSession = await resolveSession();
+      if (!activeSession) {
+        setAlert('Please sign in again to create a learner link.');
+        return;
+      }
+      const isAdmin = MHA_Brady.isAllowedEmail(MHA_Brady.normalizeEmail(activeSession.user.email));
+      if (!isAdmin) {
+        setAlert('Only Brady admin accounts can add learners.');
+        return;
+      }
+      await addSubAccount(activeSession);
+    } catch (err) {
+      setAlert(`Could not save learner: ${String(err?.message || err)}`);
+    } finally {
+      if (submit) submit.disabled = false;
+      _addSubAccountSubmitting = false;
+    }
+  };
+
+  // Primary binding.
+  addForm.addEventListener('submit', submitHandler);
+
+  // Click-path fallback for environments where keyboard/form submit semantics differ.
+  if (submitBtn) {
+    submitBtn.addEventListener('click', submitHandler);
+  }
+}
+
 async function addSubAccount(session) {
   const emailInput = document.getElementById('learnerEmail');
   const nameInput = document.getElementById('learnerName');
@@ -479,24 +547,20 @@ async function main() {
 
   const addForm = document.getElementById('addSubAccountForm');
   if (addForm) {
-    addForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const submit = addForm.querySelector('button[type="submit"]');
-      if (submit) submit.disabled = true;
-      try {
-        await addSubAccount(session);
-      } catch (e) {
-        setAlert(`Could not save learner: ${String(e?.message || e)}`);
-      } finally {
-        if (submit) submit.disabled = false;
-      }
-    });
+    bindAddSubAccountSubmit(session);
   }
 
   await refresh(session);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function bootAdmin() {
   bindClearContextButton();
+  bindAddSubAccountSubmit();
   void main();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootAdmin);
+} else {
+  bootAdmin();
+}

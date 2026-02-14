@@ -187,6 +187,8 @@ async function handler(req, res) {
       return;
     }
 
+    const shouldIncludeArtifacts = Boolean(includeArtifacts) || Boolean(includeArtifactContent);
+
     // Guard: prevent huge accidental exports.
     const startMs = new Date(`${startDay}T00:00:00.000Z`).getTime();
     const endMs = new Date(`${endDay}T00:00:00.000Z`).getTime();
@@ -312,17 +314,19 @@ async function handler(req, res) {
           ['limit', '500'],
         ],
       }).catch(() => []),
-      supabaseRestGetList({
-        supabaseUrl, anonKey, accessToken: token, table: 'brady_artifacts',
-        paramsList: [
-          ['select', selectArtifacts],
-          ['user_id', `eq.${targetUserId}`],
-          ['day', `gte.${startDay}`],
-          ['day', `lte.${endDay}`],
-          ['order', 'created_at.desc'],
-          ['limit', '200'],
-        ],
-      }),
+      shouldIncludeArtifacts
+        ? supabaseRestGetList({
+          supabaseUrl, anonKey, accessToken: token, table: 'brady_artifacts',
+          paramsList: [
+            ['select', selectArtifacts],
+            ['user_id', `eq.${targetUserId}`],
+            ['day', `gte.${startDay}`],
+            ['day', `lte.${endDay}`],
+            ['order', 'created_at.desc'],
+            ['limit', '200'],
+          ],
+        })
+        : Promise.resolve([]),
       supabaseRestGetList({
         supabaseUrl, anonKey, accessToken: token, table: 'brady_ai_reviews',
         paramsList: [
@@ -369,7 +373,7 @@ async function handler(req, res) {
         assignment_drafts: assignmentDrafts || [],
         reading_log: readingLogs || [],
         reading_drafts: readingDrafts || [],
-        artifacts: (includeArtifacts || includeArtifactContent) ? (artifacts || []) : (artifacts || []),
+        artifacts: shouldIncludeArtifacts ? (artifacts || []) : [],
         ai_reviews: aiReviews || [],
         learner_profile: (learnerProfile && learnerProfile[0]) ? learnerProfile[0] : null,
       },
@@ -395,4 +399,3 @@ module.exports._internal = {
   isIsoDay,
   dayRangeToTimestamps,
 };
-

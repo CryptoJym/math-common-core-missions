@@ -10,6 +10,15 @@ const SUPABASE_ANON_KEY = window.MHA_CONFIG?.SUPABASE_ANON_KEY || '';
 let _supabase = null;
 let _didValidateSessionThisPage = false;
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function getSupabase() {
   if (!_supabase) {
     _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -241,8 +250,23 @@ async function signIn(email, password) {
 
 /** Sign out */
 async function signOut() {
-  const { error } = await getSupabase().auth.signOut();
-  if (error) throw error;
+  const sb = getSupabase();
+  try {
+    const { error } = await sb.auth.signOut();
+    if (!error) {
+      window.location.href = 'login.html';
+      return;
+    }
+  } catch (_) {
+    // Fall through to local cleanup and redirect.
+  }
+
+  try {
+    await sb.auth.signOut({ scope: 'local' });
+  } catch (_) {
+    // Keep going; local cleanup is best effort.
+  }
+
   window.location.href = 'login.html';
 }
 
@@ -271,9 +295,9 @@ async function initAuthUI(requireLogin = false) {
     `;
   } else {
     const profile = await getProfile();
-    const displayName = profile?.display_name || session.user.email;
-    const hunterRank = profile?.hunter_rank || 'E-Rank';
-    const xp = profile?.xp_total || 0;
+    const displayName = escapeHtml(profile?.display_name || session.user.email || '');
+    const hunterRank = escapeHtml(profile?.hunter_rank || 'E-Rank');
+    const xp = escapeHtml(profile?.xp_total || 0);
 
     userNav.innerHTML = `
       <div class="user-nav-info">
@@ -283,6 +307,14 @@ async function initAuthUI(requireLogin = false) {
       </div>
       <button class="user-nav-logout" onclick="signOut()">Logout</button>
     `;
+  }
+
+  if (session) {
+    try {
+      document.body.classList.add('has-user-nav');
+    } catch (_) {
+      // Ignore; this class is optional.
+    }
   }
 
   // Insert at top of body

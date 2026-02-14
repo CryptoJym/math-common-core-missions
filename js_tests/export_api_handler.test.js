@@ -236,3 +236,83 @@ test('export handler: success returns JSON with expected top-level keys', async 
 
   global.fetch = oldFetch;
 });
+
+test('export handler: includeArtifacts false excludes artifact rows', async () => {
+  const oldFetch = global.fetch;
+  let artifactCalls = 0;
+
+  const fetchStub = createFetchStub([
+    { match: /\/auth\/v1\/user$/, handle: async () => jsonResponse(200, { id: '00000000-0000-0000-0000-000000000001', email: 'james@jamesbrady.org' }) },
+    { match: /\/rest\/v1\/brady_assignment_progress\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_assignment_attempts\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_practice_attempts\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_daily_training_log\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_practice_drafts\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_assignment_drafts\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_reading_log\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_reading_drafts\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_ai_reviews\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_ai_learner_profile\?/, handle: async () => jsonResponse(200, []) },
+  ]);
+  global.fetch = async (url, opts) => {
+    if (/\/rest\/v1\/brady_artifacts\?/.test(String(url))) {
+      artifactCalls += 1;
+    }
+    return fetchStub(url, opts);
+  };
+
+  const req = makeReq({
+    method: 'POST',
+    headers: { Authorization: 'Bearer token' },
+    body: { startDay: '2026-02-12', endDay: '2026-02-13', includeArtifacts: false },
+  });
+  const res = makeRes();
+
+  await handler(req, res);
+
+  const out = res._getJson();
+  assert.equal(res.statusCode, 200);
+  assert.equal(out.data.artifacts.length, 0);
+  assert.equal(out.counts.artifacts, 0);
+  assert.equal(artifactCalls, 0);
+
+  global.fetch = oldFetch;
+});
+
+test('export handler: includeArtifacts true includes artifact rows', async () => {
+  const oldFetch = global.fetch;
+  const fetchStub = createFetchStub([
+    { match: /\/auth\/v1\/user$/, handle: async () => jsonResponse(200, { id: '00000000-0000-0000-0000-000000000001', email: 'james@jamesbrady.org' }) },
+    { match: /\/rest\/v1\/brady_assignment_progress\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_assignment_attempts\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_practice_attempts\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_daily_training_log\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_practice_drafts\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_assignment_drafts\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_reading_log\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_reading_drafts\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_artifacts\?/, handle: async () =>
+      jsonResponse(200, [{ id: 'a1', day: '2026-02-12', filename: 'x.pdf' }]),
+    },
+    { match: /\/rest\/v1\/brady_ai_reviews\?/, handle: async () => jsonResponse(200, []) },
+    { match: /\/rest\/v1\/brady_ai_learner_profile\?/, handle: async () => jsonResponse(200, []) },
+  ]);
+  global.fetch = fetchStub;
+
+  const req = makeReq({
+    method: 'POST',
+    headers: { Authorization: 'Bearer token' },
+    body: { startDay: '2026-02-12', endDay: '2026-02-13', includeArtifacts: true },
+  });
+  const res = makeRes();
+
+  await handler(req, res);
+
+  const out = res._getJson();
+  assert.equal(res.statusCode, 200);
+  assert.equal(out.counts.artifacts, 1);
+  assert.equal(Array.isArray(out.data.artifacts), true);
+  assert.equal(out.data.artifacts[0].id, 'a1');
+
+  global.fetch = oldFetch;
+});

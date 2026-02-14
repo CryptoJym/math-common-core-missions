@@ -16,15 +16,23 @@
 
 const DEFAULT_SUPABASE_URL = 'https://dwkjbuefiiawoktmprmp.supabase.co';
 const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3a2pidWVmaWlhd29rdG1wcm1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NDA0MTgsImV4cCI6MjA4NjQxNjQxOH0.EXY-qerJ9v9EeerJ4Q2ec0XC3_rbbRls2HH8bTRxRTw';
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 
 const ALLOWED_EMAILS = new Set([
   'bradyhyro67@gmail.com',
   'james@jamesbrady.org',
 ]);
 
+const ASSIGNMENT_CATALOG_PATH = path.join(__dirname, '..', '..', 'static_auth', 'js', 'brady_assignments.js');
+const PASS_PERCENT_DEFAULT = 80;
+
 // Server-enforced cooldown after a failed attempt (< passPercent).
 const LOCKOUT_DAYS = 3;
 const LOCKOUT_MS = LOCKOUT_DAYS * 24 * 60 * 60 * 1000;
+
+let assignmentCatalogCache;
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -83,6 +91,64 @@ function normalizeTagKey(tag) {
   if (!k) return '';
   if (!/^[a-z0-9_]{1,32}$/.test(k)) return '';
   return k;
+}
+
+function normalizeAssignmentCatalogRow(raw) {
+  const id = String(raw?.id || '').trim();
+  if (!id) return null;
+
+  const title = String(raw?.title || id).trim() || id;
+  const passPercent = Number(raw?.passPercent);
+  const normalizedPassPercent = Number.isFinite(passPercent) ? passPercent : PASS_PERCENT_DEFAULT;
+  const standards = Array.isArray(raw?.standards) ? raw.standards : [];
+  const learningTargets = Array.isArray(raw?.learningTargets) ? raw.learningTargets : [];
+
+  return {
+    id,
+    title,
+    passPercent: normalizedPassPercent,
+    standards: standards.filter((value) => typeof value === 'string' && value.trim()).map((value) => String(value)),
+    learningTargets: learningTargets.filter((value) => typeof value === 'string' && value.trim()).map((value) => String(value)),
+  };
+}
+
+function getAssignmentCatalog() {
+  if (assignmentCatalogCache) return assignmentCatalogCache;
+
+  let rows = [];
+  try {
+    const source = fs.readFileSync(ASSIGNMENT_CATALOG_PATH, 'utf8');
+    const context = { module: { exports: null }, exports: {}, window: {} };
+    vm.createContext(context);
+    vm.runInContext(`${source}\nmodule.exports = BRADY_ASSIGNMENTS;`, context, {
+      filename: ASSIGNMENT_CATALOG_PATH,
+      timeout: 2000,
+    });
+    rows = Array.isArray(context.module?.exports) ? context.module.exports : [];
+  } catch (_) {
+    rows = [];
+  }
+
+  const out = {};
+  for (const row of rows) {
+    const normalized = normalizeAssignmentCatalogRow(row);
+    if (!normalized) continue;
+    out[normalized.id] = {
+      id: normalized.id,
+      title: normalized.title,
+      standards: normalized.standards,
+      learningTargets: normalized.learningTargets,
+      passPercent: normalized.passPercent,
+    };
+  }
+
+  assignmentCatalogCache = out;
+  return assignmentCatalogCache;
+}
+
+function getAssignmentById(assignmentId) {
+  const catalog = getAssignmentCatalog();
+  return catalog[assignmentId] || null;
 }
 
 function computeFocusTagsFromAttemptResults(results) {
@@ -355,15 +421,21 @@ async function handler(req, res) {
     }
 
     const body = await readJsonBody(req);
-    const assignment = body?.assignment || null;
-    const assignmentId = String(body?.assignmentId || assignment?.id || '').trim();
-    const passPercent = 80;
+    const assignmentId = String(body?.assignmentId || body?.assignment?.id || '').trim();
+    const assignment = getAssignmentById(assignmentId);
+    const passPercent = Number.isFinite(Number(assignment?.passPercent))
+      ? Number(assignment.passPercent)
+      : PASS_PERCENT_DEFAULT;
     const basedOnAttemptedAt = body?.basedOnAttemptedAt ? String(body.basedOnAttemptedAt) : '';
     const requestedQueryUserId = normalizeUuid(body?.queryUserId);
     let queryUserId = '';
 
     if (!assignmentId) {
       sendJson(res, 400, { error: 'assignmentId is required' });
+      return;
+    }
+    if (!assignment) {
+      sendJson(res, 400, { error: 'Unknown assignmentId' });
       return;
     }
 

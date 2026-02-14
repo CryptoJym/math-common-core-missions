@@ -12,7 +12,7 @@ function toAbs(path) {
 async function clearAuthState(page) {
   await page.context().clearCookies();
   try {
-    await page.goto('about:blank');
+    await gotoWithRetry(page, 'about:blank');
     await page.evaluate(() => {
       window.localStorage.clear();
       window.sessionStorage.clear();
@@ -40,6 +40,21 @@ async function installRuntimeGuards(page) {
   });
 
   return runtime;
+}
+
+async function gotoWithRetry(page, url, options = {}, retries = 2) {
+  const safeOpts = { waitUntil: 'domcontentloaded', timeout: 20_000, ...options };
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await page.goto(url, safeOpts);
+    } catch (err) {
+      const message = String(err?.message || err || '');
+      const isTransient = /ERR_NETWORK_CHANGED|ERR_CONNECTION_RESET|ERR_NETWORK_IO_SUSPENDED|ERR_NAME_NOT_RESOLVED|net::ERR_/.test(message);
+      if (!isTransient || attempt >= retries) throw err;
+      await page.waitForTimeout(300 * (attempt + 1));
+    }
+  }
+  throw new Error(`Navigation retry exhausted for ${url}`);
 }
 
 async function assertNoRuntimeErrors(page, runtime) {
@@ -119,7 +134,7 @@ async function assertAuthRedirect(page, protectedPath) {
 async function signInAdmin(page) {
   test.skip(!HAS_ADMIN_CREDENTIALS, 'Set BRADY_ADMIN_EMAIL and BRADY_ADMIN_PASSWORD to run authenticated smoke checks.');
   await clearAuthState(page);
-  await page.goto(toAbs('login.html?next=brady/index.html'), { waitUntil: 'domcontentloaded' });
+  await gotoWithRetry(page, toAbs('login.html?next=brady/index.html'), { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#email')).toBeVisible();
   await expect(page.locator('#password')).toBeVisible();
   await expect(page.locator('#submitBtn')).toBeVisible();
@@ -230,7 +245,7 @@ test.describe('Brady smoke', () => {
     const paths = ['brady/assignments.html', 'brady/daily.html', 'brady/avatar.html', 'brady/admin.html', 'brady/coach.html'];
     for (const path of paths) {
       await clearAuthState(page);
-      await page.goto(toAbs(path), { waitUntil: 'domcontentloaded' });
+      await gotoWithRetry(page, toAbs(path), { waitUntil: 'domcontentloaded' });
       await assertAuthRedirect(page, path);
       await page.waitForTimeout(120);
       const nextParam = new URL(page.url()).searchParams.get('next');
@@ -244,7 +259,7 @@ test.describe('Brady smoke', () => {
     const runtime = await installRuntimeGuards(page);
     await signInAdmin(page);
     await assertRouteExistsOrSkip(page, 'brady/avatar.html');
-    await page.goto(toAbs('brady/avatar.html'), { waitUntil: 'domcontentloaded' });
+    await gotoWithRetry(page, toAbs('brady/avatar.html'), { waitUntil: 'domcontentloaded' });
 
     await expect(page.locator('h1')).toHaveText('Brady Avatar Dashboard');
     await expect(page.locator('#identitySection')).toBeVisible();
@@ -262,7 +277,7 @@ test.describe('Brady smoke', () => {
     const runtime = await installRuntimeGuards(page);
     await signInAdmin(page);
     await assertRouteExistsOrSkip(page, 'brady/assignment.html?id=math_equivalent_fractions');
-    await page.goto(toAbs('brady/assignment.html?id=math_equivalent_fractions'), { waitUntil: 'domcontentloaded' });
+    await gotoWithRetry(page, toAbs('brady/assignment.html?id=math_equivalent_fractions'), { waitUntil: 'domcontentloaded' });
 
     await page.waitForTimeout(1000);
     const state = await getAssignmentAttemptState(page);

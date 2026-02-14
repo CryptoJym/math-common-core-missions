@@ -64,6 +64,8 @@ async function loadAssignmentProgress(session, queryUserId) {
 
 function pickTargetAssignment(progressById) {
   const list = (BRADY_ASSIGNMENTS || []).slice().sort((a, b) => (a.priority || 9999) - (b.priority || 9999));
+  const firstInProgress = list.find((a) => (progressById[a.id] || 'not_started') === 'in_progress');
+  if (firstInProgress) return firstInProgress;
   const firstNotMastered = list.find((a) => (progressById[a.id] || 'not_started') !== 'mastered');
   return firstNotMastered || list[0] || null;
 }
@@ -75,6 +77,16 @@ function pickMixedAssignment(progressById, target, dayISO) {
   if (pool.length === 0) return null;
   const idx = seedFromString(`daily_mixed_pick:${dayISO}`) % pool.length;
   return pool[idx];
+}
+
+function updateDailySeed(sectionKey, nextSeed) {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set(`seed_${sectionKey}`, String(nextSeed));
+    window.location.href = url.toString();
+  } catch (_) {
+    // no-op
+  }
 }
 
 async function loadDailyLog(session, dayISO, queryUserId) {
@@ -1135,7 +1147,7 @@ function bindQuizSectionHandlers(opts) {
       // Re-rendering is handled by the caller (we simply reload for simplicity).
       // This also keeps the daily plan deterministic unless they explicitly request a new version.
       const nextSeed = (Date.now() & 0xffffffff) >>> 0;
-      window.location.search = `?seed_${encodeURIComponent(sectionKey)}=${encodeURIComponent(nextSeed)}`;
+      updateDailySeed(sectionKey, nextSeed);
     });
   }
 }

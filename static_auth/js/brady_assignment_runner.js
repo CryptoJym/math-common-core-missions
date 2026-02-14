@@ -1216,19 +1216,45 @@ async function upsertProgressFromScore(session, queryUserId, assignmentId, score
   if (error) throw error;
 }
 
-async function saveAttempt(session, queryUserId, assignmentId, seed, summary, answers, results) {
+function summarizeAttempt(summary, quiz, results) {
+  const resultsObj = (results && typeof results === 'object') ? results : {};
+  let correct = 0;
+  const entries = Object.entries(resultsObj);
+  for (const [, value] of entries) {
+    if (value && value.correct === true) correct++;
+  }
+
+  const total = Array.isArray(quiz?.questions)
+    ? quiz.questions.length
+    : entries.length;
+  const safeTotal = Math.max(0, Number(total) || 0);
+  const safeCorrect = Math.max(0, Math.min(correct, safeTotal));
+  const scorePercent = safeTotal > 0 ? Math.round((safeCorrect / safeTotal) * 100) : 0;
+
+  return {
+    ...summary,
+    totalQuestions: safeTotal,
+    correctQuestions: safeCorrect,
+    scorePercent,
+    passed: scorePercent >= Number(summary?.passPercent || 0),
+  };
+}
+
+async function saveAttempt(session, queryUserId, assignmentId, seed, summary, quiz, answers, results) {
+  const canonicalSummary = summarizeAttempt(summary, quiz, results);
   const sb = MHA_Auth.getSupabase();
   const { error } = await sb.from('brady_assignment_attempts').insert({
     user_id: queryUserId,
     assignment_id: assignmentId,
     seed,
-    score_percent: summary.scorePercent,
-    total_questions: summary.totalQuestions,
-    correct_questions: summary.correctQuestions,
+    score_percent: canonicalSummary.scorePercent,
+    total_questions: canonicalSummary.totalQuestions,
+    correct_questions: canonicalSummary.correctQuestions,
     answers,
     results,
   });
   if (error) throw error;
+  return canonicalSummary;
 }
 
 async function main() {
@@ -1558,8 +1584,8 @@ async function main() {
             renderResults(summary);
 
             // Save attempt + update mastery.
-            await saveAttempt(gate.session, queryUserId, a.id, seed, summary, answers, results);
-            await upsertProgressFromScore(gate.session, queryUserId, a.id, scorePercent, quiz.passPercent);
+            const canonicalSummary = await saveAttempt(gate.session, queryUserId, a.id, seed, summary, quiz, answers, results);
+            await upsertProgressFromScore(gate.session, queryUserId, a.id, canonicalSummary.scorePercent, quiz.passPercent);
             if (draftHandle) await draftHandle.clear();
 
             // Refresh history UI.
