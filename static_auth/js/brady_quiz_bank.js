@@ -124,6 +124,16 @@ function withDifficulty(meta, difficulty) {
   return { ...base, difficulty: Number(difficulty) || 1 };
 }
 
+function applyDifficultyRampMeta(questions) {
+  const qs = Array.isArray(questions) ? questions : [];
+  const total = qs.length;
+  for (let i = 0; i < total; i++) {
+    const q = qs[i];
+    if (!q || typeof q !== 'object') continue;
+    q.meta = withDifficulty(q.meta, difficultyForIndex(i, total));
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Quiz generators
 // ---------------------------------------------------------------------------
@@ -1240,13 +1250,13 @@ function quiz_reading_theme_and_summary(seed) {
   const rng = mulberry32(seed);
   const questions = [];
 
-  // Topic vs theme
-  questions.push(makeMc('q1', 'Which one is a THEME (a lesson/message), not just a topic?', [
-    'Friendship',
-    'Hard work can build confidence over time.',
-    'A boy and his dog',
-    'Basketball practice',
-  ], 'Hard work can build confidence over time.', 'A theme is a message/lesson, usually a full sentence.', ['theme_vs_topic'], {}));
+  // Start easier and build toward harder (evidence + theme).
+  questions.push(makeMc('q1', 'Which statement is an opinion?', [
+    'The character walked home after school.',
+    'The article lists three reasons.',
+    'The best solution is obvious.',
+    'The passage includes a quotation.',
+  ], 'The best solution is obvious.', 'Opinions use judgment words like best/worst/obvious.', ['opinion_vs_fact'], {}));
 
   questions.push(makeMc('q2', 'Which summary is MOST objective?', [
     'The author is wrong and the story is dumb.',
@@ -1255,6 +1265,21 @@ function quiz_reading_theme_and_summary(seed) {
     'I feel sad reading this.',
   ], 'The text explains a main idea and supports it with details.', 'Objective = no opinions, just facts.', ['objective_summary'], {}));
 
+  questions.push(makeMc('q3', 'Which of these is a topic sentence (main idea of a paragraph)?', [
+    'For example, the temperature dropped 5 degrees.',
+    'In conclusion, everyone agreed.',
+    'The paragraph explains why teamwork matters during hard tasks.',
+    'However, this happened yesterday.',
+  ], 'The paragraph explains why teamwork matters during hard tasks.', 'A main idea sentence states what the paragraph is about.', ['main_idea'], {}));
+
+  // Topic vs theme (harder: a theme is a lesson/message).
+  questions.push(makeMc('q4', 'Which one is a THEME (a lesson/message), not just a topic?', [
+    'Friendship',
+    'Hard work can build confidence over time.',
+    'A boy and his dog',
+    'Basketball practice',
+  ], 'Hard work can build confidence over time.', 'A theme is a message/lesson, usually a full sentence.', ['theme_vs_topic'], {}));
+
   // Evidence support
   const detailSets = [
     { main: 'Plants need sunlight to grow.', supports: ['The text says leaves absorb light.', 'The text describes growth slowing in darkness.'], not: ['The author likes plants.'] },
@@ -1262,21 +1287,7 @@ function quiz_reading_theme_and_summary(seed) {
   ];
   const ds = pickOne(rng, detailSets);
   const choices = shuffle(rng, ds.supports.concat(ds.not));
-  questions.push(makeMc('q3', `Which detail best supports the main idea: "${ds.main}"`, choices, ds.supports[0], 'Supporting details are facts/examples that prove the main idea.', ['supporting_evidence'], { main: ds.main }));
-
-  questions.push(makeMc('q4', 'Which of these is a topic sentence (main idea of a paragraph)?', [
-    'For example, the temperature dropped 5 degrees.',
-    'In conclusion, everyone agreed.',
-    'The paragraph explains why teamwork matters during hard tasks.',
-    'However, this happened yesterday.',
-  ], 'The paragraph explains why teamwork matters during hard tasks.', 'A main idea sentence states what the paragraph is about.', ['main_idea'], {}));
-
-  questions.push(makeMc('q5', 'Which statement is an opinion?', [
-    'The character walked home after school.',
-    'The article lists three reasons.',
-    'The best solution is obvious.',
-    'The passage includes a quotation.',
-  ], 'The best solution is obvious.', 'Opinions use judgment words like best/worst/obvious.', ['opinion_vs_fact'], {}));
+  questions.push(makeMc('q5', `Which detail best supports the main idea: "${ds.main}"`, choices, ds.supports[0], 'Supporting details are facts/examples that prove the main idea.', ['supporting_evidence'], { main: ds.main }));
 
   return { passPercent: 80, title: 'Theme + Objective Summary', questions };
 }
@@ -1334,7 +1345,7 @@ function quiz_reading_vocabulary_context_roots(seed) {
   const rng = mulberry32(seed);
   const questions = [];
 
-  const items = [
+  const literalItems = [
     {
       sentence: 'After the long run, he was exhausted, so he sat down to rest.',
       word: 'exhausted',
@@ -1348,14 +1359,30 @@ function quiz_reading_vocabulary_context_roots(seed) {
       answer: 'quiet',
     },
     {
+      sentence: 'After checking the results, it was evident that the plan worked.',
+      word: 'evident',
+      choices: ['clear', 'hidden', 'dangerous', 'funny'],
+      answer: 'clear',
+    },
+  ];
+
+  const figurativeItems = [
+    {
       sentence: 'Her smile was a lighthouse in the storm, guiding everyone forward.',
       word: 'lighthouse',
       choices: ['a real building on the ocean', 'figurative language meaning her smile gave hope', 'a loud noise', 'a math tool'],
       answer: 'figurative language meaning her smile gave hope',
     },
+    {
+      sentence: 'The classroom was a zoo during the last five minutes before the bell.',
+      word: 'zoo',
+      choices: ['a real zoo with animals', 'figurative language meaning it was noisy and chaotic', 'a quiet place', 'a homework tool'],
+      answer: 'figurative language meaning it was noisy and chaotic',
+    },
   ];
 
-  const picked = shuffle(rng, items).slice(0, 3);
+  // Ramp difficulty inside the quiz: start with literal context-clue items, then a figurative one.
+  const picked = shuffle(rng, literalItems).slice(0, 2).concat([pickOne(rng, figurativeItems)]);
   picked.forEach((it, idx) => {
     const tags = it.answer.includes('figurative')
       ? ['context_clues', 'figurative_language']
@@ -1931,40 +1958,42 @@ function quiz_language_pronouns_possessives(seed) {
   const rng = mulberry32(seed);
   const questions = [];
 
-  questions.push(makeMc('q1', 'Choose the correct sentence:', [
-    'Someone left their book on the desk.',
-    'Someone left there book on the desk.',
-    'Someone left they book on the desk.',
-    'Someone left books on the desk.',
-  ], 'Someone left their book on the desk.', 'Indefinite pronouns like "someone" use correct possessive forms.', ['pronoun_possessive'], {}));
-
-  questions.push(makeMc('q2', 'Choose the correct singular possessive:', [
+  // Ordered easy -> hard to match a normal worksheet progression.
+  questions.push(makeMc('q1', 'Choose the correct singular possessive:', [
     'the boys hat',
     "the boy's hat",
     "the boys' hat",
     'the boy hat',
   ], "the boy's hat", 'Singular possessive: add apostrophe + s.', ['apostrophe_possessive'], {}));
 
-  questions.push(makeMc('q3', 'Which sentence uses an indefinite pronoun correctly?', [
+  questions.push(makeMc('q2', 'Which sentence uses an indefinite pronoun correctly?', [
     'Anybody are welcome.',
     'Anybody is welcome.',
     'Anybodys welcome.',
     'Anybody were welcome.',
   ], 'Anybody is welcome.', 'Anybody/anyone/someone is singular here.', ['indefinite_pronoun_agreement'], {}));
 
-  questions.push(makeMc('q4', 'Fix the error: "Each of the players forgot there water." Choose the best correction:', [
-    'Each of the players forgot their water.',
-    'Each of the players forgot there water.',
-    'Each of the players forgot they water.',
-    'Each of the players forgot the water.',
-  ], 'Each of the players forgot their water.', '"There" is a place. "Their" shows ownership.', ['there_their'], {}));
-
-  questions.push(makeMc('q5', 'Choose the correct possessive:', [
+  questions.push(makeMc('q3', 'Choose the correct possessive:', [
     "the dog's leash",
     "the dogs leash",
     "the dogs' leash",
     "the dog's' leash",
   ], "the dog's leash", 'Singular noun dog -> dog’s.', ['apostrophe_possessive'], {}));
+
+  questions.push(makeMc('q4', 'Choose the correct sentence:', [
+    'Someone left their book on the desk.',
+    'Someone left there book on the desk.',
+    'Someone left they book on the desk.',
+    'Someone left books on the desk.',
+  ], 'Someone left their book on the desk.', 'Indefinite pronouns like "someone" use correct possessive forms.', ['pronoun_possessive'], {}));
+
+  // Editing/correction is typically harder than picking a correct example.
+  questions.push(makeMc('q5', 'Fix the error: "Each of the players forgot there water." Choose the best correction:', [
+    'Each of the players forgot their water.',
+    'Each of the players forgot there water.',
+    'Each of the players forgot they water.',
+    'Each of the players forgot the water.',
+  ], 'Each of the players forgot their water.', '"There" is a place. "Their" shows ownership.', ['there_their'], {}));
 
   return { passPercent: 80, title: 'Pronouns + Possessives', questions };
 }
@@ -1973,33 +2002,34 @@ function quiz_language_sentence_combining_verb_tense(seed) {
   const rng = mulberry32(seed);
   const questions = [];
 
-  questions.push(makeMc('q1', 'Combine these two sentences best:\n"I finished my work. I checked it twice."', [
-    'I finished my work and checked it twice.',
-    'I finished my work. I checked it twice.',
-    'I finished my work because twice.',
-    'Checked it twice and finished my work.',
-  ], 'I finished my work and checked it twice.', 'Use a conjunction to combine without changing meaning.', ['sentence_combining'], {}));
-
-  questions.push(makeMc('q2', 'Which sentence uses irregular past tense correctly?', [
+  // Ordered easy -> hard: verb tense basics, then sentence combining.
+  questions.push(makeMc('q1', 'Which sentence uses irregular past tense correctly?', [
     'He goed to the store.',
     'He went to the store.',
     'He goeded to the store.',
     'He go to the store yesterday.',
   ], 'He went to the store.', 'Irregular past tense of "go" is "went".', ['irregular_past_tense'], {}));
 
-  questions.push(makeMc('q3', 'Combine for conciseness:\n"The test was hard. The test was long."', [
-    'The test was hard and long.',
-    'The test was hard. The test was long.',
-    'Hard long test was.',
-    'The test was and long hard.',
-  ], 'The test was hard and long.', 'Remove repeated words and keep meaning.', ['sentence_combining'], {}));
-
-  questions.push(makeMc('q4', 'Choose the correct past tense:', [
+  questions.push(makeMc('q2', 'Choose the correct past tense:', [
     'She run yesterday.',
     'She ran yesterday.',
     'She ranned yesterday.',
     'She running yesterday.',
   ], 'She ran yesterday.', 'Past tense of run is ran.', ['irregular_past_tense'], {}));
+
+  questions.push(makeMc('q3', 'Combine these two sentences best:\n"I finished my work. I checked it twice."', [
+    'I finished my work and checked it twice.',
+    'I finished my work. I checked it twice.',
+    'I finished my work because twice.',
+    'Checked it twice and finished my work.',
+  ], 'I finished my work and checked it twice.', 'Use a conjunction to combine without changing meaning.', ['sentence_combining'], {}));
+
+  questions.push(makeMc('q4', 'Combine for conciseness:\n"The test was hard. The test was long."', [
+    'The test was hard and long.',
+    'The test was hard. The test was long.',
+    'Hard long test was.',
+    'The test was and long hard.',
+  ], 'The test was hard and long.', 'Remove repeated words and keep meaning.', ['sentence_combining'], {}));
 
   questions.push(makeMc('q5', 'Which is the best combined sentence?\n"Marcus read the directions. Marcus followed them."', [
     'Marcus read the directions and followed them.',
@@ -2015,26 +2045,27 @@ function quiz_language_commas_transitions_formal_tone(seed) {
   const rng = mulberry32(seed);
   const questions = [];
 
-  questions.push(makeMc('q1', 'Choose the sentence with correct commas in a series:', [
-    'I bought apples oranges and bananas.',
-    'I bought apples, oranges, and bananas.',
-    'I bought, apples oranges and bananas.',
-    'I bought apples oranges, and bananas.',
-  ], 'I bought apples, oranges, and bananas.', 'Use commas to separate items in a list.', ['commas_series'], {}));
-
-  questions.push(makeMc('q2', 'Which transition best shows an example?', [
+  // Ordered easy -> hard: transitions, then commas, then formal tone.
+  questions.push(makeMc('q1', 'Which transition best shows an example?', [
     'However',
     'For example',
     'Therefore',
     'Meanwhile',
   ], 'For example', 'For example introduces an example.', ['transitions_example'], {}));
 
-  questions.push(makeMc('q3', 'Which sentence is more formal/objective?', [
-    'This proves the author is totally right.',
-    'This evidence supports the author’s claim.',
-    'This is super obvious.',
-    'I love this argument!',
-  ], 'This evidence supports the author’s claim.', 'Formal/objective avoids emotional/judgment words.', ['formal_tone'], {}));
+  questions.push(makeMc('q2', 'Choose the best transition showing contrast:', [
+    'Similarly',
+    'However',
+    'For instance',
+    'As a result',
+  ], 'However', 'However signals contrast.', ['transitions_contrast'], {}));
+
+  questions.push(makeMc('q3', 'Choose the sentence with correct commas in a series:', [
+    'I bought apples oranges and bananas.',
+    'I bought apples, oranges, and bananas.',
+    'I bought, apples oranges and bananas.',
+    'I bought apples oranges, and bananas.',
+  ], 'I bought apples, oranges, and bananas.', 'Use commas to separate items in a list.', ['commas_series'], {}));
 
   questions.push(makeMc('q4', 'Where should the comma go? "After the test we went home."', [
     'After, the test we went home.',
@@ -2043,12 +2074,12 @@ function quiz_language_commas_transitions_formal_tone(seed) {
     'No comma needed.',
   ], 'After the test, we went home.', 'Introductory phrase -> comma after it.', ['commas_intro_phrase'], {}));
 
-  questions.push(makeMc('q5', 'Choose the best transition showing contrast:', [
-    'Similarly',
-    'However',
-    'For instance',
-    'As a result',
-  ], 'However', 'However signals contrast.', ['transitions_contrast'], {}));
+  questions.push(makeMc('q5', 'Which sentence is more formal/objective?', [
+    'This proves the author is totally right.',
+    'This evidence supports the author’s claim.',
+    'This is super obvious.',
+    'I love this argument!',
+  ], 'This evidence supports the author’s claim.', 'Formal/objective avoids emotional/judgment words.', ['formal_tone'], {}));
 
   return { passPercent: 80, title: 'Commas + Transitions + Formal Tone', questions };
 }
@@ -2087,6 +2118,7 @@ function buildQuiz(assignment, seed, options) {
     return { passPercent: assignment?.passPercent || 80, title: assignment?.title || 'Assignment', questions: [] };
   }
   const quiz = builder(seed, options);
+  applyDifficultyRampMeta(quiz?.questions);
   // Allow assignment to override pass percent.
   quiz.passPercent = Number(assignment?.passPercent || quiz.passPercent || 80);
   return quiz;
@@ -2112,7 +2144,18 @@ function buildPracticeQuiz(assignment, seed, options) {
   }
 
   const baseTitle = title || assignment?.title || 'Assignment';
-  const questions = combined.slice(0, desiredCount).map((q, idx) => ({ ...q, id: `q${idx + 1}` }));
+  const sorted = combined.map((q, idx) => ({ q, idx, d: Number(q?.meta?.difficulty) }));
+  sorted.sort((a, b) => {
+    const da = Number.isFinite(a.d) ? a.d : 1;
+    const db = Number.isFinite(b.d) ? b.d : 1;
+    if (da !== db) return da - db;
+    return a.idx - b.idx;
+  });
+
+  const questions = sorted
+    .slice(0, desiredCount)
+    .map((row, idx) => ({ ...row.q, id: `q${idx + 1}` }));
+  applyDifficultyRampMeta(questions);
 
   return { passPercent, title: `Practice: ${baseTitle}`, questions };
 }
