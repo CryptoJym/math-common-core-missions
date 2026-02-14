@@ -79,6 +79,59 @@ function safeJsonParse(maybeText) {
   }
 }
 
+function getJsonObjectLikeText(text) {
+  const parsed = safeJsonParse(text);
+  if (!parsed || typeof parsed !== 'object') return null;
+  if (Array.isArray(parsed)) return parsed[0] ? { ...(parsed[0] || {}) } : parsed;
+  return parsed;
+}
+
+function makeProviderUnavailableError(message) {
+  const err = new Error(message);
+  err.statusCode = 503;
+  err.errorCode = 'llm_not_configured';
+  return err;
+}
+
+function modelUnavailableError(message, providerCode = '', providerType = '') {
+  const err = new Error(message);
+  err.errorCode = 'llm_model_unavailable';
+  if (providerCode) err.providerErrorCode = providerCode;
+  if (providerType) err.providerErrorType = providerType;
+  return err;
+}
+
+function hasModelUnavailableCode(code) {
+  const safeCode = String(code || '').toLowerCase().trim();
+  if (!safeCode) return false;
+  return safeCode === 'model_not_found' || safeCode === 'invalid_model';
+}
+
+function isModelUnavailableError(err) {
+  const status = Number(err?.statusCode);
+  const errorCode = String(err?.errorCode || '').toLowerCase();
+  const providerCode = String(err?.providerErrorCode || err?.code || '').toLowerCase();
+  const openAiType = String(err?.providerErrorType || '').toLowerCase();
+  const msg = String(err?.message || '').toLowerCase();
+  const hasModelUnavailableProviderCode = hasModelUnavailableCode(providerCode) || hasModelUnavailableCode(openAiType);
+  return (
+    errorCode === 'llm_model_unavailable'
+    || hasModelUnavailableProviderCode
+    || (Number.isFinite(status) && [400, 404, 422, 500].includes(status) && (msg.includes('invalid model') || msg.includes('model not found') || msg.includes('model does not exist') || msg.includes("model's") || msg.includes('model `') || msg.includes('model \"') || msg.includes("model '") || msg.includes('is not found')))
+  );
+}
+
+function normalizeOpenAIErrorPayload(rawText) {
+  const obj = getJsonObjectLikeText(rawText);
+  if (!obj || typeof obj !== 'object') return { message: String(rawText || ''), code: '', type: '' };
+  const inner = obj?.error && typeof obj.error === 'object' ? obj.error : obj;
+  return {
+    message: String(inner?.message || inner?.error || obj?.message || rawText || ''),
+    code: String(inner?.code || obj?.code || ''),
+    type: String(inner?.type || obj?.type || ''),
+  };
+}
+
 async function supabaseGetUser({ supabaseUrl, anonKey, accessToken }) {
   const resp = await fetch(`${supabaseUrl}/auth/v1/user`, {
     method: 'GET',
@@ -326,6 +379,100 @@ function buildCoachPrompt({ day, manual, memory, computed }) {
   ].join('\n');
 }
 
+function buildFallbackCoachPayload({ day, manual, computed, memory }) {
+  const safeManual = manual && typeof manual === 'object' ? manual : {};
+  const safeMemory = memory && typeof memory === 'object' ? memory : {};
+  const safeComputed = computed && typeof computed === 'object' ? computed : {};
+  const dayValue = String(day || todayISO());
+  const topMissed = Array.isArray(safeComputed.top_missed_tags) ? safeComputed.top_missed_tags : [];
+  const topWeakness = topMissed[0];
+  const weakest = topWeakness && topWeakness.tag
+    ? `Focus on ${topWeakness.tag} work.`
+    : 'Keep momentum on active in-progress work.';
+  const lastCompleted = Number.isFinite(Number(safeComputed?.completionRate)) ? safeComputed.completionRate : null;
+
+  const nextFocus = (safeComputed?.progress_summary || {});
+  const weakestAssignmentId = String(nextFocus?.weakestAssignmentId || '').trim();
+  const nextFocusType = weakestAssignmentId ? 'assignment' : 'daily';
+  const nextFocusWhy = weakestAssignmentId
+    ? `Missed most in ${String(weakestAssignmentId || '').replace(/_/g, ' ')}`
+    : 'Continue today’s target and review daily plan.';
+
+  const strengths = [];
+  if (safeComputed?.daily_summary?.completedLast14 != null) {
+    strengths.push(`${safeComputed.daily_summary.completedLast14} daily checkpoints completed in the last 14 days.`);
+  }
+  if (Number.isFinite(Number(safeComputed?.reading_summary?.minutesLast30))) {
+    strengths.push(`Read ${safeComputed.reading_summary.minutesLast30} minutes in the last 30 reading entries.`);
+  }
+  if (lastCompleted !== null) strengths.push(`Assignment completion trend is ${lastCompleted}% based on tracked data.`);
+
+  const weaknesses = [
+    {
+      area: topWeakness?.tag || 'focus and pace',
+      evidence: safest(topWeakness?.tag)
+        ? `Top challenge seen in recent attempts: ${String(topWeakness?.tag)}`
+        : 'Needs clearer targeting across mixed skill work.',
+    },
+  ];
+
+  return {
+    schema_version: 1,
+    memory_update: {
+      strengths: strengths.length ? strengths : ['Keep current work visible and consistent.'],
+      weaknesses,
+      coach_rules: ['Use the platform daily when possible.', 'Complete all required practice before retakes.'],
+      next_focus: {
+        type: nextFocusType,
+        id: weakestAssignmentId || 'daily',
+        why: nextFocusWhy,
+      },
+    },
+    daily_plan: {
+      day: dayValue,
+      headline: 'Offline coaching mode is active (fallback plan)',
+      steps: [
+        {
+          title: 'Warm-up',
+          minutes: 12,
+          instructions: `Quickly review the latest data summary, then run ${safeManual?.goal || 'the scheduled'} work block.`,
+        },
+        {
+          title: 'Target work',
+          minutes: 20,
+          instructions: `Prioritize effort on: ${weakest || 'your current active assignment'}`,
+        },
+        {
+          title: 'Reflection',
+          minutes: 8,
+          instructions: `${weakest} Write one sentence about what was still unclear.`,
+        },
+      ],
+      check_for_understanding: [
+        {
+          question: 'What is your next actionable focus for today?',
+          expected: nextFocusWhy,
+        },
+        {
+          question: 'What did you complete in reading and daily work today?',
+          expected: 'A short list of completed items.',
+        },
+      ],
+      parent_view: {
+        what_to_watch: 'Whether he skips hard practice due to frustration.',
+        how_to_help: 'Break each step down into 10-minute chunks and check one item at a time.',
+      },
+      ...(safeComputed?.fallback_note || {}),
+    },
+    from_fallback: true,
+  };
+}
+
+function safest(value) {
+  const s = String(value || '').trim();
+  return /^([a-zA-Z0-9_ -]{1,64})$/.test(s);
+}
+
 function validateCoachPayload(payload) {
   const errors = [];
   if (!payload || typeof payload !== 'object') return { ok: false, errors: ['payload is not an object'] };
@@ -353,7 +500,9 @@ function validateCoachPayload(payload) {
 
 async function callOpenAICoach({ model, prompt }) {
   const apiKey = process.env.OPENAI_API_KEY || '';
-  if (!apiKey) throw new Error('OPENAI_API_KEY is not configured on the server.');
+  if (!apiKey) {
+    throw makeProviderUnavailableError('OPENAI_API_KEY is not configured on the server.');
+  }
 
   const resp = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -374,7 +523,21 @@ async function callOpenAICoach({ model, prompt }) {
 
   if (!resp.ok) {
     const text = await resp.text();
-    throw new Error(`OpenAI request failed (${resp.status}): ${text}`);
+    const normalized = normalizeOpenAIErrorPayload(text);
+    const msg = `OpenAI request failed (${resp.status}): ${normalized.message || text}`;
+    const isUnavailable = isModelUnavailableError({
+      statusCode: resp.status,
+      message: msg,
+      providerErrorCode: normalized.code,
+      providerErrorType: normalized.type,
+    });
+    const err = isUnavailable ? modelUnavailableError(msg, normalized.code, normalized.type) : new Error(msg);
+    if (!Number.isFinite(Number(err.statusCode))) {
+      err.statusCode = resp.status;
+    }
+    err.providerErrorCode = normalized.code;
+    err.providerErrorType = normalized.type;
+    throw err;
   }
 
   const data = await resp.json();
@@ -396,7 +559,9 @@ async function callOpenAICoach({ model, prompt }) {
 
 async function callGeminiCoach({ prompt }) {
   const apiKey = process.env.GEMINI_API_KEY || '';
-  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured on the server.');
+  if (!apiKey) {
+    throw makeProviderUnavailableError('GEMINI_API_KEY is not configured on the server.');
+  }
 
   const model = process.env.GEMINI_MODEL || 'gemini-3.0-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -626,14 +791,48 @@ async function handler(req, res) {
     const prompt = buildCoachPrompt({ day, manual, memory, computed });
 
     let ai = null;
+    let openAiErr = null;
+    const openaiModel = process.env.OPENAI_MODEL || 'gpt-5.2';
+    const openaiFallbackModel = process.env.OPENAI_FALLBACK_MODEL || process.env.OPENAI_MODEL_FALLBACK || 'gpt-4o-mini';
+    const modelCandidates = [];
+    if (openaiModel) modelCandidates.push(openaiModel);
+    if (openaiFallbackModel && openaiFallbackModel !== openaiModel) modelCandidates.push(openaiFallbackModel);
+
     try {
-      ai = await callOpenAICoach({
-        model: process.env.OPENAI_MODEL || 'gpt-5.2',
-        prompt,
-      });
+      for (const model of modelCandidates) {
+        try {
+          ai = await callOpenAICoach({ model, prompt });
+          break;
+        } catch (err) {
+          openAiErr = err;
+          if (model !== openaiModel && isModelUnavailableError(err)) {
+            throw err;
+          }
+          if (model === openaiModel && modelCandidates.length > 1 && isModelUnavailableError(err)) {
+            continue;
+          }
+          throw err;
+        }
+      }
     } catch (openAiErr) {
-      if (process.env.GEMINI_API_KEY) {
+      const isProviderUnavailable = openAiErr?.errorCode === 'llm_not_configured';
+      const fallbackToRules = isProviderUnavailable
+        || isModelUnavailableError(openAiErr)
+        || !process.env.GEMINI_API_KEY;
+
+      if (process.env.GEMINI_API_KEY && !isProviderUnavailable) {
         ai = await callGeminiCoach({ prompt });
+      } else if (fallbackToRules) {
+        ai = {
+          provider: 'fallback',
+          model: 'rules',
+          payload: buildFallbackCoachPayload({
+            day,
+            manual,
+            memory,
+            computed,
+          }),
+        };
       } else {
         throw openAiErr;
       }

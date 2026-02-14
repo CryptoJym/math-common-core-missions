@@ -866,6 +866,49 @@ test.describe('AI Coach', () => {
     expect(page.url().includes('login.html'), 'Coach should not redirect to login with a valid session').toBeFalsy();
     await assertNoRuntimeErrors(page, runtime);
   });
+
+  test('Coach API response is explicit and never returns a generic 500', async ({ page }) => {
+    const runtime = await installRuntimeGuards(page);
+    await signInAdmin(page);
+    await assertRouteExistsOrSkip(page, 'brady/coach.html');
+
+    const coachRespPromise = page.waitForResponse(
+      (resp) => {
+        const req = resp.request();
+        return req.url().includes('/api/brady/coach') && req.method() === 'POST';
+      },
+      { timeout: 20_000 },
+    );
+
+    await gotoWithRetry(page, toAbs('brady/coach.html'), { waitUntil: 'domcontentloaded' });
+    const coachResp = await coachRespPromise;
+
+    const status = coachResp.status();
+    expect(status).not.toBe(500);
+    const payload = await coachResp.json().catch(() => null);
+
+    if (status === 200) {
+      expect(payload, 'coach success payload should include a plan and profile').toBeTruthy();
+      expect(payload?.daily_plan, 'success payload should include daily plan').toBeTruthy();
+      expect(payload?.profile, 'success payload should include profile').toBeTruthy();
+    } else {
+      expect(payload).toBeTruthy();
+      expect(typeof payload?.error, 'error payload should explain the response').toBe('string');
+    }
+
+    if (status === 401 || status === 403) {
+      expect(payload?.error, `auth/allowlist error should include a reason`).toBeTruthy();
+    }
+
+    if (status === 503) {
+      expect(payload?.error_code, `llm config error should include explicit code`).toBe('llm_not_configured');
+    }
+
+    await expect(page.locator('h1')).toHaveText('AI Coach');
+    await expect(page.locator('#planContainer')).toBeVisible();
+    await page.waitForTimeout(600);
+    await assertNoRuntimeErrors(page, runtime);
+  });
 });
 
 test.describe('Admin portal', () => {

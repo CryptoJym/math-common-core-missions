@@ -427,7 +427,6 @@ function bindAddSubAccountSubmit(session) {
   _addSubAccountSubmitListenerAttached = true;
 
   const submitBtn = addForm.querySelector('button[type="submit"]');
-
   const resolveSession = async () => {
     if (_adminSubAccountSession?.user?.id) return _adminSubAccountSession;
     try {
@@ -445,9 +444,17 @@ function bindAddSubAccountSubmit(session) {
   const submitHandler = async (event) => {
     if (event) {
       event.preventDefault();
+      if (typeof event.stopPropagation === 'function') event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
     }
 
-    if (_addSubAccountSubmitting) return;
+    if (addForm && typeof addForm.reportValidity === 'function' && !addForm.reportValidity()) {
+      return;
+    }
+
+    if (_addSubAccountSubmitting) {
+      return;
+    }
     _addSubAccountSubmitting = true;
 
     const submit = addForm.querySelector('button[type="submit"]');
@@ -473,12 +480,25 @@ function bindAddSubAccountSubmit(session) {
     }
   };
 
-  // Primary binding.
-  addForm.addEventListener('submit', submitHandler);
+  // Keep a single shared handler for both submit and click flows to avoid
+  // viewport/input-mode differences between desktop/mobile automation.
+  const submitBtnClickHandler = async (event) => {
+    if (event) {
+      event.preventDefault();
+      if (typeof event.stopPropagation === 'function') event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+    }
+    await submitHandler();
+  };
 
-  // Click-path fallback for environments where keyboard/form submit semantics differ.
+  // Single deterministic submit path, plus direct click path for narrow mobile viewports
+  // where submit dispatch can be unreliable in automated interactions.
+  addForm.addEventListener('submit', submitHandler, true);
   if (submitBtn) {
-    submitBtn.addEventListener('click', submitHandler);
+    submitBtn.addEventListener('click', submitBtnClickHandler, true);
+  }
+  if (addForm.noValidate !== true) {
+    addForm.setAttribute('novalidate', 'novalidate');
   }
 }
 

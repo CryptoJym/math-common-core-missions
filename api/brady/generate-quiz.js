@@ -387,7 +387,24 @@ async function callOpenAIForQuiz({ model, prompt }) {
 
   if (!resp.ok) {
     const text = await resp.text();
-    throw new Error(`OpenAI request failed (${resp.status}): ${text}`);
+    const message = `OpenAI request failed (${resp.status}): ${text}`;
+    const lower = String(message).toLowerCase();
+    const isModelUnavailable =
+      resp.status === 400
+      && (
+        lower.includes('invalid model id')
+        || lower.includes('does not exist')
+        || lower.includes('model id')
+      );
+    if (isModelUnavailable) {
+      const err = new Error(message);
+      err.statusCode = resp.status;
+      err.errorCode = 'llm_model_unavailable';
+      throw err;
+    }
+    const err = new Error(message);
+    err.statusCode = resp.status;
+    throw err;
   }
 
   const data = await resp.json();
@@ -570,8 +587,41 @@ async function handler(req, res) {
     }
 
     const prompt = buildQuizPrompt({ assignment, passPercent, focusTags, latestScorePercent });
-    const model = process.env.OPENAI_MODEL || 'gpt-5.2';
-    const quiz = await callOpenAIForQuiz({ model, prompt });
+    const primaryModel = process.env.OPENAI_MODEL || 'gpt-5.2';
+    const fallbackModel = process.env.OPENAI_FALLBACK_MODEL || process.env.OPENAI_MODEL_FALLBACK || 'gpt-4o-mini';
+    const modelCandidates = [primaryModel];
+    if (fallbackModel && fallbackModel !== primaryModel) {
+      modelCandidates.push(fallbackModel);
+    }
+
+    let quiz = null;
+    let openAiErr = null;
+    for (const model of modelCandidates) {
+      try {
+        quiz = await callOpenAIForQuiz({ model, prompt });
+        break;
+      } catch (err) {
+        openAiErr = err;
+        const isModelUnavailable = (err?.errorCode === 'llm_model_unavailable')
+          || (Number.isFinite(Number(err?.statusCode))
+            && Number(err.statusCode) === 400
+            && String(err?.message || '').toLowerCase().includes('invalid model'));
+        if (model !== primaryModel && isModelUnavailable) {
+          throw err;
+        }
+        if (model === primaryModel && isModelUnavailable && modelCandidates.length > 1) {
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    if (!quiz) {
+      const status = Number.isFinite(Number(openAiErr?.statusCode)) ? openAiErr.statusCode : 500;
+      const err = new Error(openAiErr?.message || 'OpenAI model unavailable');
+      err.statusCode = status;
+      throw err;
+    }
 
     // Force pass percent to match the assignment (do not let the model change it).
     quiz.passPercent = passPercent;
