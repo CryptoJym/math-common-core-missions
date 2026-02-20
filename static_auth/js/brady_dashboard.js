@@ -20,6 +20,13 @@ function setAlert(msg) {
   el.style.display = 'block';
 }
 
+function statusLabel(status) {
+  const value = String(status || 'not_started');
+  if (value === 'in_progress') return 'Working';
+  if (value === 'mastered') return 'Mastered';
+  return 'Not started';
+}
+
 async function loadAssignmentProgress(session, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
@@ -124,7 +131,7 @@ function renderNextUp(target, progressRow) {
   el.innerHTML = `
     <div class="pill-row">
       <span class="pill">${target.subject}</span>
-      <span class="status-badge ${status}">${status.replace(/_/g, ' ')}</span>
+      <span class="status-badge ${status}">${statusLabel(status)}</span>
       ${last ? `<span class="small">Last updated: ${last}</span>` : ''}
     </div>
     <div style="margin-top:10px; font-family: 'Orbitron', sans-serif; color: var(--accent-gold);">${target.title}</div>

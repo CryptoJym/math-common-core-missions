@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Brady Training HQ | Math Hunter Academy</title>
+  <title>Brady Training HQ | Level Up</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="brady.css">
@@ -12,17 +12,31 @@
   <div class="container">
     <div class="page-header">
       <h1>Brady Training HQ</h1>
-      <p>Personalized missions based on your latest assessment</p>
+      <p>One clear next step. Then keep momentum.</p>
+      <div class="shell-meta">
+        <span class="sync-chip">Saved</span>
+        <span class="small">Level Up student shell</span>
+      </div>
     </div>
 
     <div id="alert" class="alert" style="display:none;"></div>
 
+    <div class="section assignment-nextup">
+      <h2>Next Up</h2>
+      <div id="nextUp" class="small">Loading next assignment...</div>
+    </div>
+
+    <div class="section">
+      <h2>Today At A Glance</h2>
+      <div id="todaySummary" class="small">Loading...</div>
+    </div>
+
     <div class="grid">
       <a class="card" href="daily.html">
         <h3>Daily Training</h3>
-        <p>One short routine each day: warm-up, target skill, mixed review, AI practice.</p>
+        <p>Three focused steps. One session. Done.</p>
         <div class="pill-row">
-          <span class="pill">⏱️ 20–30 min</span>
+          <span class="pill">Step flow</span>
           <span class="pill pill-math">Math</span>
           <span class="pill pill-reading">Reading</span>
         </div>
@@ -30,58 +44,48 @@
 
       <a class="card" href="assignments.html">
         <h3>Assignments</h3>
-        <p>Your targeted lessons (what to practice next) and your progress toward mastery.</p>
+        <p>See what matters now, open details only when needed.</p>
         <div class="pill-row">
-          <span class="pill">🎯 Targeted</span>
-          <span class="pill">✅ Track progress</span>
+          <span class="pill">Next up</span>
+          <span class="pill">Compact list</span>
         </div>
       </a>
 
-      <a class="card" href="avatar.html">
-        <h3>Avatar Dashboard</h3>
-        <p>Track standing, streaks, and proof of work before moving to the next mission.</p>
+      <a class="card" href="reading.html">
+        <h3>Reading</h3>
+        <p>Read, answer, reflect, and save your progress.</p>
         <div class="pill-row">
-          <span class="pill">📊 Performance</span>
-          <span class="pill">🧭 Standings</span>
+          <span class="pill pill-reading">Books</span>
+          <span class="pill">Journal</span>
         </div>
       </a>
 
       <a class="card" href="coach.html">
         <h3>AI Coach</h3>
-        <p>A daily plan that adapts to saved progress and keeps the focus tight.</p>
+        <p>Get a plan built from your saved work and goals.</p>
         <div class="pill-row">
-          <span class="pill">🧠 Coach</span>
-          <span class="pill">🧾 Memory</span>
+          <span class="pill">Plan</span>
+          <span class="pill">Memory</span>
         </div>
       </a>
 
-      <a class="card" href="reading.html">
-        <h3>Reading & Journal</h3>
-        <p>Log minutes, track books, and journal how reading impacted your day.</p>
+      <a class="card" href="avatar.html">
+        <h3>Avatar Dashboard</h3>
+        <p>Track standing, streaks, and where to focus next.</p>
         <div class="pill-row">
-          <span class="pill">📚 Books</span>
-          <span class="pill">📝 Journal</span>
+          <span class="pill">Performance</span>
+          <span class="pill">Next focus</span>
         </div>
       </a>
 
       <a class="card" href="admin.html">
-        <h3>Admin Portal</h3>
-        <p>Manage learner sub-accounts and switch the active work context.</p>
+        <h3>Brady Admin Portal</h3>
+        <p>Manage learner context and export progress safely.</p>
         <div class="pill-row">
-          <span class="pill">🛠️ Manage</span>
-          <span class="pill">👪 Parent / Teacher</span>
+          <span class="pill">Sub-accounts</span>
+          <span class="pill">Export</span>
         </div>
       </a>
-    </div>
-
-    <div class="section">
-      <h2>Today</h2>
-      <div id="todaySummary" class="small">Loading…</div>
-    </div>
-
-    <div class="section">
-      <h2>Next Up</h2>
-      <div id="nextUp" class="small">Loading…</div>
     </div>
   </div>
 

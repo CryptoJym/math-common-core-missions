@@ -49,13 +49,16 @@
     if (!container) return;
 
     const file = currentFile();
-    const links = [
+    const primaryLinks = [
       { href: 'index.html', label: 'HQ' },
       { href: 'daily.html', label: 'Daily' },
       { href: 'assignments.html', label: 'Assignments' },
       { href: 'reading.html', label: 'Reading' },
       { href: 'avatar.html', label: 'Avatar' },
       { href: 'coach.html', label: 'Coach' },
+    ];
+
+    const moreLinks = [
       { href: 'admin.html', label: 'Admin' },
       { href: '../index.html', label: 'Main' },
     ];
@@ -63,13 +66,20 @@
     const nav = document.createElement('nav');
     nav.className = 'brady-topnav';
     nav.innerHTML = `
-      <button class="brady-topnav-back" type="button" aria-label="Back">← Back</button>
+      <button class="brady-topnav-back" type="button" aria-label="Back">Back</button>
       <div class="brady-topnav-links" role="navigation" aria-label="Brady Menu">
-        ${links.map((l) => {
+        ${primaryLinks.map((l) => {
           const active = normalizeFile(l.href) === file;
           return `<a class="brady-topnav-link ${active ? 'active' : ''}" href="${escapeHtml(l.href)}">${escapeHtml(l.label)}</a>`;
         }).join('')}
       </div>
+      <details class="brady-topnav-more">
+        <summary class="brady-topnav-more-btn">More</summary>
+        <div class="brady-topnav-more-panel" role="menu" aria-label="More links">
+          ${moreLinks.map((l) => `<a href="${escapeHtml(l.href)}">${escapeHtml(l.label)}</a>`).join('')}
+        </div>
+      </details>
+      <span class="sync-chip" title="Sync state">Saved</span>
       <div class="brady-topnav-context small" data-brady-context style="display:none;"></div>
     `;
 
@@ -106,7 +116,7 @@
     }
 
     const roleText = role ? ` (${role})` : '';
-    _contextEl.textContent = `Working as: ${label}${roleText}${isSelf ? '' : ' · delegated'}`;
+    _contextEl.textContent = `Working as: ${label}${roleText}${isSelf ? '' : ' delegated'}`;
     _contextEl.style.display = 'block';
   }
 
@@ -125,4 +135,3 @@
     setContext,
   };
 })();
-

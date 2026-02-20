@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Brady Admin Portal | Math Hunter Academy</title>
+  <title>Brady Admin Portal | Level Up</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="brady.css">
@@ -12,31 +12,34 @@
   <div class="container">
     <div class="page-header">
       <h1>Brady Admin Portal</h1>
-      <p>Manage learner accounts and route work into sub-accounts</p>
+      <p>Manage learner access and export progress.</p>
+      <div class="shell-meta">
+        <span class="sync-chip">Saved</span>
+      </div>
     </div>
 
     <div id="alert" class="alert" style="display:none;"></div>
 
     <div class="section">
       <h2>Current Account</h2>
-      <div id="accountSummary" class="small">Loading…</div>
+      <div id="accountSummary" class="small">Loading...</div>
       <div class="btn-row">
-        <button class="btn secondary" type="button" id="clearContextBtn">Work As Me</button>
-        <a class="btn secondary" href="index.html" style="text-decoration:none; display:inline-flex; align-items:center;">Back to Brady HQ</a>
+        <button class="btn secondary" type="button" id="clearContextBtn">Work as me</button>
+        <a class="btn secondary" href="index.html">Back to HQ</a>
       </div>
     </div>
 
     <div class="section">
-      <h2>Add Sub-Account</h2>
+      <h2>Add Learner</h2>
       <form id="addSubAccountForm">
         <div class="field-row">
           <div>
-            <label for="learnerEmail">Learner Email</label>
+            <label for="learnerEmail">Learner email</label>
             <input id="learnerEmail" type="email" required placeholder="student@example.com">
           </div>
           <div>
-            <label for="learnerName">Learner Name (optional)</label>
-            <input id="learnerName" type="text" placeholder="Preferred display name">
+            <label for="learnerName">Learner name (optional)</label>
+            <input id="learnerName" type="text" placeholder="Preferred name">
           </div>
           <div>
             <label for="learnerRole">Role</label>
@@ -49,24 +52,21 @@
           </div>
         </div>
         <div class="btn-row">
-          <button class="btn" type="submit">Save Sub-Account</button>
+          <button class="btn" type="submit">Save learner</button>
         </div>
       </form>
-      <div class="small" style="margin-top:10px;">
-        If the learner email has not created a login yet, we create a pending link.
-        When they sign up, the link is automatically attached to their account.
-      </div>
+      <div class="small" style="margin-top:9px;">If the learner has not signed up yet, this stays as a pending link.</div>
     </div>
 
     <div class="section">
-      <h2>Sub-Accounts</h2>
-      <div id="subAccountSummary" class="small">Loading…</div>
-      <div id="subAccountList" style="margin-top:12px;">Loading…</div>
+      <h2>Linked Learners</h2>
+      <div id="subAccountSummary" class="small">Loading...</div>
+      <div id="subAccountList" style="margin-top:12px;">Loading...</div>
     </div>
 
     <div class="section">
       <h2>Export Progress</h2>
-      <div class="small">Download a JSON report for a specific learner and date range.</div>
+      <div class="small">Download a JSON report for one learner and date range.</div>
       <div class="field-row" style="margin-top:10px;">
         <div>
           <label for="exportLearner">Learner</label>
@@ -81,7 +81,7 @@
           <input id="exportEnd" type="date">
         </div>
         <div>
-          <label for="exportIncludeFiles">Include Files</label>
+          <label for="exportIncludeFiles">Include files</label>
           <select id="exportIncludeFiles">
             <option value="0" selected>No (metadata only)</option>
             <option value="1">Yes (larger download)</option>
@@ -90,17 +90,16 @@
       </div>
       <div class="btn-row">
         <button class="btn" type="button" id="downloadExportBtn" disabled>Download JSON</button>
-        <span class="small" id="exportMsg" style="color: var(--text-secondary);"></span>
+        <span class="small" id="exportMsg"></span>
       </div>
     </div>
 
     <div class="section">
-      <h2>How It Works</h2>
-      <ul style="padding-left: 18px;">
-        <li class="small">Create one or more learners by email.</li>
-        <li class="small">For new users, keep them pending until they sign up.</li>
-        <li class="small">Switch current working context so all progress is saved against the selected learner.</li>
-        <li class="small">Use the Daily / Reading / Assignment pages normally while a learner is selected.</li>
+      <h2>How This Works</h2>
+      <ul style="padding-left:18px;">
+        <li class="small">Add learners by email.</li>
+        <li class="small">Choose a learner to work in their context.</li>
+        <li class="small">Daily, Reading, and Assignment pages save under that learner.</li>
       </ul>
     </div>
   </div>

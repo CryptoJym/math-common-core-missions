@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reading & Journal | Math Hunter Academy</title>
+  <title>Reading | Level Up</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="brady.css">
@@ -11,14 +11,18 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <h1>Reading & Journal</h1>
-      <p>Track minutes and write what the reading changed in you today</p>
+      <h1>Reading</h1>
+      <p>Read. Answer. Reflect.</p>
+      <div class="shell-meta">
+        <span class="sync-chip">Saved</span>
+        <span class="small">Write one short reflection so progress stays meaningful.</span>
+      </div>
     </div>
 
     <div id="alert" class="alert" style="display:none;"></div>
 
     <div class="section">
-      <h2>Log Today</h2>
+      <h2>Today</h2>
       <div class="field-row">
         <div>
           <label for="day">Date</label>
@@ -30,49 +34,51 @@
         </div>
         <div>
           <label for="minutes">Minutes</label>
-          <input id="minutes" type="number" min="0" max="600" step="5" placeholder="e.g. 20">
+          <input id="minutes" type="number" min="0" max="600" step="5" placeholder="Example: 20">
         </div>
         <div>
-          <label for="journal">Journal (what you felt and how it impacted you)</label>
-          <textarea id="journal" placeholder="What did you read? What did it make you think/feel? What will you do differently today because of it?"></textarea>
+          <label for="journal">Reflection</label>
+          <textarea id="journal" placeholder="What did you read? What was the main idea? What should you remember tomorrow?"></textarea>
         </div>
       </div>
+
       <div class="btn-row">
         <button class="btn" type="button" id="saveReading">Save</button>
-        <button class="btn secondary" type="button" id="fillWorksheet">Book Worksheet Template</button>
-        <button class="btn secondary" type="button" id="aiCheckWorksheet">AI Check Worksheet</button>
-        <button class="btn secondary" type="button" id="fillPrompt">AI Reflection Prompt</button>
-        <span class="small" id="draftMsg" style="color: var(--text-secondary);"></span>
+        <button class="btn secondary" type="button" id="fillWorksheet">Open worksheet</button>
+        <button class="btn secondary" type="button" id="aiCheckWorksheet">Check worksheet</button>
+        <button class="btn secondary" type="button" id="fillPrompt">AI prompt</button>
+        <span class="small" id="draftMsg"></span>
       </div>
 
       <div class="ai-box" id="worksheetReviewBox" style="display:none; margin-top:12px;">
-        <h4>AI Worksheet Review</h4>
+        <h4>Worksheet Review</h4>
         <div id="worksheetReviewMeta" class="small"></div>
-        <div id="worksheetReviewFeedback" class="small" style="margin-top:10px; white-space: pre-wrap;"></div>
+        <div id="worksheetReviewFeedback" class="small" style="margin-top:10px; white-space:pre-wrap;"></div>
         <div id="worksheetReviewNextSteps" class="small" style="margin-top:10px;"></div>
       </div>
 
       <div class="ai-box" id="aiBox" style="display:none;">
-        <h4>AI Co-Learning (Reading)</h4>
-        <div class="small">
-          Use this to learn the book deeper and also learn how to “ask AI the right way.”
-        </div>
+        <h4>AI Help Prompts</h4>
+        <div class="small">Choose one tool and copy the prompt.</div>
+
         <div style="margin-top:10px;">
-          <label>ChatGPT Web App Prompt</label>
+          <label for="chatgptPrompt">ChatGPT prompt</label>
           <textarea class="ai-prompt" id="chatgptPrompt" readonly></textarea>
           <div class="btn-row">
             <button class="btn secondary" type="button" data-copy="chatgptPrompt">Copy</button>
           </div>
         </div>
+
         <div style="margin-top:12px;">
-          <label>Codex CLI Prompt</label>
+          <label for="codexPrompt">Codex prompt</label>
           <textarea class="ai-prompt" id="codexPrompt" readonly></textarea>
           <div class="btn-row">
             <button class="btn secondary" type="button" data-copy="codexPrompt">Copy</button>
           </div>
         </div>
+
         <div style="margin-top:12px;">
-          <label>Claude Code Prompt</label>
+          <label for="claudePrompt">Claude Code prompt</label>
           <textarea class="ai-prompt" id="claudePrompt" readonly></textarea>
           <div class="btn-row">
             <button class="btn secondary" type="button" data-copy="claudePrompt">Copy</button>
@@ -83,26 +89,18 @@
 
     <div class="section">
       <h2>History</h2>
-      <div id="readingSummary" class="small">Loading…</div>
+      <div id="readingSummary" class="small">Loading...</div>
       <table class="table">
         <thead>
           <tr>
             <th>Date</th>
             <th>Book</th>
             <th>Minutes</th>
-            <th>Journal</th>
+            <th>Reflection</th>
           </tr>
         </thead>
         <tbody id="readingRows"></tbody>
       </table>
-    </div>
-
-    <div class="section">
-      <h2>Back</h2>
-      <div class="btn-row">
-        <a class="btn secondary" href="index.html" style="text-decoration:none; display:inline-flex; align-items:center;">← Brady HQ</a>
-        <a class="btn secondary" href="../index.html" style="text-decoration:none; display:inline-flex; align-items:center;">🏰 Main HQ</a>
-      </div>
     </div>
   </div>
 

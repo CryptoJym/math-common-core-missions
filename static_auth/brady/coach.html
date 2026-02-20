@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Coach | Math Hunter Academy</title>
+  <title>AI Coach | Level Up</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="brady.css">
@@ -12,37 +12,38 @@
   <div class="container">
     <div class="page-header">
       <h1>AI Coach</h1>
-      <p>A daily plan that adapts to saved progress</p>
+      <p>Clear daily plan based on your saved work.</p>
+      <div class="shell-meta">
+        <span class="sync-chip">Saved</span>
+      </div>
     </div>
 
     <div id="alert" class="alert" style="display:none;"></div>
 
     <div class="section">
-      <h2>Today’s Plan</h2>
-      <div id="coachMeta" class="small">Loading…</div>
+      <h2>Today's Plan</h2>
+      <div id="coachMeta" class="small">Loading...</div>
       <div class="btn-row">
-        <button class="btn" type="button" id="refreshPlanBtn">Get Plan</button>
-        <button class="btn secondary" type="button" id="forcePlanBtn">Force Regenerate</button>
+        <button class="btn" type="button" id="refreshPlanBtn">Get plan</button>
+        <button class="btn secondary" type="button" id="forcePlanBtn">Refresh plan</button>
       </div>
-      <div id="planContainer" style="margin-top:12px;">Loading…</div>
+      <div id="planContainer" style="margin-top:12px;">Loading...</div>
     </div>
 
     <div class="section">
-      <h2>Coach Memory (Profile)</h2>
-      <div class="small">
-        This is the AI’s saved understanding of the learner. It updates using ground-truth platform data (tests, daily training, reading).
-      </div>
+      <h2>Coach Memory</h2>
+      <div class="small">This saves your goal, session time, and context so coaching stays consistent.</div>
 
       <div class="ai-box" style="margin-top:12px;">
-        <h4>Manual Inputs (Parent/Teacher)</h4>
+        <h4>Manual Inputs</h4>
         <div class="field-row">
           <div>
-            <label for="manualGoal">Primary goal (plain English)</label>
-            <input id="manualGoal" type="text" placeholder="e.g. Master fractions + build daily consistency">
+            <label for="manualGoal">Main goal</label>
+            <input id="manualGoal" type="text" placeholder="Example: Improve fractions and consistency">
           </div>
           <div>
-            <label for="manualSessionMinutes">Typical session length (minutes)</label>
-            <input id="manualSessionMinutes" type="number" min="5" max="120" step="5" placeholder="e.g. 25">
+            <label for="manualSessionMinutes">Session length (minutes)</label>
+            <input id="manualSessionMinutes" type="number" min="5" max="120" step="5" placeholder="Example: 25">
           </div>
           <div>
             <label for="manualTone">Coaching tone</label>
@@ -53,27 +54,19 @@
             </select>
           </div>
           <div>
-            <label for="manualNotes">Parent notes (constraints / context)</label>
-            <textarea id="manualNotes" placeholder="Anything the coach should know (attention span, schedule, what motivates him, etc.)"></textarea>
+            <label for="manualNotes">Notes</label>
+            <textarea id="manualNotes" placeholder="Share schedule limits, motivators, or reminders."></textarea>
           </div>
         </div>
         <div class="btn-row">
-          <button class="btn secondary" type="button" id="saveManualBtn">Save Manual Inputs</button>
+          <button class="btn secondary" type="button" id="saveManualBtn">Save inputs</button>
         </div>
         <div id="manualSaveMsg" class="small" style="margin-top:8px;"></div>
       </div>
 
       <div class="ai-box" style="margin-top:12px;">
-        <h4>Current Memory Snapshot</h4>
-        <div id="profileContainer" class="small">Loading…</div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>Back</h2>
-      <div class="btn-row">
-        <a class="btn secondary" href="index.html" style="text-decoration:none; display:inline-flex; align-items:center;">← Brady HQ</a>
-        <a class="btn secondary" href="../index.html" style="text-decoration:none; display:inline-flex; align-items:center;">🏰 Main HQ</a>
+        <h4>Saved Profile Snapshot</h4>
+        <div id="profileContainer" class="small">Loading...</div>
       </div>
     </div>
   </div>
