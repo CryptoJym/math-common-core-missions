@@ -1341,7 +1341,7 @@ async function main() {
     // If they already failed once and cooldown expired, they must pass practice before retaking the test.
     const practiceBlocksTest = (!isLocked && practiceRequired && !practicePassed);
     if (practiceBlocksTest) {
-      document.title = `${a.title} | Math Hunter Academy`;
+      document.title = `${a.title} | Level Up`;
       const titleEl = document.getElementById('assignmentTitle');
       const subtitleEl = document.getElementById('assignmentSubtitle');
       if (titleEl) titleEl.textContent = a.title;
@@ -1448,7 +1448,7 @@ async function main() {
       }
     }
 
-    document.title = `${a.title} | Math Hunter Academy`;
+    document.title = `${a.title} | Level Up`;
     const titleEl = document.getElementById('assignmentTitle');
     const subtitleEl = document.getElementById('assignmentSubtitle');
     if (titleEl) titleEl.textContent = a.title;

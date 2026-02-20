@@ -530,7 +530,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title} | Math Hunter Academy</title>
+    <title>{title} | Level Up</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -548,7 +548,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     <div class="container">
         <nav class="nav-bar">
-            <a href="index.html" class="nav-btn">← Return to Hunter HQ</a>
+            <a href="index.html" class="nav-btn">← Return to Level Up HQ</a>
             <span class="rank-badge rank-{rank}">{rank}-RANK</span>
         </nav>
 
@@ -556,7 +556,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <h1>⚠️ [SYSTEM] DUNGEON GATE DETECTED</h1>
             <div class="dungeon-name">🏰 {dungeon}</div>
             <p style="margin-top: 15px; color: var(--text-secondary);">
-                Hunter, a new challenge awaits. Complete this dungeon to strengthen your mathematical abilities.
+                A new challenge awaits. Complete this dungeon to strengthen your mathematical abilities.
             </p>
         </div>
 
@@ -594,7 +594,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Hunter Academy | Solo Leveling Edition</title>
+    <title>Level Up | Solo Leveling Edition</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -717,10 +717,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <body>
     <div class="container">
         <div class="hero">
-            <h1>⚔️ MATH HUNTER ACADEMY</h1>
+            <h1>⚔️ LEVEL UP</h1>
             <p class="subtitle">Solo Leveling Edition</p>
             <p style="margin-top: 20px; color: var(--text-secondary); max-width: 600px; margin-left: auto; margin-right: auto;">
-                Welcome, Hunter. 15 Dungeon Gates have appeared. Each contains mathematical challenges
+                Welcome to Level Up. 15 Dungeon Gates have appeared. Each contains mathematical challenges
                 aligned to the ancient Common Core Standards. Complete them all to achieve S-Rank mastery.
             </p>
 
@@ -728,7 +728,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 This area is restricted.
             </div>
             <a href="la_index.html" class="nav-btn" style="margin-top: 25px; display: inline-flex; background: linear-gradient(135deg, rgba(0, 212, 170, 0.2), rgba(76, 201, 240, 0.2)); border-color: #00d4aa;">
-                <span style="font-size: 1.2em;">📚</span> Language Arts Hunter Academy
+                <span style="font-size: 1.2em;">📚</span> Language Arts Level Up
             </a>
 
             <div id="bradyPortal" style="display:none; margin-top: 14px;">
@@ -898,7 +898,7 @@ MISSION_TEMPLATE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mission {mission_num:02d} - {title} | Math Hunter Academy</title>
+    <title>Mission {mission_num:02d} - {title} | Level Up</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
     {css}
