@@ -213,6 +213,23 @@
       color: #a7bbd3;
       font-size: 0.92rem;
     }
+
+    .auth-text-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 700;
+      font-family: inherit;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .auth-text-btn:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -246,6 +263,7 @@
 
       <div class="auth-links">
         <p>Need an account? <a id="signupLink" href="signup.html">Create one</a></p>
+        <button type="button" class="auth-text-btn" id="forgotPasswordBtn" onclick="handlePasswordReset()">Forgot password?</button>
       </div>
 
       <a href="index.html" class="guest-link">Continue as guest (progress is not saved)</a>
@@ -280,6 +298,9 @@
         errorEl.style.display = 'block';
       } else if (redirectState.confirmed) {
         successEl.textContent = 'Email confirmed. You can sign in now.';
+        successEl.style.display = 'block';
+      } else if (url.searchParams.get('reset') === '1') {
+        successEl.textContent = 'Password updated. You can sign in now.';
         successEl.style.display = 'block';
       }
 
@@ -343,6 +364,36 @@
       } finally {
         btn.disabled = false;
         btn.textContent = 'Resend Confirmation Email';
+      }
+    }
+
+    async function handlePasswordReset() {
+      const email = document.getElementById('email').value.trim();
+      const errorEl = document.getElementById('authError');
+      const successEl = document.getElementById('authSuccess');
+      const btn = document.getElementById('forgotPasswordBtn');
+
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (!email) {
+        errorEl.textContent = 'Enter your email above, then click Forgot password.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Sending reset link...';
+      try {
+        await MHA_Auth.requestPasswordReset(email);
+        successEl.textContent = 'If this email is registered, a password reset link has been sent. Check inbox and spam.';
+        successEl.style.display = 'block';
+      } catch (err) {
+        errorEl.textContent = MHA_Auth.getFriendlyAuthMessage(err, 'reset');
+        errorEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Forgot password?';
       }
     }
   </script>

@@ -37,6 +37,12 @@ function getLoginRedirectUrl() {
   return loginUrl.toString();
 }
 
+function getPasswordResetRedirectUrl() {
+  const currentUrl = new URL(window.location.href);
+  const resetUrl = new URL('reset-password.html', currentUrl);
+  return resetUrl.toString();
+}
+
 function decodeAuthMessage(value) {
   if (!value) return '';
   try {
@@ -66,6 +72,12 @@ function getFriendlyAuthMessage(error, context = 'auth') {
   if (context === 'resend' && !rawMessage) {
     return 'Unable to resend confirmation email right now. Please try again shortly.';
   }
+  if (context === 'reset' && !rawMessage) {
+    return 'Unable to send password reset email right now. Please try again shortly.';
+  }
+  if (context === 'reset_update' && !rawMessage) {
+    return 'Unable to update password right now. Please request a new reset link.';
+  }
   return rawMessage || 'Authentication failed. Please try again.';
 }
 
@@ -74,6 +86,7 @@ async function processAuthRedirect() {
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
   const code = searchParams.get('code');
   let confirmed = false;
+  let recovery = false;
   let error = null;
 
   if (code) {
@@ -93,6 +106,13 @@ async function processAuthRedirect() {
     confirmed = true;
   }
 
+  if (
+    searchParams.get('type') === 'recovery' ||
+    hashParams.get('type') === 'recovery'
+  ) {
+    recovery = true;
+  }
+
   const redirectError =
     searchParams.get('error_description') ||
     hashParams.get('error_description') ||
@@ -103,7 +123,7 @@ async function processAuthRedirect() {
     error = { message: decodeAuthMessage(redirectError) };
   }
 
-  return { confirmed, error };
+  return { confirmed, recovery, error };
 }
 
 function clearAuthRedirectParams() {
@@ -238,6 +258,18 @@ async function resendSignupConfirmation(email) {
   if (error) throw error;
 }
 
+/** Send password reset email */
+async function requestPasswordReset(email) {
+  const targetEmail = String(email || '').trim();
+  if (!targetEmail) {
+    throw new Error('Enter your email address first.');
+  }
+  const { error } = await getSupabase().auth.resetPasswordForEmail(targetEmail, {
+    redirectTo: getPasswordResetRedirectUrl()
+  });
+  if (error) throw error;
+}
+
 /** Sign in with email and password */
 async function signIn(email, password) {
   const { data, error } = await getSupabase().auth.signInWithPassword({
@@ -332,6 +364,7 @@ window.MHA_Auth = {
   signOut,
   initAuthUI,
   resendSignupConfirmation,
+  requestPasswordReset,
   processAuthRedirect,
   clearAuthRedirectParams,
   getFriendlyAuthMessage
