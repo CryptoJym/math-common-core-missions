@@ -66,21 +66,27 @@
     const nav = document.createElement('nav');
     nav.className = 'brady-topnav';
     nav.innerHTML = `
-      <button class="brady-topnav-back" type="button" aria-label="Back">Back</button>
+      <div class="brady-topnav-left">
+        <button class="brady-topnav-back" type="button" aria-label="Back">Back</button>
+        <div class="brady-topnav-brand">Level Up</div>
+      </div>
       <div class="brady-topnav-links" role="navigation" aria-label="Brady Menu">
         ${primaryLinks.map((l) => {
           const active = normalizeFile(l.href) === file;
           return `<a class="brady-topnav-link ${active ? 'active' : ''}" href="${escapeHtml(l.href)}">${escapeHtml(l.label)}</a>`;
         }).join('')}
       </div>
-      <details class="brady-topnav-more">
-        <summary class="brady-topnav-more-btn">More</summary>
-        <div class="brady-topnav-more-panel" role="menu" aria-label="More links">
-          ${moreLinks.map((l) => `<a href="${escapeHtml(l.href)}">${escapeHtml(l.label)}</a>`).join('')}
-        </div>
-      </details>
-      <span class="sync-chip" title="Sync state">Saved</span>
-      <div class="brady-topnav-context small" data-brady-context style="display:none;"></div>
+      <div class="brady-topnav-right">
+        <details class="brady-topnav-more">
+          <summary class="brady-topnav-more-btn">More</summary>
+          <div class="brady-topnav-more-panel" role="menu" aria-label="More links">
+            ${moreLinks.map((l) => `<a href="${escapeHtml(l.href)}">${escapeHtml(l.label)}</a>`).join('')}
+          </div>
+        </details>
+        <span class="sync-chip" title="Sync state">Saved</span>
+        <span class="brady-topnav-rank">Rank 12 / 2400 XP</span>
+        <div class="brady-topnav-context small" data-brady-context style="display:none;"></div>
+      </div>
     `;
 
     const backBtn = nav.querySelector('.brady-topnav-back');

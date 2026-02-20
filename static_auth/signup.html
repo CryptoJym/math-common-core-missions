@@ -1,110 +1,149 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Account | Level Up</title>
+  <title>Level Up | Create Account</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a0f;
-      --bg-card: #141a2b;
-      --accent-blue: #4cc9f0;
-      --accent-purple: #7b2cbf;
-      --accent-gold: #ffd700;
-      --accent-green: #00ff88;
-      --accent-red: #ff4444;
-      --text-primary: #eaf2ff;
-      --text-secondary: #aab8d5;
+      --bg: #0a0a0f;
+      --line: rgba(77, 202, 239, 0.28);
+      --line-soft: rgba(255, 255, 255, 0.13);
+      --blue: #4cc9f0;
+      --purple: #7b2cbf;
+      --gold: #ffd700;
+      --green: #00ff88;
+      --red: #ff4444;
+      --text: #e7f0ff;
+      --muted: #96aac9;
     }
 
     * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
     }
 
     body {
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 22px;
       font-family: 'Rajdhani', sans-serif;
-      color: var(--text-primary);
+      color: var(--text);
       background:
-        radial-gradient(circle at 8% -10%, rgba(123, 44, 191, 0.25), transparent 42%),
-        radial-gradient(circle at 95% 0%, rgba(76, 201, 240, 0.22), transparent 42%),
-        var(--bg-primary);
+        radial-gradient(circle at 12% 8%, rgba(123, 44, 191, 0.22) 0%, transparent 44%),
+        radial-gradient(circle at 88% 88%, rgba(76, 201, 240, 0.2) 0%, transparent 44%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      overflow: hidden;
     }
 
-    .auth-container {
-      width: min(460px, 100%);
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 255, 136, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.04) 1px, transparent 1px);
+      background-size: 46px 46px;
+      mask-image: radial-gradient(circle at 50% 45%, #000 34%, transparent 88%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .auth-shell {
+      width: min(470px, 100%);
     }
 
     .auth-card {
-      border-radius: 22px;
-      border: 1px solid rgba(76, 201, 240, 0.35);
-      background: linear-gradient(145deg, rgba(21, 26, 44, 0.96), rgba(13, 17, 30, 0.96));
-      box-shadow: 0 18px 38px rgba(4, 8, 20, 0.5);
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: linear-gradient(155deg, rgba(10, 18, 32, 0.9), rgba(13, 19, 33, 0.92));
+      box-shadow: 0 20px 42px rgba(2, 8, 16, 0.5);
       padding: 30px 24px;
+      backdrop-filter: blur(10px);
     }
 
-    .auth-header {
+    .brand {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
     }
 
-    .auth-header h1 {
+    .brand h1 {
       font-family: 'Orbitron', sans-serif;
-      color: var(--accent-gold);
-      font-size: 1.5em;
-      letter-spacing: 1.2px;
+      font-size: 1.75rem;
+      letter-spacing: 0.12em;
+      color: var(--gold);
       text-transform: uppercase;
-      text-shadow: 0 0 16px rgba(255, 215, 0, 0.28);
+      text-shadow: 0 0 14px rgba(255, 215, 0, 0.25);
     }
 
-    .auth-header p {
-      margin-top: 7px;
-      color: var(--accent-blue);
-      letter-spacing: 0.9px;
-      font-size: 0.97em;
+    .brand p {
+      margin-top: 8px;
+      color: var(--blue);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 700;
     }
 
-    .form-group {
-      margin-bottom: 16px;
+    .auth-error,
+    .auth-success {
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      display: none;
+      font-size: 0.95rem;
     }
 
-    .form-group label {
+    .auth-error {
+      border: 1px solid rgba(255, 68, 68, 0.6);
+      background: rgba(255, 68, 68, 0.1);
+      color: var(--red);
+    }
+
+    .auth-success {
+      border: 1px solid rgba(0, 255, 136, 0.5);
+      background: rgba(0, 255, 136, 0.08);
+      color: var(--green);
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field label {
       display: block;
       margin-bottom: 6px;
-      color: var(--accent-blue);
-      font-size: 0.84em;
-      font-weight: 700;
-      letter-spacing: 0.8px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
+      color: var(--blue);
     }
 
-    .form-group input {
+    .field input {
       width: 100%;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-radius: 12px;
-      background: rgba(7, 10, 17, 0.75);
-      color: var(--text-primary);
-      font-family: inherit;
-      font-size: 1em;
-      padding: 12px 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 11px;
+      background: rgba(4, 8, 15, 0.78);
+      color: var(--text);
+      font: inherit;
+      font-size: 1rem;
+      padding: 11px 12px;
     }
 
-    .form-group input:focus {
+    .field input:focus {
       outline: none;
-      border-color: rgba(76, 201, 240, 0.62);
-      box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.14);
+      border-color: rgba(0, 255, 136, 0.64);
+      box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.12);
     }
 
-    .form-group input::placeholder {
-      color: var(--text-secondary);
+    .field input::placeholder {
+      color: var(--muted);
     }
 
     .auth-btn {
@@ -112,20 +151,20 @@
       border-radius: 999px;
       border: 1px solid transparent;
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.85em;
-      letter-spacing: 0.9px;
       text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.76rem;
       padding: 11px 14px;
       cursor: pointer;
       transition: transform 0.12s ease, box-shadow 0.12s ease;
       margin-top: 8px;
       background: linear-gradient(135deg, #0ce08a, #00ff88);
       color: #04110a;
+      box-shadow: 0 0 14px rgba(0, 255, 136, 0.24);
     }
 
     .auth-btn:hover {
       transform: translateY(-1px);
-      box-shadow: 0 0 18px rgba(0, 255, 136, 0.24);
     }
 
     .auth-btn:disabled {
@@ -135,38 +174,17 @@
       box-shadow: none;
     }
 
-    .auth-error,
-    .auth-success {
-      border-radius: 12px;
-      padding: 10px 12px;
-      margin-bottom: 14px;
-      display: none;
-      font-size: 0.95em;
-    }
-
-    .auth-error {
-      border: 1px solid rgba(255, 68, 68, 0.65);
-      background: rgba(255, 68, 68, 0.12);
-      color: var(--accent-red);
-    }
-
-    .auth-success {
-      border: 1px solid rgba(0, 255, 136, 0.6);
-      background: rgba(0, 255, 136, 0.1);
-      color: var(--accent-green);
-    }
-
     .auth-links {
       margin-top: 14px;
       text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.97em;
+      color: var(--muted);
+      font-size: 1rem;
     }
 
     .auth-links a {
-      color: var(--accent-blue);
+      color: var(--blue);
       text-decoration: none;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .auth-links a:hover {
@@ -175,38 +193,38 @@
   </style>
 </head>
 <body>
-  <div class="auth-container">
+  <div class="auth-shell">
     <div class="auth-card">
-      <div class="auth-header">
-        <h1>Create Your Account</h1>
-        <p>Set up Level Up access</p>
+      <div class="brand">
+        <h1>Create Account</h1>
+        <p>Neural Link Registration</p>
       </div>
 
       <div class="auth-error" id="authError"></div>
       <div class="auth-success" id="authSuccess"></div>
 
       <form id="signupForm" onsubmit="handleSignup(event)">
-        <div class="form-group">
-          <label for="displayName">Display name</label>
+        <div class="field">
+          <label for="displayName">Display Name</label>
           <input type="text" id="displayName" placeholder="How should we call you?" required minlength="2" maxlength="30">
         </div>
 
-        <div class="form-group">
+        <div class="field">
           <label for="email">Email</label>
           <input type="email" id="email" placeholder="you@example.com" required>
         </div>
 
-        <div class="form-group">
-          <label for="password">Password</label>
+        <div class="field">
+          <label for="password">Secure Access Key</label>
           <input type="password" id="password" placeholder="At least 6 characters" required minlength="6">
         </div>
 
-        <div class="form-group">
-          <label for="confirmPassword">Confirm password</label>
+        <div class="field">
+          <label for="confirmPassword">Validate Key</label>
           <input type="password" id="confirmPassword" placeholder="Re-enter your password" required minlength="6">
         </div>
 
-        <button type="submit" class="auth-btn" id="submitBtn">Create account</button>
+        <button type="submit" class="auth-btn" id="submitBtn">Create Account</button>
       </form>
 
       <div class="auth-links">
@@ -269,7 +287,7 @@
           window.location.href = next || 'index.html';
         } else {
           const loginUrl = next ? `login.html?next=${encodeURIComponent(next)}` : 'login.html';
-          successEl.innerHTML = `Registration complete. Check your email and click the confirmation link. Then return to <a href="${loginUrl}" style="color: var(--accent-blue);">login</a>.`;
+          successEl.innerHTML = `Registration complete. Check your email and click the confirmation link. Then return to <a href="${loginUrl}" style="color: var(--blue);">login</a>.`;
           successEl.style.display = 'block';
           document.getElementById('signupForm').style.display = 'none';
         }
@@ -277,7 +295,7 @@
         errorEl.textContent = MHA_Auth.getFriendlyAuthMessage(err, 'signup');
         errorEl.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = 'Create account';
+        btn.textContent = 'Create Account';
       }
     }
   </script>

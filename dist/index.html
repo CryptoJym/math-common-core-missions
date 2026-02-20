@@ -1,42 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Level Up | Solo Leveling Edition</title>
+  <title>Level Up | Personal Progression</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-0: #071018;
-      --bg-1: #0d1725;
-      --bg-2: #142335;
-      --card: rgba(17, 31, 47, 0.78);
+      --bg: #0a0a0f;
+      --bg-soft: #121a27;
+      --card: rgba(17, 27, 41, 0.78);
       --line: rgba(255, 255, 255, 0.14);
-      --line-strong: rgba(88, 191, 255, 0.45);
-      --teal: #14d9b6;
-      --blue: #58bfff;
-      --gold: #ffc84d;
-      --ink: #e9f2ff;
-      --muted: #a7bbd2;
-      --danger: #ff5f66;
-      --ok: #3dff9a;
-      --radius-xl: 24px;
-      --radius-lg: 18px;
-      --radius-md: 12px;
-      --shadow: 0 18px 45px rgba(2, 8, 16, 0.45);
+      --line-blue: rgba(76, 201, 240, 0.42);
+      --line-gold: rgba(255, 215, 0, 0.45);
+      --blue: #4cc9f0;
+      --purple: #7b2cbf;
+      --gold: #ffd700;
+      --green: #00ff88;
+      --red: #ff4444;
+      --text: #eaf2ff;
+      --muted: #a6bbd8;
+      --shadow: 0 20px 42px rgba(2, 8, 16, 0.48);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
-      font-family: 'Rajdhani', sans-serif;
-      background:
-        radial-gradient(circle at 8% -2%, rgba(20, 217, 182, 0.16), transparent 38%),
-        radial-gradient(circle at 95% 4%, rgba(88, 191, 255, 0.2), transparent 42%),
-        linear-gradient(160deg, var(--bg-0), var(--bg-1) 45%, var(--bg-2));
-      color: var(--ink);
       min-height: 100vh;
+      font-family: 'Rajdhani', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 8% -2%, rgba(123, 44, 191, 0.2) 0%, transparent 42%),
+        radial-gradient(circle at 94% 2%, rgba(76, 201, 240, 0.2) 0%, transparent 44%),
+        var(--bg);
       line-height: 1.45;
     }
 
@@ -48,286 +50,369 @@
       background-image:
         linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-      background-size: 26px 26px;
-      mask-image: radial-gradient(circle at 50% 20%, #000 45%, transparent 90%);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(circle at 50% 20%, #000 44%, transparent 90%);
       z-index: -1;
     }
 
-    .container {
-      width: min(1180px, 100%);
-      margin: 0 auto;
-      padding: 24px;
+    body.has-user-nav {
+      padding-top: 52px;
     }
 
     .user-nav {
       position: fixed;
-      top: 6px;
+      top: 0;
       left: 0;
       right: 0;
       z-index: 100;
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      gap: 12px;
-      padding: 8px 18px;
-      border-bottom: 1px solid rgba(88, 191, 255, 0.25);
-      background: rgba(7, 16, 24, 0.86);
-      backdrop-filter: blur(8px);
+      gap: 10px;
+      padding: 8px 16px;
+      background: rgba(10, 10, 15, 0.9);
+      border-bottom: 1px solid rgba(76, 201, 240, 0.2);
+      backdrop-filter: blur(10px);
     }
 
     .user-nav-info {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 9px;
     }
 
     .user-nav-rank {
-      padding: 4px 10px;
       border-radius: 999px;
-      background: rgba(20, 217, 182, 0.16);
-      border: 1px solid rgba(20, 217, 182, 0.45);
-      color: var(--teal);
-      font-weight: 700;
-      font-size: 0.78em;
-      letter-spacing: 0.9px;
+      padding: 4px 10px;
+      border: 1px solid rgba(123, 44, 191, 0.45);
+      background: rgba(123, 44, 191, 0.18);
+      color: #dfd0ff;
+      font-size: 0.74rem;
+      font-family: 'Orbitron', sans-serif;
       text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
-    .user-nav-name { color: var(--blue); font-weight: 600; }
-    .user-nav-xp { color: var(--gold); font-size: 0.86em; }
+    .user-nav-name {
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .user-nav-xp {
+      color: var(--gold);
+      font-size: 0.84rem;
+    }
 
     .user-nav-login,
     .user-nav-logout {
-      text-decoration: none;
       border-radius: 999px;
-      padding: 6px 12px;
-      font-size: 0.86em;
-      border: 1px solid var(--line-strong);
+      border: 1px solid rgba(76, 201, 240, 0.45);
+      background: rgba(76, 201, 240, 0.09);
       color: var(--blue);
-      background: rgba(88, 191, 255, 0.1);
-      transition: all 0.15s ease;
-    }
-
-    .user-nav-logout {
-      border-color: rgba(255, 95, 102, 0.52);
-      color: var(--danger);
-      background: rgba(255, 95, 102, 0.1);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-family: 'Orbitron', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 6px 12px;
       cursor: pointer;
     }
 
-    .user-nav-login:hover,
-    .user-nav-logout:hover { transform: translateY(-1px); }
+    .user-nav-logout {
+      border-color: rgba(255, 68, 68, 0.5);
+      color: var(--red);
+      background: rgba(255, 68, 68, 0.1);
+    }
 
-    body.has-user-nav { padding-top: 52px; }
+    .shell {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      transform: rotate(45deg);
+      background: linear-gradient(135deg, #4cc9f0, #7b2cbf);
+    }
+
+    .brand-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.06rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: white;
+    }
+
+    .top-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .top-link {
+      border-radius: 999px;
+      border: 1px solid var(--line-blue);
+      background: rgba(76, 201, 240, 0.08);
+      color: var(--blue);
+      text-decoration: none;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 7px 12px;
+    }
 
     .hero {
-      position: relative;
-      border: 1px solid var(--line-strong);
-      border-radius: var(--radius-xl);
-      padding: 34px 28px;
+      border: 1px solid var(--line-blue);
+      border-radius: 22px;
+      background: linear-gradient(145deg, rgba(13, 22, 34, 0.92), rgba(9, 16, 26, 0.92));
       box-shadow: var(--shadow);
-      background:
-        linear-gradient(140deg, rgba(16, 31, 48, 0.9), rgba(8, 17, 27, 0.88));
+      padding: 30px 24px;
+      position: relative;
       overflow: hidden;
     }
 
     .hero::after {
       content: '';
       position: absolute;
-      right: -80px;
-      top: -70px;
       width: 260px;
       height: 260px;
+      right: -90px;
+      top: -90px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(20, 217, 182, 0.22), transparent 68%);
+      background: radial-gradient(circle, rgba(123, 44, 191, 0.24), transparent 68%);
       pointer-events: none;
     }
 
-    .eyebrow {
+    .status-chip {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      border: 1px solid rgba(20, 217, 182, 0.45);
-      background: rgba(20, 217, 182, 0.12);
-      color: var(--teal);
-      padding: 5px 10px;
       border-radius: 999px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      font-size: 0.82em;
+      border: 1px solid rgba(76, 201, 240, 0.45);
+      background: rgba(76, 201, 240, 0.1);
+      color: var(--blue);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
+      padding: 4px 10px;
     }
 
     .hero h1 {
-      margin-top: 14px;
+      margin-top: 12px;
       font-family: 'Orbitron', sans-serif;
-      font-size: clamp(1.9rem, 4.2vw, 3rem);
-      letter-spacing: 1.2px;
+      font-size: clamp(1.9rem, 3.4vw, 3rem);
+      line-height: 1.05;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--ink);
-      text-shadow: 0 0 20px rgba(88, 191, 255, 0.24);
+      color: var(--gold);
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.24);
     }
 
-    .subtitle {
+    .hero p {
       margin-top: 10px;
+      font-size: 1.06rem;
+      max-width: 720px;
       color: var(--muted);
-      max-width: 760px;
-      font-size: 1.06em;
     }
 
     .hero-actions {
-      margin-top: 20px;
+      margin-top: 18px;
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-    }
-
-    .chip-link {
-      display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 9px 13px;
+    }
+
+    .hero-btn {
       border-radius: 999px;
+      border: 1px solid transparent;
       text-decoration: none;
-      font-weight: 700;
-      font-size: 0.92em;
-      border: 1px solid var(--line-strong);
-      background: rgba(88, 191, 255, 0.12);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 10px 14px;
+    }
+
+    .hero-btn.primary {
+      background: linear-gradient(135deg, #0ce08a, #00ff88);
+      color: #04110a;
+    }
+
+    .hero-btn.secondary {
+      border-color: var(--line-blue);
+      background: rgba(76, 201, 240, 0.1);
       color: var(--blue);
-      transition: all 0.15s ease;
     }
 
-    .chip-link:hover { transform: translateY(-1px); }
-
-    .chip-link.gold {
-      border-color: rgba(255, 200, 77, 0.55);
-      background: rgba(255, 200, 77, 0.12);
+    .hero-btn.gold {
+      border-color: var(--line-gold);
+      background: rgba(255, 215, 0, 0.1);
       color: var(--gold);
-    }
-
-    .chip-link.green {
-      border-color: rgba(20, 217, 182, 0.48);
-      background: rgba(20, 217, 182, 0.12);
-      color: var(--teal);
     }
 
     #authNotice {
       display: none;
-      margin-top: 14px;
-      border-radius: var(--radius-md);
-      padding: 12px 14px;
-      border: 1px solid rgba(255, 95, 102, 0.6);
-      background: rgba(255, 95, 102, 0.14);
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 68, 68, 0.62);
+      background: rgba(255, 68, 68, 0.12);
       color: #ffd9db;
+      padding: 10px 12px;
+    }
+
+    .feature-grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .feature {
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.03);
+      padding: 14px;
+    }
+
+    .feature h3 {
+      font-family: 'Orbitron', sans-serif;
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.76rem;
+    }
+
+    .feature p {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 0.92rem;
     }
 
     .rank-wrap {
-      margin-top: 26px;
+      margin-top: 24px;
       display: grid;
-      gap: 18px;
+      gap: 16px;
     }
 
     .rank-section {
+      border-radius: 18px;
       border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      padding: 14px;
-      background: rgba(10, 20, 32, 0.76);
+      background: rgba(10, 18, 30, 0.76);
       box-shadow: var(--shadow);
+      padding: 14px;
     }
 
     .rank-head {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
     }
 
     .rank-title {
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.74rem;
+      color: #dbe7ff;
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.95em;
-      letter-spacing: 0.9px;
-      text-transform: uppercase;
-      color: var(--ink);
+      gap: 8px;
+    }
+
+    .rank-copy {
+      color: var(--muted);
+      font-size: 0.95rem;
     }
 
     .rank-badge {
       border-radius: 999px;
-      padding: 5px 10px;
-      font-weight: 700;
-      font-size: 0.78em;
-      letter-spacing: 0.9px;
-      text-transform: uppercase;
+      padding: 3px 8px;
       border: 1px solid transparent;
+      font-size: 0.68rem;
     }
 
     .rank-E { background: rgba(175, 185, 198, 0.16); border-color: rgba(175, 185, 198, 0.45); color: #dbe5f2; }
     .rank-D { background: rgba(88, 191, 255, 0.16); border-color: rgba(88, 191, 255, 0.5); color: var(--blue); }
-    .rank-C { background: rgba(20, 217, 182, 0.16); border-color: rgba(20, 217, 182, 0.48); color: var(--teal); }
-    .rank-B { background: rgba(150, 127, 255, 0.16); border-color: rgba(150, 127, 255, 0.5); color: #d7c9ff; }
-    .rank-A { background: rgba(255, 200, 77, 0.18); border-color: rgba(255, 200, 77, 0.54); color: var(--gold); }
-
-    .rank-copy { color: var(--muted); font-size: 0.95em; }
+    .rank-C { background: rgba(0, 255, 136, 0.16); border-color: rgba(0, 255, 136, 0.45); color: var(--green); }
+    .rank-B { background: rgba(123, 44, 191, 0.2); border-color: rgba(123, 44, 191, 0.48); color: #ddcbff; }
+    .rank-A { background: rgba(255, 215, 0, 0.16); border-color: rgba(255, 215, 0, 0.45); color: var(--gold); }
 
     .gates-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
     }
 
     .gate-card {
       position: relative;
-      text-decoration: none;
-      color: var(--ink);
-      border-radius: var(--radius-md);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: block;
+      border-radius: 12px;
+      border: 1px solid var(--line);
       background: var(--card);
-      padding: 12px;
-      min-height: 102px;
-      transition: all 0.15s ease;
-      display: grid;
-      grid-template-rows: auto auto 1fr;
-      gap: 6px;
+      box-shadow: 0 12px 24px rgba(5, 10, 18, 0.35);
+      padding: 11px;
+      color: inherit;
+      text-decoration: none;
+      min-height: 112px;
     }
 
     .gate-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(88, 191, 255, 0.6);
-      box-shadow: 0 0 0 1px rgba(88, 191, 255, 0.26), 0 16px 28px rgba(0, 10, 20, 0.32);
+      border-color: var(--line-blue);
+      box-shadow: 0 0 0 1px rgba(76, 201, 240, 0.18), 0 14px 30px rgba(5, 10, 18, 0.44);
     }
 
     .gate-top {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      color: var(--muted);
-      font-size: 0.8em;
-      letter-spacing: 0.6px;
+      align-items: center;
+      margin-bottom: 8px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.67rem;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
+      color: var(--blue);
     }
 
     .gate-icon {
-      font-size: 1.3em;
-      line-height: 1;
+      opacity: 0.8;
+      font-size: 0.95rem;
     }
 
     .gate-card h3 {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.88em;
-      letter-spacing: 0.7px;
-      color: var(--ink);
+      font-size: 0.83rem;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
+      color: var(--text);
     }
 
     .gate-card p {
+      margin-top: 6px;
       color: var(--muted);
-      font-size: 0.9em;
-      line-height: 1.25;
+      font-size: 0.88rem;
+      line-height: 1.26;
     }
 
     .completion-badge {
@@ -336,43 +421,70 @@
       bottom: 10px;
       border-radius: 999px;
       padding: 3px 8px;
-      font-weight: 700;
-      font-size: 0.7em;
-      letter-spacing: 0.8px;
+      border: 1px solid rgba(0, 255, 136, 0.48);
+      color: var(--green);
+      background: rgba(0, 255, 136, 0.12);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.64rem;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      border: 1px solid rgba(61, 255, 154, 0.5);
-      color: var(--ok);
-      background: rgba(61, 255, 154, 0.12);
     }
 
     .gate-card.mission-cleared {
-      border-color: rgba(61, 255, 154, 0.45);
-      box-shadow: inset 0 0 0 1px rgba(61, 255, 154, 0.22);
+      border-color: rgba(0, 255, 136, 0.5);
+      box-shadow: inset 0 0 0 1px rgba(0, 255, 136, 0.18), 0 12px 26px rgba(5, 10, 18, 0.4);
     }
 
-    @media (max-width: 760px) {
-      .container { padding: 16px; }
-      .hero { padding: 22px 16px; }
-      .user-nav { padding: 8px 10px; gap: 8px; }
-      .user-nav-xp { display: none; }
-      .gates-grid { grid-template-columns: 1fr; }
+    @media (max-width: 900px) {
+      .feature-grid,
+      .gates-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <span class="brand-name">Level Up</span>
+      </div>
+      <div class="top-links">
+        <a class="top-link" href="login.html">Login</a>
+        <a class="top-link" href="signup.html">Sign Up</a>
+      </div>
+    </div>
+
     <section class="hero">
-      <span class="eyebrow">Solo Leveling Edition</span>
-      <h1>Level Up</h1>
-      <p class="subtitle">Short missions. Clear progress. One next step at a time.</p>
+      <span class="status-chip">System Status: Ready</span>
+      <h1>One Clear Next Step</h1>
+      <p>Short missions. Clear progress. Daily momentum across Math, Reading, and your Brady command workflow.</p>
 
       <div id="authNotice">That page is available only to an authorized account.</div>
 
       <div class="hero-actions">
-        <a class="chip-link green" href="la_index.html"><span>📚</span>Language Arts Level Up</a>
+        <a class="hero-btn primary" href="signup.html">Start Free</a>
+        <a class="hero-btn secondary" href="login.html">Log In</a>
+        <a class="hero-btn secondary" href="la_index.html">Language Arts</a>
         <div id="bradyPortal" style="display:none;">
-          <a class="chip-link gold" href="brady/index.html"><span>🧠</span>Brady Training HQ</a>
+          <a class="hero-btn gold" href="brady/index.html">Open Brady HQ</a>
         </div>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature">
+          <h3>Missions</h3>
+          <p>Focus on the next assignment and avoid overload.</p>
+        </article>
+        <article class="feature">
+          <h3>Daily</h3>
+          <p>Three simple steps. Save progress as you go.</p>
+        </article>
+        <article class="feature">
+          <h3>Coach</h3>
+          <p>Use AI prompts to get unstuck and keep moving.</p>
+        </article>
       </div>
     </section>
 
@@ -460,9 +572,7 @@
       const params = new URLSearchParams(window.location.search);
       if (params.get('unauthorized') === '1') {
         const notice = document.getElementById('authNotice');
-        if (notice) {
-          notice.style.display = 'block';
-        }
+        if (notice) notice.style.display = 'block';
       }
     });
   </script>

@@ -134,26 +134,54 @@ body.has-user-nav {
 
 .brady-topnav {
   position: sticky;
-  top: 64px;
+  top: 62px;
   z-index: 35;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(76, 201, 240, 0.3);
+  border-radius: 14px;
+  background: rgba(9, 13, 22, 0.92);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
+}
+
+.brady-topnav-left {
+  display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  margin-bottom: 18px;
-  border: 1px solid rgba(76, 201, 240, 0.25);
-  border-radius: 18px;
-  background: rgba(7, 10, 18, 0.84);
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(8px);
+  min-width: 190px;
+}
+
+.brady-topnav-brand {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.72em;
+  letter-spacing: 1.7px;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  border: 1px solid rgba(255, 215, 0, 0.32);
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: rgba(255, 215, 0, 0.08);
 }
 
 .brady-topnav-links {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   align-items: center;
+  justify-content: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.brady-topnav-links::-webkit-scrollbar {
+  display: none;
 }
 
 .brady-topnav-link,
@@ -161,23 +189,24 @@ body.has-user-nav {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 11px;
+  padding: 7px 10px;
   border-radius: 999px;
-  border: 1px solid var(--border-purple);
-  background: rgba(123, 44, 191, 0.14);
-  color: var(--text-primary);
+  border: 1px solid rgba(123, 44, 191, 0.28);
+  background: rgba(123, 44, 191, 0.08);
+  color: var(--text-secondary);
   text-decoration: none;
   font-family: 'Orbitron', sans-serif;
-  font-size: 0.74em;
-  letter-spacing: 0.8px;
+  font-size: 0.68em;
+  letter-spacing: 1px;
   text-transform: uppercase;
   transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  white-space: nowrap;
 }
 
 .brady-topnav-back {
   appearance: none;
   cursor: pointer;
-  border-color: rgba(76, 201, 240, 0.55);
+  border-color: rgba(76, 201, 240, 0.45);
   background: rgba(76, 201, 240, 0.12);
   color: var(--accent-blue);
 }
@@ -190,13 +219,20 @@ body.has-user-nav {
 }
 
 .brady-topnav-link.active {
-  color: var(--accent-green);
-  border-color: var(--border-green);
-  background: rgba(0, 255, 136, 0.12);
+  color: var(--accent-gold);
+  border-color: rgba(255, 215, 0, 0.45);
+  background: rgba(255, 215, 0, 0.12);
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.28);
+}
+
+.brady-topnav-right {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .brady-topnav-more {
-  margin-left: auto;
   position: relative;
 }
 
@@ -249,10 +285,25 @@ body.has-user-nav {
 }
 
 .brady-topnav-context {
-  margin-left: 6px;
-  color: var(--text-secondary);
-  font-size: 0.84em;
+  color: var(--accent-blue);
+  font-size: 0.74em;
   white-space: nowrap;
+  border: 1px solid rgba(76, 201, 240, 0.32);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(76, 201, 240, 0.08);
+}
+
+.brady-topnav-rank {
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: var(--accent-gold);
+  background: rgba(255, 215, 0, 0.08);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.68em;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
 }
 
 .sync-chip {
@@ -671,6 +722,17 @@ textarea:focus {
 
   .brady-topnav {
     top: 60px;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .brady-topnav-brand,
+  .brady-topnav-rank {
+    display: none;
+  }
+
+  .brady-topnav-right {
+    gap: 6px;
   }
 
   .page-header {
@@ -685,13 +747,10 @@ textarea:focus {
     display: none;
   }
 
-  .brady-topnav-more {
-    margin-left: 0;
-  }
-
   .brady-topnav-context {
-    width: 100%;
-    margin-left: 0;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: normal;
   }
 }
