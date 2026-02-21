@@ -70,7 +70,7 @@
         <button class="brady-topnav-back" type="button" aria-label="Back">Back</button>
         <div class="brady-topnav-brand">Level Up</div>
       </div>
-      <div class="brady-topnav-links" role="navigation" aria-label="Brady Menu">
+      <div class="brady-topnav-links" role="navigation" aria-label="Level Up Menu">
         ${primaryLinks.map((l) => {
           const active = normalizeFile(l.href) === file;
           return `<a class="brady-topnav-link ${active ? 'active' : ''}" href="${escapeHtml(l.href)}">${escapeHtml(l.label)}</a>`;

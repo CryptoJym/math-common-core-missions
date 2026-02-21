@@ -171,7 +171,7 @@ async function main() {
     renderTodaySummary(dayISO, daily, readingMinutesWeek);
     renderNextUp(target, progressMap[target?.id]);
   } catch (e) {
-    setAlert(e?.message || 'Unable to load Brady dashboard.');
+    setAlert(e?.message || 'Unable to load Level Up dashboard.');
   }
 }
 

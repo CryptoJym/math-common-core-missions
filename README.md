@@ -1,4 +1,15 @@
-# Math Common Core Missions
+# Math Common Core Missions (Level Up)
+
+This repo now powers the **Level Up** student experience (landing, login/signup, Brady student shell, and mission pages).
+
+If you need a plain-language map of where everything lives, start here:
+- `SYSTEM_MAP.md`
+
+Fast health check (one command):
+
+```bash
+bash scripts/autopilot_check.sh
+```
 
 Interactive math lessons aligned to **6th Grade Common Core Standards**, designed for homeschool and family learning environments.
 

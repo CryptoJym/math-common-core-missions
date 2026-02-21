@@ -32,3 +32,4 @@ node_modules/
 # Python caches
 __pycache__/
 .pytest_cache/
+.venv/

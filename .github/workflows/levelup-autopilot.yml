@@ -1,0 +1,42 @@
+name: Level Up Autopilot
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      - name: Rebuild dist
+        run: python build_solo_leveling_site.py
+
+      - name: Run JS tests
+        run: node --test js_tests/*.test.js
+
+      - name: Run build output tests
+        run: pytest tests/test_build_output.py
+
+      - name: Verify dist is committed
+        run: git diff --exit-code -- dist

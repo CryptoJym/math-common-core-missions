@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Brady Admin Portal | Level Up</title>
+  <title>Level Up Admin | Level Up</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="brady.css">
@@ -11,7 +11,7 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <h1>Brady Admin Portal</h1>
+      <h1>Level Up Admin</h1>
       <p>Manage learner access and export progress.</p>
       <div class="shell-meta">
         <span class="sync-chip">Saved</span>
@@ -21,7 +21,7 @@
     <div id="alert" class="alert" style="display:none;"></div>
 
     <div class="section">
-      <h2>Current Account</h2>
+      <h2>Active Operator</h2>
       <div id="accountSummary" class="small">Loading...</div>
       <div class="btn-row">
         <button class="btn secondary" type="button" id="clearContextBtn">Work as me</button>
@@ -30,7 +30,7 @@
     </div>
 
     <div class="section">
-      <h2>Add Learner</h2>
+      <h2>Link Learner</h2>
       <form id="addSubAccountForm">
         <div class="field-row">
           <div>
@@ -59,7 +59,7 @@
     </div>
 
     <div class="section">
-      <h2>Linked Learners</h2>
+      <h2>Linked Accounts</h2>
       <div id="subAccountSummary" class="small">Loading...</div>
       <div id="subAccountList" style="margin-top:12px;">Loading...</div>
     </div>
@@ -107,6 +107,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/config.js"></script>
   <script src="../js/auth.js"></script>
+  <script src="../js/sync_status.js"></script>
   <script src="../js/brady_access.js"></script>
   <script src="../js/brady_nav.js"></script>
   <script src="../js/brady_admin.js"></script>

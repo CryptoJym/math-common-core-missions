@@ -321,6 +321,24 @@ body.has-user-nav {
   text-transform: uppercase;
 }
 
+.sync-chip-saved {
+  border-color: var(--border-green);
+  color: var(--accent-green);
+  background: rgba(0, 255, 136, 0.09);
+}
+
+.sync-chip-syncing {
+  border-color: rgba(76, 201, 240, 0.48);
+  color: var(--accent-blue);
+  background: rgba(76, 201, 240, 0.11);
+}
+
+.sync-chip-offline {
+  border-color: rgba(255, 68, 68, 0.56);
+  color: var(--accent-red);
+  background: rgba(255, 68, 68, 0.12);
+}
+
 .page-header {
   padding: 24px 22px;
   margin-bottom: 18px;

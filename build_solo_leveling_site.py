@@ -733,7 +733,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
             <div id="bradyPortal" style="display:none; margin-top: 14px;">
                 <a href="brady/index.html" class="nav-btn" style="display: inline-flex; background: linear-gradient(135deg, rgba(255, 215, 0, 0.16), rgba(123, 44, 191, 0.16)); border-color: rgba(255, 215, 0, 0.55);">
-                    <span style="font-size: 1.2em;">🧠</span> Brady Training HQ
+                    <span style="font-size: 1.2em;">🧠</span> Level Up HQ
                 </a>
             </div>
         </div>
@@ -752,7 +752,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             document.body.classList.add('has-user-nav');
             await MHA_Progress.initIndexProgress();
 
-            // Show Brady-only portal link for the Brady account.
+            // Show the private student portal link for authorized accounts.
             const session = await MHA_Auth.getSession();
             const email = String(session?.user?.email || '').trim().toLowerCase();
             const allowed = ['bradyhyro67@gmail.com', 'james@jamesbrady.org'];

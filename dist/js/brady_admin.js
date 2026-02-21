@@ -136,7 +136,7 @@ function bindClearContextButton() {
 
       const email = MHA_Brady.normalizeEmail(session?.user?.email);
       if (!MHA_Brady.isAllowedEmail(email)) {
-        setAlert('Only Brady admin accounts can manage learners.');
+        setAlert('Only Level Up admin accounts can manage learners.');
         return;
       }
 
@@ -468,7 +468,7 @@ function bindAddSubAccountSubmit(session) {
       }
       const isAdmin = MHA_Brady.isAllowedEmail(MHA_Brady.normalizeEmail(activeSession.user.email));
       if (!isAdmin) {
-        setAlert('Only Brady admin accounts can add learners.');
+        setAlert('Only Level Up admin accounts can add learners.');
         return;
       }
       await addSubAccount(activeSession);
@@ -555,7 +555,7 @@ async function main() {
   document.body.classList.add('has-user-nav');
 
   if (!MHA_Brady.isAllowedEmail(MHA_Brady.normalizeEmail(gate.session.user.email))) {
-    setAlert('Only Brady admin accounts can manage learners.');
+    setAlert('Only Level Up admin accounts can manage learners.');
     return;
   }
 
