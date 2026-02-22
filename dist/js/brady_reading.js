@@ -39,6 +39,10 @@ function bookTitle(bookId) {
   return match ? match.title : String(bookId || '');
 }
 
+function safeHtml(text) {
+  return String(text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function readingDraftKey(dayISO, bookId) {
   // Local-only key on purpose: supports autosave even before auth/gate resolves.
   // Remote drafts are stored separately in Supabase (brady_reading_drafts).
@@ -192,7 +196,7 @@ function utf8ToBase64(text) {
   return { base64: btoa(binary), sizeBytes: bytes.length };
 }
 
-async function upsertWorksheetArtifact(queryUserId, dayISO, bookId, minutes, journal) {
+async function upsertWorksheetArtifact(queryUserId, dayISO, bookId, minutes, pagesRead, rememberedNotes, journal) {
   const sb = MHA_Auth.getSupabase();
   const title = bookTitle(bookId);
   const assignmentId = `reading_worksheet_${String(bookId || '')}`;
@@ -202,6 +206,8 @@ async function upsertWorksheetArtifact(queryUserId, dayISO, bookId, minutes, jou
     `Date: ${String(dayISO || '')}`,
     `Book: ${title}`,
     `Minutes: ${minutes ?? ''}`,
+    `Pages read: ${String(pagesRead || '').trim()}`,
+    `What I remember: ${String(rememberedNotes || '').trim()}`,
     '',
     'Student responses:',
     '---',
@@ -314,6 +320,73 @@ function renderWorksheetReview(result) {
   box.style.display = 'block';
 }
 
+async function generateReadingQuestions(queryUserId) {
+  const token = await MHA_Auth.getAccessToken();
+  const day = document.getElementById('day')?.value || todayLocalISO();
+  const bookId = document.getElementById('book')?.value || '';
+  const pagesRead = document.getElementById('pagesRead')?.value || '';
+  const rememberedNotes = document.getElementById('rememberedNotes')?.value || '';
+  const journal = document.getElementById('journal')?.value || '';
+
+  const resp = await fetch('/api/brady/reading-questions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      day,
+      bookId,
+      pagesRead,
+      rememberedNotes,
+      journal,
+      queryUserId,
+    }),
+  });
+
+  const body = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    const err = new Error(body?.error || `AI questions failed (${resp.status}).`);
+    err.statusCode = resp.status;
+    err.errorCode = body?.error_code || body?.errorCode || '';
+    throw err;
+  }
+  return body || {};
+}
+
+function renderReadingQuestions(result) {
+  const box = document.getElementById('readingQuestionsBox');
+  const metaEl = document.getElementById('readingQuestionsMeta');
+  const listEl = document.getElementById('readingQuestionsList');
+  if (!box || !listEl) return;
+
+  const questions = Array.isArray(result?.questions) ? result.questions : [];
+  if (!questions.length) {
+    if (metaEl) metaEl.textContent = 'No questions generated yet.';
+    listEl.innerHTML = '';
+    box.style.display = 'block';
+    return;
+  }
+
+  const provider = String(result?.provider || 'fallback');
+  const model = String(result?.model || '');
+  if (metaEl) {
+    metaEl.textContent = `Generated ${questions.length} questions via ${provider}${model ? ` (${model})` : ''}.`;
+  }
+
+  listEl.innerHTML = questions.slice(0, 8).map((q) => {
+    const question = safeHtml(q?.question || q?.prompt || '');
+    const focus = safeHtml(String(q?.focus || 'comprehension').trim());
+    const why = safeHtml(q?.why || '');
+    return `<li style="margin-bottom:10px;">
+      <div>${question}</div>
+      <div class="small" style="margin-top:4px;">Focus: <span class="mono">${focus}</span>${why ? ` — ${why}` : ''}</div>
+    </li>`;
+  }).join('');
+
+  box.style.display = 'block';
+}
+
 async function signOutLocalAndRedirectToLogin(nextPath) {
   try {
     await MHA_Auth.getSupabase().auth.signOut({ scope: 'local' });
@@ -328,7 +401,7 @@ async function loadReadingDraftRow(session, queryUserId, dayISO, bookId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_reading_drafts')
-    .select('day,book_id,minutes,journal,updated_at')
+    .select('day,book_id,minutes,pages_read,remembered_notes,journal,updated_at')
     .eq('user_id', queryUserId)
     .eq('day', dayISO)
     .eq('book_id', bookId)
@@ -337,7 +410,7 @@ async function loadReadingDraftRow(session, queryUserId, dayISO, bookId) {
   return data || null;
 }
 
-async function saveReadingDraftRow(session, queryUserId, dayISO, bookId, minutes, journal) {
+async function saveReadingDraftRow(session, queryUserId, dayISO, bookId, minutes, pagesRead, rememberedNotes, journal) {
   void session;
   const sb = MHA_Auth.getSupabase();
   const { error } = await sb
@@ -347,6 +420,8 @@ async function saveReadingDraftRow(session, queryUserId, dayISO, bookId, minutes
       day: dayISO,
       book_id: bookId,
       minutes,
+      pages_read: pagesRead,
+      remembered_notes: rememberedNotes,
       journal,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,day,book_id' });
@@ -369,27 +444,34 @@ function setAiPrompts() {
   const day = document.getElementById('day')?.value || todayLocalISO();
   const bookId = document.getElementById('book')?.value || BRADY_BOOKS[0]?.id;
   const minutes = document.getElementById('minutes')?.value || '';
+  const pagesRead = document.getElementById('pagesRead')?.value || '';
+  const rememberedNotes = document.getElementById('rememberedNotes')?.value || '';
   const journal = document.getElementById('journal')?.value || '';
   const title = bookTitle(bookId);
 
   const chatgpt = [
     `I read "${title}" on ${day} for ${minutes || '?'} minutes.`,
+    `Pages: ${pagesRead || '(not provided)'}`,
     '',
-    'Ask me 6 reflection questions that connect the reading to my real life.',
-    'Then help me write a journal entry in my voice (keep it honest, not cheesy).',
+    'Ask me 6 simple comprehension questions to test understanding and the message I am gleaning.',
+    'Then ask for evidence from the text for at least 2 answers.',
+    'Then help me write a short workbook entry in my voice (clear and honest).',
     'Finally, give me 3 specific actions I can take today based on what I read.',
     '',
-    'Here are my rough notes (optional):',
-    journal ? journal : '(no notes yet)',
+    'What I remember:',
+    rememberedNotes || '(none yet)',
+    '',
+    'Workbook notes:',
+    journal || '(none yet)',
   ].join('\n');
 
   const codex = [
     'Help me build a tiny local "reading tracker" script.',
-    '- Input: date, book, minutes, journal',
+    '- Input: date, book, pages_read, minutes, remembered_notes, workbook_notes',
     '- Output: weekly minutes totals, streaks, and a simple report',
     '- Save data in a local JSON file',
     '',
-    `Seed today: ${day}, ${title}, ${minutes || 0} minutes`,
+    `Seed today: ${day}, ${title}, pages ${pagesRead || '?'}, ${minutes || 0} minutes`,
   ].join('\n');
 
   const claude = [
@@ -446,7 +528,7 @@ function bindPromptControls() {
   const maybeUpdatePrompts = () => {
     if (aiBox && aiBox.style.display !== 'none') setAiPrompts();
   };
-  ['day', 'book', 'minutes', 'journal'].forEach((id) => {
+  ['day', 'book', 'minutes', 'pagesRead', 'rememberedNotes', 'journal'].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('input', maybeUpdatePrompts);
@@ -471,7 +553,7 @@ async function loadReadingLogs(session, queryUserId) {
   const sb = MHA_Auth.getSupabase();
   const { data, error } = await sb
     .from('brady_reading_log')
-    .select('day,book_id,minutes,journal,created_at')
+    .select('day,book_id,pages_read,minutes,remembered_notes,journal,created_at')
     .eq('user_id', queryUserId)
     .order('day', { ascending: false })
     .limit(60);
@@ -483,18 +565,28 @@ function renderReadingLogs(rows) {
   const tbody = document.getElementById('readingRows');
   if (!tbody) return;
 
+  const clip = (value, maxLen = 240) => {
+    const s = String(value || '').trim();
+    if (!s) return '';
+    return s.length > maxLen ? `${s.slice(0, maxLen - 1)}…` : s;
+  };
+
   tbody.innerHTML = (rows || []).map((r) => {
     const day = r.day || '';
     const book = bookTitle(r.book_id);
+    const pages = r.pages_read || '';
     const minutes = r.minutes ?? '';
+    const remembered = clip(r.remembered_notes || '', 260);
     const journal = (r.journal || '').trim();
-    const safe = (s) => String(s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const workbook = clip(journal, 260);
     return `
       <tr>
-        <td class="mono">${safe(day)}</td>
-        <td>${safe(book)}</td>
-        <td class="mono">${safe(minutes)}</td>
-        <td>${safe(journal)}</td>
+        <td class="mono">${safeHtml(day)}</td>
+        <td>${safeHtml(book)}</td>
+        <td class="mono">${safeHtml(pages)}</td>
+        <td class="mono">${safeHtml(minutes)}</td>
+        <td>${safeHtml(remembered)}</td>
+        <td>${safeHtml(workbook)}</td>
       </tr>
     `;
   }).join('');
@@ -512,18 +604,24 @@ async function saveReading(session, queryUserId) {
   const bookId = document.getElementById('book')?.value;
   const minutesRaw = document.getElementById('minutes')?.value;
   const minutes = Number(minutesRaw);
+  const pagesRead = String(document.getElementById('pagesRead')?.value || '').trim();
+  const rememberedNotes = String(document.getElementById('rememberedNotes')?.value || '').trim();
   const journal = document.getElementById('journal')?.value || null;
 
   if (!bookId) throw new Error('Select a book.');
   if (!Number.isFinite(minutes) || minutes < 0 || minutes > 600) {
     throw new Error('Minutes must be a number between 0 and 600.');
   }
+  if (pagesRead.length > 120) throw new Error('Pages Read is too long.');
+  if (rememberedNotes.length > 4000) throw new Error('What I Remember is too long.');
 
   const { error } = await sb.from('brady_reading_log').upsert({
     user_id: queryUserId,
     day,
     book_id: bookId,
     minutes,
+    pages_read: pagesRead || null,
+    remembered_notes: rememberedNotes || null,
     journal,
   }, { onConflict: 'user_id,day,book_id' });
   if (error) throw error;
@@ -611,21 +709,31 @@ async function main() {
 
     const applyDraftToForm = (draft) => {
       const minutesEl = document.getElementById('minutes');
+      const pagesEl = document.getElementById('pagesRead');
+      const rememberedEl = document.getElementById('rememberedNotes');
       const journalEl = document.getElementById('journal');
       if (minutesEl) minutesEl.value = draft?.minutes != null ? String(draft.minutes) : '';
+      if (pagesEl) pagesEl.value = String(draft?.pages_read || '');
+      if (rememberedEl) rememberedEl.value = String(draft?.remembered_notes || '');
       if (journalEl) journalEl.value = String(draft?.journal || '');
     };
 
     const clearFormFields = () => {
       const minutesEl = document.getElementById('minutes');
+      const pagesEl = document.getElementById('pagesRead');
+      const rememberedEl = document.getElementById('rememberedNotes');
       const journalEl = document.getElementById('journal');
       if (minutesEl) minutesEl.value = '';
+      if (pagesEl) pagesEl.value = '';
+      if (rememberedEl) rememberedEl.value = '';
       if (journalEl) journalEl.value = '';
     };
 
     const captureDraftPayload = () => {
       const { day, bookId } = getCurrentKey();
       const minutesRaw = document.getElementById('minutes')?.value;
+      const pagesRead = String(document.getElementById('pagesRead')?.value || '').trim();
+      const rememberedNotes = String(document.getElementById('rememberedNotes')?.value || '').trim();
       const journal = document.getElementById('journal')?.value || '';
       const minutesNum = minutesRaw === '' ? null : Number(minutesRaw);
       const minutes = Number.isFinite(minutesNum) ? Number(minutesNum) : null;
@@ -633,6 +741,8 @@ async function main() {
         day,
         book_id: bookId,
         minutes,
+        pages_read: pagesRead || null,
+        remembered_notes: rememberedNotes || null,
         journal,
         updated_at: new Date().toISOString(),
       };
@@ -650,7 +760,16 @@ async function main() {
       draftSaveTimer = window.setTimeout(async () => {
         const payload = captureDraftPayload();
         try {
-          await saveReadingDraftRow(gateSession, queryUserId, payload.day, payload.book_id, payload.minutes, payload.journal || null);
+          await saveReadingDraftRow(
+            gateSession,
+            queryUserId,
+            payload.day,
+            payload.book_id,
+            payload.minutes,
+            payload.pages_read || null,
+            payload.remembered_notes || null,
+            payload.journal || null,
+          );
           setDraftMsg('Draft saved.');
         } catch (_) {
           setDraftMsg('Draft saved locally (offline).');
@@ -696,7 +815,7 @@ async function main() {
     };
 
     // Bind drafts immediately (so refresh/page changes don't lose work even if auth is still loading).
-    ['minutes', 'journal'].forEach((id) => {
+    ['minutes', 'pagesRead', 'rememberedNotes', 'journal'].forEach((id) => {
       const el = document.getElementById(id);
       if (!el) return;
       el.addEventListener('input', onInput);
@@ -743,7 +862,16 @@ async function main() {
       try {
         const payload = writeLocalNow();
         if (!gateSession || !queryUserId) return;
-        await saveReadingDraftRow(gateSession, queryUserId, payload.day, payload.book_id, payload.minutes, payload.journal || null);
+        await saveReadingDraftRow(
+          gateSession,
+          queryUserId,
+          payload.day,
+          payload.book_id,
+          payload.minutes,
+          payload.pages_read || null,
+          payload.remembered_notes || null,
+          payload.journal || null,
+        );
       } catch (_) {
         // best effort
       }
@@ -755,6 +883,38 @@ async function main() {
 
     const rows = await loadReadingLogs(gateSession, queryUserId);
     renderReadingLogs(rows);
+
+    const questionsBtn = document.getElementById('generateQuestions');
+    if (questionsBtn) {
+      questionsBtn.addEventListener('click', async () => {
+        setAlert('');
+        questionsBtn.disabled = true;
+        const originalText = questionsBtn.textContent;
+        questionsBtn.textContent = 'Generating…';
+        try {
+          const out = await generateReadingQuestions(queryUserId);
+          renderReadingQuestions(out);
+          setAlert('Questions ready.');
+          setTimeout(() => setAlert(''), 1200);
+        } catch (e) {
+          const status = Number(e?.statusCode || e?.status || 0);
+          const code = String(e?.errorCode || e?.error_code || '');
+          const msg = String(e?.message || '').toLowerCase();
+          const looksLikeMissingSession = status === 401
+            || code === 'session_not_found'
+            || msg.includes('session_not_found')
+            || msg.includes('session_id claim');
+          if (looksLikeMissingSession) {
+            await signOutLocalAndRedirectToLogin('brady/reading.html');
+            return;
+          }
+          setAlert(e?.message || 'Unable to generate questions.');
+        } finally {
+          questionsBtn.disabled = false;
+          questionsBtn.textContent = originalText || 'AI questions';
+        }
+      });
+    }
 
     const aiCheckBtn = document.getElementById('aiCheckWorksheet');
     if (aiCheckBtn) {
@@ -772,13 +932,23 @@ async function main() {
           const minutesRaw = document.getElementById('minutes')?.value;
           const minutesNum = minutesRaw === '' ? null : Number(minutesRaw);
           const minutes = Number.isFinite(minutesNum) ? Number(minutesNum) : null;
+          const pagesRead = String(document.getElementById('pagesRead')?.value || '').trim();
+          const rememberedNotes = String(document.getElementById('rememberedNotes')?.value || '').trim();
           const journal = document.getElementById('journal')?.value || '';
 
           if (!bookId) throw new Error('Select a book first.');
           if (minutes === null) throw new Error('Enter minutes before AI check.');
           if (!String(journal || '').trim()) throw new Error('Write your worksheet/journal before AI check.');
 
-          const artifact = await upsertWorksheetArtifact(queryUserId, day, bookId, minutes, journal);
+          const artifact = await upsertWorksheetArtifact(
+            queryUserId,
+            day,
+            bookId,
+            minutes,
+            pagesRead,
+            rememberedNotes,
+            journal,
+          );
           const out = await reviewArtifactById(artifact.id, queryUserId);
           renderWorksheetReview(out);
           setAlert(out?.reused ? 'AI review loaded.' : 'AI review saved.');

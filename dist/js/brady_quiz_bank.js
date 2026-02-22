@@ -1415,6 +1415,160 @@ function quiz_reading_vocabulary_context_roots(seed) {
   return { passPercent: 80, title: 'Vocabulary + Context + Figurative Language', questions };
 }
 
+function quiz_reading_comprehension_recall_and_evidence(seed) {
+  void seed;
+  const questions = [];
+
+  questions.push(makeMc('q1', 'What is the BEST first step after finishing a reading section?', [
+    'Look up spoilers online',
+    'Retell what happened in order from memory',
+    'Skip straight to random details',
+    'Only write your opinion',
+  ], 'Retell what happened in order from memory', 'A quick retell checks real comprehension before review.', ['recall'], {}));
+
+  questions.push(makeMc('q2', 'Which answer is strongest for a comprehension question?', [
+    '“I just feel like this is true.”',
+    '“I think this because the text says ___ and ___.”',
+    '“My friend said this happened.”',
+    '“I forgot, so I guessed.”',
+  ], '“I think this because the text says ___ and ___.”', 'Strong answers include evidence from the text.', ['evidence'], {}));
+
+  questions.push(makeMc('q3', 'What is text evidence?', [
+    'Any random idea',
+    'A detail, quote, or event from the text that supports your answer',
+    'Your mood while reading',
+    'A title only',
+  ], 'A detail, quote, or event from the text that supports your answer', 'Evidence must come from the text itself.', ['evidence'], {}));
+
+  questions.push(makeMc('q4', 'Which question is inferential (reading between the lines)?', [
+    'What page did this happen on?',
+    'What color was the cover?',
+    'What does this event suggest about the character’s values?',
+    'How many words are in paragraph one?',
+  ], 'What does this event suggest about the character’s values?', 'Inferential questions ask you to combine clues and reasoning.', ['inference'], {}));
+
+  questions.push(makeMc('q5', 'If two answers seem possible, what should you do?', [
+    'Pick the one you like more',
+    'Pick the one with stronger evidence from the text',
+    'Flip a coin',
+    'Skip the question',
+  ], 'Pick the one with stronger evidence from the text', 'Evidence quality should decide between close options.', ['evidence_quality'], {}));
+
+  questions.push(makeMc('q6', 'Which summary is MOST objective?', [
+    'This chapter was awesome and perfect.',
+    'The section describes a conflict, the response, and the immediate result.',
+    'I hated this part because it was boring.',
+    'The author is wrong about everything.',
+  ], 'The section describes a conflict, the response, and the immediate result.', 'Objective summaries avoid emotional judgment language.', ['objective_summary'], {}));
+
+  questions.push(makeMc('q7', 'What does “check your recall” mean?', [
+    'Re-read forever without answering questions',
+    'Write what you remember, then compare it with the text and fix misses',
+    'Only memorize page numbers',
+    'Copy the chapter word-for-word',
+  ], 'Write what you remember, then compare it with the text and fix misses', 'Recall + correction improves retention.', ['retrieval_practice'], {}));
+
+  questions.push(makeMc('q8', 'Which is the BEST evidence note format?', [
+    '“It was interesting.”',
+    '“Detail: ___. Why it matters: ___.”',
+    '“I forgot.”',
+    '“This is deep.”',
+  ], '“Detail: ___. Why it matters: ___.”', 'Evidence + explanation makes understanding visible.', ['evidence_note'], {}));
+
+  questions.push(makeMc('q9', 'If your answer has no evidence, it is usually:', [
+    'Always correct',
+    'A weak answer that needs support from the text',
+    'More advanced',
+    'Better than a quote',
+  ], 'A weak answer that needs support from the text', 'Claims should be supported by text details.', ['evidence_quality'], {}));
+
+  questions.push(makeMc('q10', 'What should you do after missing a comprehension question?', [
+    'Ignore it',
+    'Find the exact part of the text that corrects your misunderstanding',
+    'Delete your notes',
+    'Change books immediately',
+  ], 'Find the exact part of the text that corrects your misunderstanding', 'Correction with source evidence prevents repeat mistakes.', ['error_correction'], {}));
+
+  return { passPercent: 80, title: 'Reading Comprehension: Recall + Evidence', questions };
+}
+
+function quiz_reading_messages_and_life_application(seed) {
+  void seed;
+  const questions = [];
+
+  questions.push(makeMc('q1', 'In reading class, a “message” is closest to:', [
+    'The chapter title',
+    'A lesson or idea the text is teaching',
+    'The number of pages',
+    'A character’s hair color',
+  ], 'A lesson or idea the text is teaching', 'Message/theme refers to the lesson behind events.', ['message'], {}));
+
+  questions.push(makeMc('q2', 'Which statement sounds most like a message/theme?', [
+    'This happened on page 37.',
+    'Money needs clear rules and discipline.',
+    'The chapter has 12 paragraphs.',
+    'A character wore boots.',
+  ], 'Money needs clear rules and discipline.', 'Themes are broad ideas, not tiny details.', ['theme_statement'], {}));
+
+  questions.push(makeMc('q3', 'How do you support a message/theme answer?', [
+    'Add one text detail that proves the message',
+    'Say “trust me”',
+    'Use only personal feelings',
+    'Avoid specific evidence',
+  ], 'Add one text detail that proves the message', 'Theme claims need evidence from the reading.', ['theme_evidence'], {}));
+
+  questions.push(makeMc('q4', 'Which question checks real-life application?', [
+    'What font is used in the book?',
+    'How could this idea affect one decision you make today?',
+    'How many commas are on page 2?',
+    'What is the ISBN number?',
+  ], 'How could this idea affect one decision you make today?', 'Application questions connect reading to action.', ['application'], {}));
+
+  questions.push(makeMc('q5', 'If your message is “save first,” which action fits best?', [
+    'Spend everything and hope for the best',
+    'Set aside part of income before optional spending',
+    'Track nothing',
+    'Borrow for wants every day',
+  ], 'Set aside part of income before optional spending', 'A message is strongest when matched to a concrete action.', ['application'], {}));
+
+  questions.push(makeMc('q6', 'Which is the strongest response to “What message are you gleaning?”', [
+    '“The chapter was long.”',
+    '“I think the message is ___ because the text shows ___.”',
+    '“I do not know and do not care.”',
+    '“This character is funny.”',
+  ], '“I think the message is ___ because the text shows ___.”', 'Message + evidence shows deeper understanding.', ['message_evidence'], {}));
+
+  questions.push(makeMc('q7', 'What is the difference between topic and message?', [
+    'No difference',
+    'Topic is the subject; message is what the text teaches about it',
+    'Message is shorter than topic',
+    'Topic is always better',
+  ], 'Topic is the subject; message is what the text teaches about it', 'Topic names what it is about; message names the lesson.', ['topic_vs_message'], {}));
+
+  questions.push(makeMc('q8', 'Which answer is most actionable?', [
+    '“Be better.”',
+    '“Tonight I will save $5 first before spending anything else.”',
+    '“Life is complicated.”',
+    '“I might maybe try something.”',
+  ], '“Tonight I will save $5 first before spending anything else.”', 'Actionable means specific and observable.', ['action_step'], {}));
+
+  questions.push(makeMc('q9', 'If your evidence does not match your message, you should:', [
+    'Keep the same answer no matter what',
+    'Revise the message or pick stronger evidence',
+    'Ignore the mismatch',
+    'Delete your notes',
+  ], 'Revise the message or pick stronger evidence', 'Message and evidence must align.', ['revision'], {}));
+
+  questions.push(makeMc('q10', 'Best end-of-reading reflection prompt:', [
+    'Did I like this chapter?',
+    'What message did I learn, what detail supports it, and what will I do next?',
+    'How many words were there?',
+    'Was the cover cool?',
+  ], 'What message did I learn, what detail supports it, and what will I do next?', 'This checks message, evidence, and application together.', ['synthesis'], {}));
+
+  return { passPercent: 80, title: 'Reading Messages: Theme + Real-Life Application', questions };
+}
+
 function quiz_book_1984_foundations(seed) {
   void seed;
   const questions = [];
@@ -2099,6 +2253,8 @@ const QUIZ_BUILDERS = {
   reading_theme_and_summary: quiz_reading_theme_and_summary,
   reading_informational_text_claims_structure: quiz_reading_informational_text_claims_structure,
   reading_vocabulary_context_roots: quiz_reading_vocabulary_context_roots,
+  reading_comprehension_recall_and_evidence: quiz_reading_comprehension_recall_and_evidence,
+  reading_messages_and_life_application: quiz_reading_messages_and_life_application,
   book_1984_foundations: quiz_book_1984_foundations,
   book_animal_farm_foundations: quiz_book_animal_farm_foundations,
   book_anthem_foundations: quiz_book_anthem_foundations,

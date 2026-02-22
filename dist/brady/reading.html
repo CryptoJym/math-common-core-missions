@@ -37,7 +37,15 @@
           <input id="minutes" type="number" min="0" max="600" step="5" placeholder="Example: 20">
         </div>
         <div>
-          <label for="journal">Reflection</label>
+          <label for="pagesRead">Pages Read</label>
+          <input id="pagesRead" type="text" maxlength="120" placeholder="Example: 34-47 or Ch. 3-4">
+        </div>
+        <div>
+          <label for="rememberedNotes">What I Remember (No Peeking)</label>
+          <textarea id="rememberedNotes" placeholder="Write what you remember first. Keep it short and honest."></textarea>
+        </div>
+        <div>
+          <label for="journal">Workbook Notes (Optional)</label>
           <textarea id="journal" placeholder="What did you read? What was the main idea? What should you remember tomorrow?"></textarea>
         </div>
       </div>
@@ -46,6 +54,7 @@
         <button class="btn" type="button" id="saveReading">Save</button>
         <button class="btn secondary" type="button" id="fillWorksheet">Open worksheet</button>
         <button class="btn secondary" type="button" id="aiCheckWorksheet">Check worksheet</button>
+        <button class="btn secondary" type="button" id="generateQuestions">AI questions</button>
         <button class="btn secondary" type="button" id="fillPrompt">AI prompt</button>
         <span class="small" id="draftMsg"></span>
       </div>
@@ -55,6 +64,12 @@
         <div id="worksheetReviewMeta" class="small"></div>
         <div id="worksheetReviewFeedback" class="small" style="margin-top:10px; white-space:pre-wrap;"></div>
         <div id="worksheetReviewNextSteps" class="small" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="ai-box" id="readingQuestionsBox" style="display:none; margin-top:12px;">
+        <h4>Comprehension Questions</h4>
+        <div id="readingQuestionsMeta" class="small"></div>
+        <ol id="readingQuestionsList" class="small" style="margin-top:8px; padding-left:18px;"></ol>
       </div>
 
       <div class="ai-box" id="aiBox" style="display:none;">
@@ -95,8 +110,10 @@
           <tr>
             <th>Date</th>
             <th>Book</th>
+            <th>Pages</th>
             <th>Minutes</th>
-            <th>Reflection</th>
+            <th>What I Remember</th>
+            <th>Workbook Notes</th>
           </tr>
         </thead>
         <tbody id="readingRows"></tbody>

@@ -536,6 +536,89 @@ const BRADY_ASSIGNMENTS = [
     },
   },
   {
+    id: 'reading_comprehension_recall_and_evidence',
+    subject: 'reading',
+    priority: 145,
+    quizId: 'reading_comprehension_recall_and_evidence',
+    passPercent: 80,
+    title: 'Reading Comprehension: Recall + Evidence',
+    standards: ['Teacher guidance'],
+    band: '201-210',
+    learningTargets: [
+      'Retell what happened in the section you read in clear order.',
+      'Answer literal and inferential questions using text evidence.',
+      'Distinguish between what the text says and your own opinion.',
+    ],
+    practicePlan: [
+      'Read assigned pages, then close the book and write what you remember.',
+      'Write 3 evidence lines (quote or paraphrase + why it matters).',
+      'Answer 6 short comprehension questions before checking the book again.',
+    ],
+    masteryCheck: [
+      'Score >= 80% on the quiz.',
+      'Provide at least 2 evidence-based answers (not guesses).',
+    ],
+    ai: {
+      chatgpt_web: [
+        'I read pages from my current book. Ask me 6 simple comprehension questions.',
+        'At least 2 should ask for text evidence.',
+        'After each answer, tell me if my evidence is strong or weak and why.',
+      ].join('\n'),
+      codex_cli: [
+        'Create a tiny "reading recall check" script:',
+        '- Input: book, pages, my recall summary',
+        '- Output: 6 comprehension prompts and a place to score evidence strength',
+        'Save results to JSON.',
+      ].join('\n'),
+      claude_code: [
+        'Review my reading recall script and improve scoring clarity:',
+        '- 0 = missing, 1 = partial, 2 = evidence-backed',
+        'Add tests for invalid/empty entries.',
+      ].join('\n'),
+    },
+  },
+  {
+    id: 'reading_messages_and_life_application',
+    subject: 'reading',
+    priority: 146,
+    quizId: 'reading_messages_and_life_application',
+    passPercent: 80,
+    title: 'Reading Messages: Theme + Real-Life Application',
+    standards: ['Teacher guidance'],
+    band: '201-210',
+    learningTargets: [
+      'Identify one message/theme from the day’s reading.',
+      'Explain how a detail from the text supports that message.',
+      'Apply that message to one real-life decision.',
+    ],
+    practicePlan: [
+      'After reading, write one message you think the text teaches.',
+      'Find one detail that supports your message.',
+      'Write one action you can take today based on that message.',
+    ],
+    masteryCheck: [
+      'Score >= 80% on the quiz.',
+      'Write one message + one evidence detail + one real-life action.',
+    ],
+    ai: {
+      chatgpt_web: [
+        'Ask me 6 short questions that test what message I am gleaning from my reading.',
+        'Include one evidence question and one real-life application question.',
+        'Keep the language simple and direct.',
+      ].join('\n'),
+      codex_cli: [
+        'Build a mini "theme tracker" script:',
+        '- Input: date, book, pages, message/theme, evidence, action step',
+        '- Output: weekly list of repeated themes',
+        'Store entries in JSON.',
+      ].join('\n'),
+      claude_code: [
+        'Improve the theme tracker to prevent vague entries and require specific evidence text.',
+        'Add tests for required fields and summary accuracy.',
+      ].join('\n'),
+    },
+  },
+  {
     id: 'language_pronouns_possessives',
     subject: 'language',
     priority: 150,
