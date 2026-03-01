@@ -257,6 +257,7 @@ async function getBradyContext(session, opts = {}) {
   const fallbackLearner = normalizeLearnerId(session.user.id);
   const saved = getActiveLearnerFromStorage(session.user.id);
   const requested = opts.learnerId ? normalizeLearnerId(opts.learnerId) : null;
+  const firstAccessible = (subAccounts || []).find((row) => row && row.is_active !== false && normalizeLearnerId(row.learner_id));
 
   if (requested && requested !== fallbackLearner) {
     const match = (subAccounts || []).find((row) => normalizeLearnerId(row.learner_id) === requested);
@@ -278,6 +279,16 @@ async function getBradyContext(session, opts = {}) {
     }
 
     setActiveLearnerInStorage(session.user.id, null);
+  }
+
+  if (isAllowedEmail(normalizeEmail(session.user.email)) && firstAccessible) {
+    const learnerId = normalizeLearnerId(firstAccessible.learner_id);
+    setActiveLearnerInStorage(session.user.id, learnerId);
+    return {
+      session,
+      context: describeLearner(session, subAccounts, learnerId),
+      subAccounts,
+    };
   }
 
   return {

@@ -511,7 +511,7 @@ function bindPromptControls() {
       }
       journalEl.value = worksheetTemplateForBook(bookId, day);
       journalEl.dispatchEvent(new Event('input', { bubbles: true }));
-      setAlert('Worksheet template loaded. Fill it out, then click "AI Check Worksheet".');
+      setAlert('Worksheet template loaded. Fill it out, then click "AI check my worksheet".');
       setTimeout(() => setAlert(''), 1400);
     });
   }
@@ -565,13 +565,24 @@ function renderReadingLogs(rows) {
   const tbody = document.getElementById('readingRows');
   if (!tbody) return;
 
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const summaryEl = document.getElementById('readingSummary');
+
+  if (!safeRows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="small">No reading entries yet.</td></tr>';
+    if (summaryEl) {
+      summaryEl.textContent = 'No reading entries yet. Save one to start building a history.';
+    }
+    return;
+  }
+
   const clip = (value, maxLen = 240) => {
     const s = String(value || '').trim();
     if (!s) return '';
     return s.length > maxLen ? `${s.slice(0, maxLen - 1)}…` : s;
   };
 
-  tbody.innerHTML = (rows || []).map((r) => {
+  tbody.innerHTML = safeRows.map((r) => {
     const day = r.day || '';
     const book = bookTitle(r.book_id);
     const pages = r.pages_read || '';
@@ -591,10 +602,9 @@ function renderReadingLogs(rows) {
     `;
   }).join('');
 
-  const summaryEl = document.getElementById('readingSummary');
+  const total = safeRows.reduce((acc, r) => acc + (Number(r.minutes) || 0), 0);
   if (summaryEl) {
-    const total = (rows || []).reduce((acc, r) => acc + (Number(r.minutes) || 0), 0);
-    summaryEl.textContent = `Last ${Math.min((rows || []).length, 60)} entries loaded. Total minutes in this list: ${total}.`;
+    summaryEl.textContent = `Showing ${safeRows.length} recent entries. Total minutes: ${total}.`;
   }
 }
 
@@ -676,6 +686,9 @@ async function main() {
 
         const nextRows = await loadReadingLogs(gateSession, queryUserId);
         renderReadingLogs(nextRows);
+        const bookName = bookTitle(bookId);
+        const statusEl = document.getElementById('worksheetStatus');
+        if (statusEl) statusEl.textContent = `Saved ${day} • ${bookName}`;
         setAiPrompts();
         setAlert('Saved.');
         setTimeout(() => setAlert(''), 1200);
@@ -771,8 +784,12 @@ async function main() {
             payload.journal || null,
           );
           setDraftMsg('Draft saved.');
+          const statusEl = document.getElementById('worksheetStatus');
+          if (statusEl) statusEl.textContent = 'Draft saved.';
         } catch (_) {
           setDraftMsg('Draft saved locally (offline).');
+          const statusEl = document.getElementById('worksheetStatus');
+          if (statusEl) statusEl.textContent = 'Draft saved locally (offline).';
         }
       }, 650);
     };
@@ -796,12 +813,15 @@ async function main() {
       const useRemote = Number.isFinite(remoteAt) && (!Number.isFinite(localAt) || remoteAt >= localAt);
       const draft = useRemote ? remote : local;
 
+      const statusEl = document.getElementById('worksheetStatus');
       if (draft) {
         applyDraftToForm(draft);
         setDraftMsg('Draft restored.');
+        if (statusEl) statusEl.textContent = 'Draft restored.';
       } else {
         clearFormFields();
         setDraftMsg('');
+        if (statusEl) statusEl.textContent = '';
       }
       setAiPrompts();
     };
@@ -883,6 +903,12 @@ async function main() {
 
     const rows = await loadReadingLogs(gateSession, queryUserId);
     renderReadingLogs(rows);
+    const summaryEl = document.getElementById('readingSummary');
+    if (summaryEl && rows && rows.length) {
+      const totalMinutes = rows.reduce((acc, r) => acc + (Number(r.minutes) || 0), 0);
+      summaryEl.textContent = `Showing ${rows.length} recent entries. Total minutes: ${totalMinutes}.`;
+    }
+
 
     const questionsBtn = document.getElementById('generateQuestions');
     if (questionsBtn) {

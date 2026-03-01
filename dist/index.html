@@ -450,7 +450,7 @@
         <div class="brand-mark" aria-hidden="true"></div>
         <span class="brand-name">Level Up</span>
       </div>
-      <div class="top-links">
+      <div class="top-links" id="publicTopLinks">
         <a class="top-link" href="login.html">Login</a>
         <a class="top-link" href="signup.html">Sign Up</a>
       </div>
@@ -464,12 +464,10 @@
       <div id="authNotice">That page is available only to an authorized account.</div>
 
       <div class="hero-actions">
-        <a class="hero-btn primary" href="signup.html">Start Free</a>
-        <a class="hero-btn secondary" href="login.html">Log In</a>
+        <a class="hero-btn primary" href="signup.html">Open Student HQ</a>
         <a class="hero-btn secondary" href="la_index.html">Language Arts</a>
-        <div id="bradyPortal" style="display:none;">
-          <a class="hero-btn gold" href="brady/index.html">Open Student HQ</a>
-        </div>
+        <a class="hero-btn secondary" href="login.html">Log In</a>
+        <div id="bradyPortal" style="display:none;"></div>
       </div>
 
       <div class="feature-grid">
@@ -564,10 +562,29 @@
 
       const session = await MHA_Auth.getSession();
       const email = String(session?.user?.email || '').trim().toLowerCase();
+      const isLoggedIn = Boolean(session?.user?.id);
       const allowed = ['bradyhyro67@gmail.com', 'james@jamesbrady.org'];
+
+      const topLinks = document.getElementById('publicTopLinks');
+      const loginCta = document.querySelector('.hero-btn.secondary[href="login.html"]');
+      const portal = document.getElementById('bradyPortal');
+      const mainCta = document.querySelector('.hero-btn.primary[href="signup.html"]');
+      const laBtn = document.querySelector('a[href="la_index.html"]');
+
+      if (topLinks && isLoggedIn) topLinks.style.display = 'none';
+      if (isLoggedIn && loginCta) loginCta.style.display = 'none';
+      if (isLoggedIn && laBtn) laBtn.style.display = 'none';
+      if (mainCta) mainCta.href = 'brady/index.html';
+
       if (allowed.includes(email)) {
-        const portal = document.getElementById('bradyPortal');
-        if (portal) portal.style.display = 'block';
+        if (mainCta) mainCta.textContent = 'Open Student HQ';
+        if (portal) {
+          portal.style.display = 'block';
+          portal.innerHTML = '<a class="hero-btn gold" href="brady/index.html">Open Student HQ</a>';
+        }
+      } else {
+        if (portal) portal.style.display = 'none';
+        if (mainCta) mainCta.textContent = 'Start Free';
       }
 
       const params = new URLSearchParams(window.location.search);

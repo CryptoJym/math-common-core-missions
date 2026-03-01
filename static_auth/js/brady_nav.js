@@ -67,8 +67,7 @@
     nav.className = 'brady-topnav';
     nav.innerHTML = `
       <div class="brady-topnav-left">
-        <button class="brady-topnav-back" type="button" aria-label="Back">Back</button>
-        <div class="brady-topnav-brand">Level Up</div>
+        <div class="brady-topnav-brand">Level Up HQ</div>
       </div>
       <div class="brady-topnav-links" role="navigation" aria-label="Level Up Menu">
         ${primaryLinks.map((l) => {
@@ -88,17 +87,6 @@
         <div class="brady-topnav-context small" data-brady-context style="display:none;"></div>
       </div>
     `;
-
-    const backBtn = nav.querySelector('.brady-topnav-back');
-    if (backBtn) {
-      backBtn.addEventListener('click', () => {
-        if (sameOriginReferrer() && window.history.length > 1) {
-          window.history.back();
-          return;
-        }
-        window.location.href = 'index.html';
-      });
-    }
 
     container.insertBefore(nav, container.firstChild);
     _contextEl = nav.querySelector('[data-brady-context]');

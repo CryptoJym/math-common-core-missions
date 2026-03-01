@@ -184,8 +184,7 @@ body.has-user-nav {
   display: none;
 }
 
-.brady-topnav-link,
-.brady-topnav-back {
+.brady-topnav-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -203,16 +202,7 @@ body.has-user-nav {
   white-space: nowrap;
 }
 
-.brady-topnav-back {
-  appearance: none;
-  cursor: pointer;
-  border-color: rgba(76, 201, 240, 0.45);
-  background: rgba(76, 201, 240, 0.12);
-  color: var(--accent-blue);
-}
-
-.brady-topnav-link:hover,
-.brady-topnav-back:hover {
+.brady-topnav-link:hover {
   transform: translateY(-1px);
   border-color: rgba(76, 201, 240, 0.7);
   box-shadow: var(--shadow-blue);
@@ -560,8 +550,9 @@ textarea {
 }
 
 textarea {
-  min-height: 112px;
+  min-height: 190px;
   resize: vertical;
+  line-height: 1.45;
 }
 
 input:focus,

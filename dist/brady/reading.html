@@ -12,7 +12,7 @@
   <div class="container">
     <div class="page-header">
       <h1>Reading</h1>
-      <p>Read. Answer. Reflect.</p>
+      <p>Read → answer → reflect → get feedback.</p>
       <div class="shell-meta">
         <span class="sync-chip">Saved</span>
         <span class="small">Write one short reflection so progress stays meaningful.</span>
@@ -41,21 +41,22 @@
           <input id="pagesRead" type="text" maxlength="120" placeholder="Example: 34-47 or Ch. 3-4">
         </div>
         <div>
-          <label for="rememberedNotes">What I Remember (No Peeking)</label>
+          <label for="rememberedNotes">What I remember first (no peeking)</label>
           <textarea id="rememberedNotes" placeholder="Write what you remember first. Keep it short and honest."></textarea>
         </div>
         <div>
-          <label for="journal">Workbook Notes (Optional)</label>
+          <label for="journal">Workbook Notes (work it in full sentences)</label>
           <textarea id="journal" placeholder="What did you read? What was the main idea? What should you remember tomorrow?"></textarea>
         </div>
       </div>
 
       <div class="btn-row">
         <button class="btn" type="button" id="saveReading">Save</button>
-        <button class="btn secondary" type="button" id="fillWorksheet">Open worksheet</button>
-        <button class="btn secondary" type="button" id="aiCheckWorksheet">Check worksheet</button>
-        <button class="btn secondary" type="button" id="generateQuestions">AI questions</button>
-        <button class="btn secondary" type="button" id="fillPrompt">AI prompt</button>
+        <span class="small" id="worksheetStatus"></span>
+        <button class="btn secondary" type="button" id="fillWorksheet">1) Generate worksheet template</button>
+        <button class="btn secondary" type="button" id="aiCheckWorksheet">2) AI check my worksheet</button>
+        <button class="btn secondary" type="button" id="generateQuestions">3) Generate AI comprehension questions</button>
+        <button class="btn secondary" type="button" id="fillPrompt">4) Open AI prompts</button>
         <span class="small" id="draftMsg"></span>
       </div>
 
@@ -104,7 +105,7 @@
 
     <div class="section">
       <h2>History</h2>
-      <div id="readingSummary" class="small">Loading...</div>
+      <div id="readingSummary" class="small">Loading your recent reading logs…</div>
       <table class="table">
         <thead>
           <tr>
